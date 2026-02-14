@@ -1,17 +1,17 @@
-const KEY = "vibe_coding_data_v1";
+const KEY = "vibe_coding_state_v1";
 
-export function loadData(defaultValue = "") {
+export function loadState(defaultState) {
   try {
     const raw = localStorage.getItem(KEY);
-    return raw === null ? defaultValue : JSON.parse(raw);
+    return raw ? JSON.parse(raw) : defaultState;
   } catch {
-    return defaultValue;
+    return defaultState;
   }
 }
 
-export function saveData(value) {
+export function saveState(state) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(value));
+    localStorage.setItem(KEY, JSON.stringify(state));
   } catch {
     // storage kan vol zitten of geblokkeerd zijn
   }

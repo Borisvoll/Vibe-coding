@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+base: '/Vibe-coding/'
 
 export default defineConfig({
   build: {

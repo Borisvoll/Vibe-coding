@@ -17,6 +17,7 @@ export const modules = [
   { id: 'planning',      label: 'Dagplan',       icon: 'check-circle',  route: 'planning',      page: () => import('./pages/planning.js') },
   { id: 'hours',         label: 'Uren',          icon: 'clock',         route: 'hours',         page: () => import('./pages/hours.js') },
   { id: 'logbook',       label: 'Logboek',       icon: 'book',          route: 'logbook',       page: () => import('./pages/logbook.js') },
+  { id: 'notebook',      label: 'Notebook',      icon: 'edit',          route: 'notebook',      page: () => import('./pages/notebook.js') },
   { id: 'goals',         label: 'Leerdoelen',    icon: 'target',        route: 'goals',         page: () => import('./pages/goals.js') },
   { id: 'competencies',  label: 'Leermeter',     icon: 'chart',         route: 'competencies',  page: () => import('./pages/competencies.js') },
   { id: 'quality',       label: 'Kwaliteit',     icon: 'shield',        route: 'quality',       page: () => import('./pages/quality.js') },

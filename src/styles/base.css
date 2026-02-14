@@ -40,32 +40,35 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: var(--space-3) var(--space-6);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  background: rgba(248, 249, 252, 0.88);
 }
 
 [data-theme="dark"] .app-header,
 :root:not([data-theme="light"]) .app-header {
-  background: rgba(20, 20, 20, 0.85);
+  background: rgba(12, 14, 26, 0.88);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .app-header {
-    background: rgba(20, 20, 20, 0.85);
+    background: rgba(12, 14, 26, 0.88);
   }
 }
 
 .app-header h1 {
   font-size: 1.125rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .app-header-actions {
@@ -129,21 +132,41 @@ body {
     flex-direction: column;
     width: var(--sidebar-width);
     min-height: 100vh;
-    border-right: 1px solid var(--color-border);
-    background: var(--color-surface);
+    background: var(--gradient-sidebar);
     padding: var(--space-6) 0;
     position: fixed;
     top: 0;
     left: 0;
     z-index: 101;
+    border-right: none;
   }
 
   .app-nav-brand {
     padding: 0 var(--space-6);
     margin-bottom: var(--space-8);
-    font-size: 1.125rem;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .app-nav-brand::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    background: var(--gradient-primary);
+    flex-shrink: 0;
+  }
+
+  .app-nav-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: var(--space-4) var(--space-6);
   }
 
   .app-nav a {
@@ -151,20 +174,30 @@ body {
     align-items: center;
     gap: var(--space-3);
     padding: var(--space-2) var(--space-6);
+    margin: 1px var(--space-3);
     font-size: 0.9375rem;
-    color: var(--color-text-secondary);
+    color: rgba(255, 255, 255, 0.6);
     transition: all var(--duration-fast) var(--ease);
     text-decoration: none;
+    border-radius: var(--radius-md);
   }
 
   .app-nav a:hover {
-    color: var(--color-text);
-    background: var(--color-surface-hover);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .app-nav a.active {
-    color: var(--color-accent);
-    background: var(--color-accent-light);
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .app-nav a .nav-icon-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    margin-right: var(--space-1);
+    flex-shrink: 0;
   }
 
   .app-shell {

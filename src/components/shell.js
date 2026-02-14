@@ -3,10 +3,26 @@ import { icon } from '../icons.js';
 import { getSetting, setSetting } from '../db.js';
 
 // Only show these modules in bottom nav (mobile) — max 5
-const bottomNavIds = ['dashboard', 'planning', 'hours', 'logbook', 'export'];
+const bottomNavIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook'];
 // Sidebar shows all modules, grouped
-const sidebarMainIds = ['dashboard', 'planning', 'hours', 'logbook', 'goals', 'competencies', 'quality', 'assignments', 'report'];
+const sidebarMainIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook', 'goals', 'competencies', 'quality', 'assignments', 'report'];
 const sidebarSecondaryIds = ['export', 'settings'];
+
+// Color dots for sidebar nav items
+const navColors = {
+  dashboard: '#4f6ef7',
+  planning: '#8b5cf6',
+  hours: '#10b981',
+  logbook: '#f59e0b',
+  notebook: '#ec4899',
+  goals: '#f43f5e',
+  competencies: '#06b6d4',
+  quality: '#6366f1',
+  assignments: '#f97316',
+  report: '#14b8a6',
+  export: '#9094ad',
+  settings: '#9094ad',
+};
 
 export function createShell(container) {
   const bottomNavItems = modules.filter(m => bottomNavIds.includes(m.id));
@@ -19,11 +35,12 @@ export function createShell(container) {
       <div class="app-nav-main">
         ${sidebarMainItems.map(m => `
           <a href="#${m.route}" class="nav-link" data-route="${m.route}">
+            <span class="nav-icon-dot" style="background:${navColors[m.id] || '#9094ad'}"></span>
             ${icon(m.icon)} ${m.label}
           </a>
         `).join('')}
       </div>
-      <div style="flex:1"></div>
+      <div class="app-nav-divider"></div>
       <div class="app-nav-secondary">
         ${sidebarSecondaryItems.map(m => `
           <a href="#${m.route}" class="nav-link" data-route="${m.route}">
@@ -31,6 +48,7 @@ export function createShell(container) {
           </a>
         `).join('')}
       </div>
+      <div style="flex:1"></div>
     </nav>
     <div class="app-shell">
       <header class="app-header">

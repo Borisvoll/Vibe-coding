@@ -1,0 +1,107 @@
+@media print {
+  /* Hide UI elements */
+  .app-nav,
+  .app-header,
+  .bottom-nav,
+  #toast-area,
+  .fab,
+  .btn,
+  .report-controls,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset layout */
+  .app-shell {
+    margin-left: 0 !important;
+  }
+
+  .app-main {
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Force colors */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* Report styles */
+  .report-preview {
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .report-preview h1 {
+    font-size: 16pt !important;
+  }
+
+  .report-preview h2 {
+    font-size: 14pt !important;
+    page-break-after: avoid;
+  }
+
+  .report-preview h3 {
+    font-size: 12pt !important;
+    page-break-after: avoid;
+  }
+
+  .report-preview table {
+    page-break-inside: avoid;
+  }
+
+  .report-preview table th,
+  .report-preview table td {
+    border: 1px solid #ccc !important;
+    padding: 4px 8px !important;
+  }
+
+  /* Hours table */
+  .hours-print-table {
+    width: 100%;
+    font-size: 10pt;
+    page-break-inside: avoid;
+  }
+
+  .hours-print-table th,
+  .hours-print-table td {
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+    text-align: left;
+  }
+
+  .hours-print-table th {
+    background: #f0f0f0;
+    font-weight: bold;
+  }
+
+  /* Page breaks */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  /* Placeholder highlight in print */
+  .report-placeholder {
+    background: #fff3cd !important;
+    color: #856404 !important;
+    padding: 1px 4px !important;
+  }
+
+  /* Footer */
+  @page {
+    margin: 2cm;
+  }
+}

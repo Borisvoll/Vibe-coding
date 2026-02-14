@@ -1,0 +1,352 @@
+/* ===== Dashboard ===== */
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.dashboard-today {
+  margin-bottom: var(--space-8);
+}
+
+.dashboard-quick-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+
+/* ===== Hours ===== */
+.hours-week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6);
+}
+
+.hours-week-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.hours-day-row {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+  gap: var(--space-4);
+}
+
+.hours-day-row:hover {
+  background: var(--color-surface-hover);
+}
+
+.hours-day-date {
+  width: 100px;
+  font-weight: 500;
+}
+
+.hours-day-times {
+  flex: 1;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.hours-day-net {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 60px;
+  text-align: right;
+}
+
+.hours-week-total {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-4);
+  font-weight: 600;
+  border-top: 2px solid var(--color-border);
+  margin-top: var(--space-2);
+}
+
+/* ===== Hours entry form ===== */
+.hours-entry-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.hours-entry-date {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.hours-entry-calculated {
+  margin-top: var(--space-6);
+  padding: var(--space-4);
+  background: var(--color-accent-light);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.hours-entry-calculated .stat-value {
+  color: var(--color-accent);
+}
+
+.hours-entry-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+/* ===== Logbook ===== */
+.logbook-filters {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.logbook-entry-card {
+  margin-bottom: var(--space-3);
+}
+
+.logbook-entry-card .card {
+  cursor: pointer;
+}
+
+.logbook-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-2);
+}
+
+.logbook-card-date {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.logbook-card-desc {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--color-text);
+  margin-bottom: var(--space-3);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.logbook-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logbook-card-tags {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.logbook-card-photos {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+/* ===== Competencies ===== */
+.competency-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.competency-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.competency-info {
+  flex: 1;
+}
+
+.competency-name {
+  font-weight: 500;
+  margin-bottom: var(--space-1);
+}
+
+.competency-level-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.competency-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ===== Assignments ===== */
+.assignment-type-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.assignment-type-card {
+  text-align: center;
+  padding: var(--space-6);
+  cursor: pointer;
+}
+
+.assignment-type-card h3 {
+  margin-bottom: var(--space-2);
+}
+
+.assignment-type-card p {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Report ===== */
+.report-preview {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  max-width: 800px;
+  margin: 0 auto;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.report-preview h1 {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-6);
+  text-align: center;
+}
+
+.report-preview h2 {
+  font-size: 1.25rem;
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.report-preview h3 {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+
+.report-preview p {
+  margin-bottom: var(--space-3);
+}
+
+.report-preview table {
+  width: 100%;
+  margin: var(--space-4) 0;
+}
+
+.report-preview table th,
+.report-preview table td {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.report-preview table th {
+  background: var(--color-surface-hover);
+  font-weight: 600;
+}
+
+.report-placeholder {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+}
+
+.report-controls {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+  flex-wrap: wrap;
+}
+
+/* ===== Export ===== */
+.export-section {
+  margin-bottom: var(--space-8);
+}
+
+.export-section h3 {
+  margin-bottom: var(--space-4);
+}
+
+/* ===== Settings ===== */
+.settings-section {
+  margin-bottom: var(--space-8);
+}
+
+.settings-section h3 {
+  margin-bottom: var(--space-4);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-label {
+  font-weight: 500;
+}
+
+.settings-desc {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* ===== Toggle switch ===== */
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.toggle.active {
+  background: var(--color-accent);
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: var(--radius-full);
+  transition: transform var(--duration-fast) var(--ease);
+  box-shadow: var(--shadow-sm);
+}
+
+.toggle.active::after {
+  transform: translateX(20px);
+}

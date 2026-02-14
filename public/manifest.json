@@ -1,8 +1,9 @@
 {
+  https://github.com/Borisvoll/Vibe-coding.git
   "name": "BPV Voortgang Tracker",
   "short_name": "BPV Tracker",
   "description": "Privacyvriendelijke stage-urenregistratie en voortgang tracker",
-  "start_url": "/",
+  "start_url": "/Vibe-coding/",
   "display": "standalone",
   "background_color": "#fafafa",
   "theme_color": "#0066cc",

@@ -143,6 +143,44 @@ export function createPage(container) {
         </div>
       </div>
 
+      <div class="card" style="margin-bottom: var(--space-8)">
+        <h3 style="margin-bottom: var(--space-4)">Consistentie Index</h3>
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:var(--space-4)">
+          ${(() => {
+            const weeksDone = weeks.filter(w => w <= getCurrentWeek()).length;
+            const hoursOnTrack = weeksDone > 0 ? Math.min(100, Math.round((totalMinutes / (weeksDone * WEEKLY_GOAL_HOURS * 60)) * 100)) : 0;
+            const reviewsDone = allWeekReviews.length;
+            const reviewsPct = weeksDone > 0 ? Math.min(100, Math.round((reviewsDone / weeksDone) * 100)) : 0;
+            const uniqueLogDays = new Set(allLogbook.map(l => l.date)).size;
+            const workDays = allHours.filter(h => h.type === 'work').length;
+            const logPct = workDays > 0 ? Math.min(100, Math.round((uniqueLogDays / workDays) * 100)) : 0;
+            const activeGoals = allGoals.filter(g => g.status === 'active' || g.status === 'in_progress').length;
+
+            return `
+              <div>
+                <div style="font-size:0.8125rem; color:var(--color-text-secondary); margin-bottom:var(--space-1)">Uren op schema</div>
+                <div class="progress-bar"><div class="progress-bar-fill ${hoursOnTrack >= 80 ? 'emerald' : hoursOnTrack >= 50 ? 'amber' : 'rose'}" style="width:${hoursOnTrack}%"></div></div>
+                <div style="font-size:0.75rem; color:var(--color-text-tertiary)">${hoursOnTrack}%</div>
+              </div>
+              <div>
+                <div style="font-size:0.8125rem; color:var(--color-text-secondary); margin-bottom:var(--space-1)">Weekreviews</div>
+                <div class="progress-bar"><div class="progress-bar-fill ${reviewsPct >= 80 ? 'emerald' : reviewsPct >= 50 ? 'amber' : 'rose'}" style="width:${reviewsPct}%"></div></div>
+                <div style="font-size:0.75rem; color:var(--color-text-tertiary)">${reviewsDone}/${weeksDone} weken</div>
+              </div>
+              <div>
+                <div style="font-size:0.8125rem; color:var(--color-text-secondary); margin-bottom:var(--space-1)">Logboek consistentie</div>
+                <div class="progress-bar"><div class="progress-bar-fill ${logPct >= 80 ? 'emerald' : logPct >= 50 ? 'amber' : 'rose'}" style="width:${logPct}%"></div></div>
+                <div style="font-size:0.75rem; color:var(--color-text-tertiary)">${uniqueLogDays}/${workDays} dagen</div>
+              </div>
+              <div>
+                <div style="font-size:0.8125rem; color:var(--color-text-secondary); margin-bottom:var(--space-1)">Actieve doelen</div>
+                <div style="font-size:1.5rem; font-weight:700; color:var(--color-rose)">${activeGoals}</div>
+              </div>
+            `;
+          })()}
+        </div>
+      </div>
+
       <h3 style="margin-bottom: var(--space-4)">Overzicht per module</h3>
       <div class="dashboard-grid">
         <div class="card card-clickable dashboard-module-card card-color-left" style="--card-color: var(--color-emerald)" data-nav="hours">

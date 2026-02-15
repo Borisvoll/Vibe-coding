@@ -2,18 +2,19 @@
   "name": "BPV Voortgang Tracker",
   "short_name": "BPV Tracker",
   "description": "Privacyvriendelijke stage-urenregistratie en voortgang tracker",
-  "start_url": "/",
+  "start_url": "/Vibe-coding/",
+  "scope": "/Vibe-coding/",
   "display": "standalone",
   "background_color": "#fafafa",
-  "theme_color": "#0066cc",
+  "theme_color": "#4f6ef7",
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/Vibe-coding/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/Vibe-coding/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

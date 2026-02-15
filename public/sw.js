@@ -1,14 +1,15 @@
-const CACHE_NAME = 'bpv-tracker-v1';
+const CACHE_NAME = 'bpv-tracker-v2';
+const BASE = self.location.pathname.replace(/\/sw\.js$/, '/');
 
 // Install: cache app shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
-        '/',
-        '/index.html',
-        '/manifest.json',
-        '/favicon.svg',
+        BASE,
+        BASE + 'index.html',
+        BASE + 'manifest.json',
+        BASE + 'favicon.svg',
       ]);
     })
   );
@@ -38,7 +39,7 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .catch(() => caches.match('/index.html'))
+        .catch(() => caches.match(BASE + 'index.html'))
     );
     return;
   }
@@ -60,7 +61,7 @@ self.addEventListener('fetch', (event) => {
       }).catch(() => {
         // Offline fallback for HTML
         if (request.headers.get('accept')?.includes('text/html')) {
-          return caches.match('/index.html');
+          return caches.match(BASE + 'index.html');
         }
       });
     })

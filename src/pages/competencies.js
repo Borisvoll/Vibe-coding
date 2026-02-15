@@ -2,7 +2,7 @@ import { getAll, put, remove } from '../db.js';
 import { icon } from '../icons.js';
 import { on, emit } from '../state.js';
 import { showToast } from '../toast.js';
-import { generateId } from '../utils.js';
+import { generateId, formatDateShort, formatDateISO } from '../utils.js';
 import { COMPETENCY_LEVELS, DEFAULT_COMPETENCIES } from '../constants.js';
 
 export function createPage(container) {
@@ -43,6 +43,22 @@ export function createPage(container) {
             ${icon('plus', 14)} Competentie toevoegen
           </button>
         </div>
+
+        ${competencies.some(c => c.updatedAt) ? `
+          <div style="margin-bottom: var(--space-8)">
+            <h3 style="margin-bottom: var(--space-4); color: var(--color-text-secondary); font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.04em">Progressie-tijdlijn</h3>
+            <div style="position:relative; padding-left:var(--space-6); border-left:2px solid var(--color-border)">
+              ${competencies.filter(c => c.updatedAt).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)).slice(0, 10).map(c => `
+                <div style="margin-bottom:var(--space-4); position:relative">
+                  <div style="position:absolute; left:calc(-1 * var(--space-6) - 5px); top:4px; width:10px; height:10px; border-radius:50%; background:var(--color-cyan)"></div>
+                  <div style="font-size:0.75rem; color:var(--color-text-tertiary)">${formatDateShort(formatDateISO(new Date(c.updatedAt)))}</div>
+                  <div style="font-weight:500">${c.name}</div>
+                  <div style="font-size:0.8125rem; color:var(--color-cyan)">${COMPETENCY_LEVELS[c.level ?? 0]}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
 
         ${Object.entries(grouped).map(([cat, items]) => `
           <div style="margin-bottom: var(--space-8)">

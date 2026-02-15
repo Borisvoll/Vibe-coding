@@ -133,10 +133,14 @@ export async function getByIndex(storeName, indexName, value) {
 
 export async function put(storeName, record) {
   const db = getDB();
+  const normalized = record && typeof record === 'object' && 'id' in record && storeName !== 'deleted'
+    ? { ...record, updatedAt: record.updatedAt || new Date().toISOString() }
+    : record;
+
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite');
     const store = tx.objectStore(storeName);
-    const request = store.put(record);
+    const request = store.put(normalized);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -171,7 +175,7 @@ export async function softDelete(storeName, key) {
         id: data.id,
         store: storeName,
         data: data,
-        deletedAt: Date.now()
+        deletedAt: new Date().toISOString()
       });
       sourceStore.delete(key);
     };
@@ -294,7 +298,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

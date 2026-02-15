@@ -33,6 +33,15 @@ body {
   width: 100%;
 }
 
+/* Page enter animation — triggered on route change */
+.app-main.page-enter {
+  animation: page-fade-in var(--duration-page) var(--ease-out);
+}
+@keyframes page-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 /* Header — Notion minimal */
 .app-header {
   position: sticky;
@@ -133,6 +142,8 @@ body {
 }
 
 .bottom-nav a.active { color: var(--color-accent); }
+.bottom-nav a.active .nav-icon { animation: tab-pop var(--duration) var(--ease-spring); }
+@keyframes tab-pop { 0% { transform: scale(1); } 40% { transform: scale(1.15); } 100% { transform: scale(1); } }
 .bottom-nav a:hover { color: var(--color-text); }
 
 .nav-icon {
@@ -202,11 +213,12 @@ body {
     text-decoration: none; border-radius: var(--radius-md);
   }
 
-  .app-nav a .nav-icon { width: 18px; height: 18px; opacity: 0.65; flex-shrink: 0; }
+  .app-nav a .nav-icon { width: 18px; height: 18px; opacity: 0.65; flex-shrink: 0; transition: opacity var(--duration-fast) var(--ease); }
   .app-nav a:hover { background: var(--color-sidebar-hover); color: var(--color-sidebar-text-active); }
   .app-nav a:hover .nav-icon { opacity: 1; }
-  .app-nav a.active { background: var(--color-sidebar-active); color: var(--color-sidebar-text-active); font-weight: 500; }
+  .app-nav a.active { background: var(--color-sidebar-active); color: var(--color-sidebar-text-active); font-weight: 500; animation: nav-active-in var(--duration) var(--ease-out); }
   .app-nav a.active .nav-icon { opacity: 1; }
+  @keyframes nav-active-in { from { background: transparent; } }
   .app-nav a .nav-icon-dot { width: 7px; height: 7px; border-radius: var(--radius-full); flex-shrink: 0; }
 
   .app-shell { margin-left: var(--sidebar-width); transition: margin-left var(--duration-slow) var(--ease); }
@@ -366,3 +378,20 @@ h4 { font-size: 1rem; font-weight: 500; }
   margin: 0 auto var(--space-4);
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* Page header entrance */
+.page-header { animation: header-slide var(--duration-page) var(--ease-out); }
+@keyframes header-slide {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .app-main.page-enter { animation: none; }
+}

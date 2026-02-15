@@ -78,6 +78,12 @@ function matchRoute(pattern, parts) {
 
 async function loadPage(loader, params) {
   if (!mainEl) return;
+
+  // Trigger page enter animation
+  mainEl.classList.remove('page-enter');
+  void mainEl.offsetWidth; // force reflow to restart animation
+  mainEl.classList.add('page-enter');
+
   try {
     const mod = await loader();
     const createFn = mod.createPage || mod.default;

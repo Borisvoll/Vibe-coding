@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from "vite";
 
 export default defineConfig({
   base: '/Vibe-coding/',
   build: {
-    target: 'es2022',
-    outDir: 'dist',
+    target: "es2022",
+    outDir: "dist",
     assetsInlineLimit: 0,
   },
   server: {

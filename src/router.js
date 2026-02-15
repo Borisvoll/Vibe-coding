@@ -29,13 +29,12 @@ function handleRoute() {
   const parts = parseHash();
   const path = parts.join('/');
 
-  // Destroy previous page
   if (currentPage && currentPage.destroy) {
     currentPage.destroy();
   }
   currentPage = null;
 
-  // Try extra routes first (parameterized)
+  // Try extra routes first
   for (const [pattern, loader] of Object.entries(extraRoutes)) {
     const params = matchRoute(pattern, parts);
     if (params !== null) {
@@ -52,10 +51,10 @@ function handleRoute() {
     loadPage(mod.page, {});
     emit('navigate', { path, params: {} });
     updateActiveNav(mod.route);
+    updateHeaderTitle(mod.label);
     return;
   }
 
-  // 404 — go to dashboard
   navigate('');
 }
 
@@ -99,4 +98,9 @@ function updateActiveNav(route) {
     const linkRoute = link.getAttribute('data-route') || '';
     link.classList.toggle('active', linkRoute === route);
   });
+}
+
+function updateHeaderTitle(label) {
+  const titleEl = document.getElementById('header-title');
+  if (titleEl) titleEl.textContent = label;
 }

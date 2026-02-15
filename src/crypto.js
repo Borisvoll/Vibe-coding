@@ -1,15 +1,17 @@
 /**
- * Encrypt data with AES-256-GCM using WebCrypto API
- * @param {string} jsonString - JSON string to encrypt
- * @param {string} password - User-provided password
- * @returns {Object} - { version, algorithm, salt, iv, data } as base64 strings
+ * AES-256-GCM encryption/decryption with PBKDF2 key derivation
+ * Supports both JSON (base64) and binary (ArrayBuffer) formats
  */
-export async function encryptData(jsonString, password) {
-  const encoder = new TextEncoder();
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  // Derive key from password using PBKDF2
+const ITERATIONS = 250000;
+const SALT_LENGTH = 16;
+const IV_LENGTH = 12;
+const ERROR_MSG = 'Onjuist wachtwoord of beschadigd bestand';
+
+// ===== Key derivation =====
+
+async function deriveKey(password, salt, usage) {
+  const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     encoder.encode(password),
@@ -17,16 +19,30 @@ export async function encryptData(jsonString, password) {
     false,
     ['deriveKey']
   );
-
-  const key = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: ITERATIONS, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
-    ['encrypt']
+    [usage]
   );
+}
 
-  // Encrypt
+// ===== JSON / base64 format (backwards compatible) =====
+
+/**
+ * Encrypt data with AES-256-GCM using WebCrypto API
+ * @param {string} jsonString - JSON string to encrypt
+ * @param {string} password - User-provided password
+ * @returns {Object} - { version, algorithm, salt, iv, data } as base64 strings
+ */
+export async function encryptData(jsonString, password) {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+
+  const key = await deriveKey(password, salt, 'encrypt');
+
   const ciphertext = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
@@ -49,37 +65,89 @@ export async function encryptData(jsonString, password) {
  * @returns {string} - Decrypted JSON string
  */
 export async function decryptData(encrypted, password) {
-  const encoder = new TextEncoder();
   const decoder = new TextDecoder();
 
   const salt = base64ToArrayBuffer(encrypted.salt);
   const iv = base64ToArrayBuffer(encrypted.iv);
   const ciphertext = base64ToArrayBuffer(encrypted.data);
 
-  const keyMaterial = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(password),
-    'PBKDF2',
-    false,
-    ['deriveKey']
-  );
+  const key = await deriveKey(password, new Uint8Array(salt), 'decrypt');
 
-  const key = await crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['decrypt']
-  );
+  try {
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv: new Uint8Array(iv) },
+      key,
+      ciphertext
+    );
+    return decoder.decode(plaintext);
+  } catch {
+    throw new Error(ERROR_MSG);
+  }
+}
 
-  const plaintext = await crypto.subtle.decrypt(
+// ===== Binary format (compact, for .bpv files) =====
+
+/**
+ * Encrypt data to a compact binary ArrayBuffer: [salt 16B][iv 12B][ciphertext...]
+ * @param {string} data - JSON string to encrypt
+ * @param {string} password - User-provided password
+ * @returns {ArrayBuffer} - salt + iv + ciphertext concatenated
+ */
+export async function encryptBinary(data, password) {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(SALT_LENGTH));
+  const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH));
+
+  const key = await deriveKey(password, salt, 'encrypt');
+
+  const ciphertext = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     key,
-    ciphertext
+    encoder.encode(data)
   );
 
-  return decoder.decode(plaintext);
+  // Concatenate: salt (16) + iv (12) + ciphertext
+  const result = new Uint8Array(SALT_LENGTH + IV_LENGTH + ciphertext.byteLength);
+  result.set(salt, 0);
+  result.set(iv, SALT_LENGTH);
+  result.set(new Uint8Array(ciphertext), SALT_LENGTH + IV_LENGTH);
+
+  return result.buffer;
 }
+
+/**
+ * Decrypt a binary ArrayBuffer produced by encryptBinary
+ * @param {ArrayBuffer} buffer - The encrypted binary data
+ * @param {string} password - User-provided password
+ * @returns {string} - Decrypted JSON string
+ */
+export async function decryptBinary(buffer, password) {
+  const decoder = new TextDecoder();
+  const bytes = new Uint8Array(buffer);
+
+  if (bytes.byteLength < SALT_LENGTH + IV_LENGTH + 1) {
+    throw new Error(ERROR_MSG);
+  }
+
+  const salt = bytes.slice(0, SALT_LENGTH);
+  const iv = bytes.slice(SALT_LENGTH, SALT_LENGTH + IV_LENGTH);
+  const ciphertext = bytes.slice(SALT_LENGTH + IV_LENGTH);
+
+  const key = await deriveKey(password, salt, 'decrypt');
+
+  try {
+    const plaintext = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    return decoder.decode(plaintext);
+  } catch {
+    throw new Error(ERROR_MSG);
+  }
+}
+
+// ===== Helpers =====
 
 function arrayBufferToBase64(buffer) {
   const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);

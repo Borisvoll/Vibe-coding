@@ -1,5 +1,5 @@
 :root {
-  /* System font stack */
+  /* System font stack — Notion-inspired */
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                Helvetica, Arial, sans-serif, "Apple Color Emoji";
   --font-mono: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
@@ -16,17 +16,24 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* === Colorful palette — light mode === */
-  --color-bg: #f8f9fc;
+  /* === Notion-style palette — light mode === */
+  --color-bg: #ffffff;
   --color-surface: #ffffff;
-  --color-surface-hover: #f1f3f9;
-  --color-border: #e2e5ef;
-  --color-border-light: #eef0f6;
-  --color-text: #1a1d2e;
-  --color-text-secondary: #5c607a;
-  --color-text-tertiary: #9094ad;
+  --color-surface-hover: #f7f7f5;
+  --color-border: #e8e8e4;
+  --color-border-light: #f0f0ec;
+  --color-text: #1f1f1f;
+  --color-text-secondary: #6b6b6b;
+  --color-text-tertiary: #9b9b9b;
 
-  /* Primary accent — vibrant blue */
+  /* Sidebar */
+  --color-sidebar-bg: #f7f7f5;
+  --color-sidebar-hover: #ebebea;
+  --color-sidebar-active: #e3e3e0;
+  --color-sidebar-text: #5c5c5c;
+  --color-sidebar-text-active: #1f1f1f;
+
+  /* Primary accent */
   --color-accent: #4f6ef7;
   --color-accent-hover: #3d5ce5;
   --color-accent-light: #eef1fe;
@@ -63,24 +70,23 @@
   --color-error-light: #fff1f2;
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #4f6ef7 0%, #8b5cf6 100%);
+  --gradient-primary: linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent) 80%, black) 100%);
   --gradient-warm: linear-gradient(135deg, #f97316 0%, #f43f5e 100%);
   --gradient-cool: linear-gradient(135deg, #06b6d4 0%, #4f6ef7 100%);
   --gradient-nature: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
-  --gradient-sidebar: linear-gradient(180deg, #1e2240 0%, #2a1f4e 100%);
 
   /* Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(79, 110, 247, 0.06);
-  --shadow-md: 0 4px 12px rgba(79, 110, 247, 0.08);
-  --shadow-lg: 0 8px 24px rgba(79, 110, 247, 0.12);
-  --shadow-color: 0 4px 14px rgba(79, 110, 247, 0.2);
+  /* Shadows — neutral */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-color: 0 2px 10px rgba(0, 0, 0, 0.1);
 
   /* Transitions */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -89,22 +95,40 @@
   --duration-slow: 300ms;
 
   /* Layout */
-  --nav-height: 64px;
-  --sidebar-width: 260px;
+  --nav-height: 56px;
+  --sidebar-width: 240px;
   --max-content-width: 900px;
+}
+
+/* Compact mode */
+[data-compact="true"] {
+  --space-1: 0.125rem;
+  --space-2: 0.375rem;
+  --space-3: 0.5rem;
+  --space-4: 0.75rem;
+  --space-5: 1rem;
+  --space-6: 1.125rem;
+  --space-8: 1.5rem;
+  --nav-height: 48px;
+  --sidebar-width: 220px;
 }
 
 /* Dark mode — system preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: #0c0e1a;
-    --color-surface: #151829;
-    --color-surface-hover: #1c2038;
-    --color-border: #262a42;
-    --color-border-light: #1c2038;
-    --color-text: #e4e6f0;
-    --color-text-secondary: #9094ad;
-    --color-text-tertiary: #5c607a;
+    --color-bg: #191919;
+    --color-surface: #202020;
+    --color-surface-hover: #2a2a2a;
+    --color-border: #333333;
+    --color-border-light: #2a2a2a;
+    --color-text: #e8e8e8;
+    --color-text-secondary: #9b9b9b;
+    --color-text-tertiary: #6b6b6b;
+    --color-sidebar-bg: #1e1e1e;
+    --color-sidebar-hover: #2a2a2a;
+    --color-sidebar-active: #333333;
+    --color-sidebar-text: #9b9b9b;
+    --color-sidebar-text-active: #e8e8e8;
     --color-accent: #6d8afb;
     --color-accent-hover: #5a77f0;
     --color-accent-light: #1c2350;
@@ -125,24 +149,28 @@
     --color-warning-light: #2a2008;
     --color-error: #fb7185;
     --color-error-light: #2a0f14;
-    --gradient-sidebar: linear-gradient(180deg, #0c0e1a 0%, #151829 100%);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-    --shadow-color: 0 4px 14px rgba(109, 138, 251, 0.15);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-color: 0 2px 10px rgba(0, 0, 0, 0.3);
   }
 }
 
 /* Dark mode — manual toggle */
 [data-theme="dark"] {
-  --color-bg: #0c0e1a;
-  --color-surface: #151829;
-  --color-surface-hover: #1c2038;
-  --color-border: #262a42;
-  --color-border-light: #1c2038;
-  --color-text: #e4e6f0;
-  --color-text-secondary: #9094ad;
-  --color-text-tertiary: #5c607a;
+  --color-bg: #191919;
+  --color-surface: #202020;
+  --color-surface-hover: #2a2a2a;
+  --color-border: #333333;
+  --color-border-light: #2a2a2a;
+  --color-text: #e8e8e8;
+  --color-text-secondary: #9b9b9b;
+  --color-text-tertiary: #6b6b6b;
+  --color-sidebar-bg: #1e1e1e;
+  --color-sidebar-hover: #2a2a2a;
+  --color-sidebar-active: #333333;
+  --color-sidebar-text: #9b9b9b;
+  --color-sidebar-text-active: #e8e8e8;
   --color-accent: #6d8afb;
   --color-accent-hover: #5a77f0;
   --color-accent-light: #1c2350;
@@ -163,9 +191,8 @@
   --color-warning-light: #2a2008;
   --color-error: #fb7185;
   --color-error-light: #2a0f14;
-  --gradient-sidebar: linear-gradient(180deg, #0c0e1a 0%, #151829 100%);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
-  --shadow-color: 0 4px 14px rgba(109, 138, 251, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-color: 0 2px 10px rgba(0, 0, 0, 0.3);
 }

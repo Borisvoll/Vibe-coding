@@ -93,3 +93,21 @@ export const ASSIGNMENT_TYPES = {
 export const WEEKDAYS = ['ma', 'di', 'wo', 'do', 'vr'];
 export const WEEKDAY_FULL = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag'];
 export const MONTHS_NL = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+export const ACCENT_COLORS = [
+  { id: 'blue',   label: 'Blauw',   hex: '#4f6ef7' },
+  { id: 'purple', label: 'Paars',   hex: '#8b5cf6' },
+  { id: 'green',  label: 'Groen',   hex: '#10b981' },
+  { id: 'rose',   label: 'Roze',    hex: '#f43f5e' },
+  { id: 'orange', label: 'Oranje',  hex: '#f97316' },
+  { id: 'cyan',   label: 'Cyaan',   hex: '#06b6d4' },
+  { id: 'indigo', label: 'Indigo',  hex: '#6366f1' },
+  { id: 'teal',   label: 'Teal',    hex: '#14b8a6' },
+];
+
+export function applyAccentColor(hex) {
+  const root = document.documentElement;
+  root.style.setProperty('--color-accent', hex);
+  root.style.setProperty('--color-accent-light', `color-mix(in srgb, ${hex} 12%, transparent)`);
+  root.style.setProperty('--gradient-primary', `linear-gradient(135deg, ${hex}, color-mix(in srgb, ${hex} 80%, black))`);
+}

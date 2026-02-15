@@ -2,11 +2,27 @@ import { getSetting, setSetting, clearAllData } from '../db.js';
 import { icon } from '../icons.js';
 import { emit } from '../state.js';
 import { showToast } from '../toast.js';
+import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
+import { APP_VERSION } from '../main.js';
 
 export function createPage(container) {
 
   async function render() {
     const theme = await getSetting('theme') || 'system';
+    const accentId = await getSetting('accentColor') || 'blue';
+    const compact = await getSetting('compact') || false;
+    const deviceId = await getSetting('device_id') || '-';
+
+    // SW status
+    let swStatus = 'Niet beschikbaar';
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
+      if (reg) {
+        swStatus = reg.active ? 'Actief' : reg.installing ? 'Installeren...' : 'Wachtend';
+      } else {
+        swStatus = 'Niet geregistreerd';
+      }
+    }
 
     container.innerHTML = `
       <div class="page-header">
@@ -35,6 +51,24 @@ export function createPage(container) {
             </label>
           </div>
         </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Accentkleur</div>
+            <div class="settings-desc">Kies een kleur voor knoppen en accenten</div>
+          </div>
+          <div class="accent-picker" id="settings-accent-picker">
+            ${ACCENT_COLORS.map(c => `
+              <button class="accent-dot ${c.id === accentId ? 'active' : ''}" data-color="${c.id}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.label}"></button>
+            `).join('')}
+          </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Compact modus</div>
+            <div class="settings-desc">Minder witruimte, dichtere layout</div>
+          </div>
+          <div class="toggle ${compact ? 'active' : ''}" id="compact-toggle"></div>
+        </div>
       </div>
 
       <div class="settings-section card">
@@ -56,17 +90,40 @@ export function createPage(container) {
       </div>
 
       <div class="settings-section card">
-        <h3>Over</h3>
+        <h3>Diagnostiek</h3>
         <div class="settings-row">
           <div>
-            <div class="settings-label">BPV Voortgang Tracker v1.0</div>
-            <div class="settings-desc">Privacy-first. Alle data lokaal opgeslagen. Geen servers, geen tracking.</div>
+            <div class="settings-label">App versie</div>
+            <div class="settings-desc">${APP_VERSION}</div>
           </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Device ID</div>
+            <div class="settings-desc" style="font-family: monospace; font-size: 0.75rem;">${deviceId}</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Service Worker</div>
+            <div class="settings-desc">${swStatus}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" data-action="reset-sw">Reset cache & SW</button>
         </div>
         <div class="settings-row">
           <div>
             <div class="settings-label">Sneltoetsen</div>
             <div class="settings-desc">Druk op ? om alle sneltoetsen te zien</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section card">
+        <h3>Over</h3>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">BPV Voortgang Tracker v${APP_VERSION}</div>
+            <div class="settings-desc">Privacy-first. Alle data lokaal opgeslagen. Geen servers, geen tracking.</div>
           </div>
         </div>
       </div>
@@ -86,6 +143,34 @@ export function createPage(container) {
           document.documentElement.setAttribute('data-theme', val);
         }
       });
+    });
+
+    // Accent color picker
+    container.querySelector('#settings-accent-picker').addEventListener('click', async (e) => {
+      const dot = e.target.closest('.accent-dot');
+      if (!dot) return;
+      const colorId = dot.dataset.color;
+      const hex = dot.dataset.hex;
+      container.querySelectorAll('.accent-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      await setSetting('accentColor', colorId);
+      applyAccentColor(hex);
+      // Also update shell accent picker
+      document.querySelectorAll('.hamburger-menu .accent-dot').forEach(d => {
+        d.classList.toggle('active', d.dataset.color === colorId);
+      });
+    });
+
+    // Compact toggle
+    container.querySelector('#compact-toggle').addEventListener('click', async function() {
+      this.classList.toggle('active');
+      const isCompact = this.classList.contains('active');
+      await setSetting('compact', isCompact);
+      if (isCompact) {
+        document.documentElement.setAttribute('data-compact', 'true');
+      } else {
+        document.documentElement.removeAttribute('data-compact');
+      }
     });
 
     // Seed data
@@ -112,6 +197,27 @@ export function createPage(container) {
       emit('competencies:updated');
       emit('assignments:updated');
       showToast('Alle data gewist', { type: 'info' });
+    });
+
+    // Reset SW & cache
+    container.querySelector('[data-action="reset-sw"]')?.addEventListener('click', async () => {
+      if (!confirm('Cache en Service Worker resetten? De pagina wordt herladen.')) return;
+      try {
+        if ('serviceWorker' in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) {
+            await reg.unregister();
+          }
+        }
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+        showToast('Cache en SW gereset. Herladen...', { type: 'info' });
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        showToast('Fout: ' + err.message, { type: 'error' });
+      }
     });
   }
 

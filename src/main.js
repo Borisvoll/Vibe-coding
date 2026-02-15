@@ -10,8 +10,12 @@ import { createRouter } from './router.js';
 import { createShell } from './components/shell.js';
 import { initShortcuts } from './shortcuts.js';
 import { getSetting } from './db.js';
+import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 
-// Module registry — nav builds from this
+export const APP_VERSION = '2.0.0';
+export const SCHEMA_VERSION = 2;
+
+// Module registry
 export const modules = [
   { id: 'dashboard',        label: 'Dashboard',         icon: 'dashboard',        route: '',                page: () => import('./pages/dashboard.js') },
   { id: 'planning',         label: 'Dagplan',           icon: 'check-circle',     route: 'planning',        page: () => import('./pages/planning.js') },
@@ -26,13 +30,13 @@ export const modules = [
   { id: 'reference',        label: 'Naslagwerk',        icon: 'search',           route: 'reference',        page: () => import('./pages/reference.js') },
   { id: 'assignments',      label: 'Opdrachten',        icon: 'clipboard',        route: 'assignments',      page: () => import('./pages/assignments.js') },
   { id: 'report',           label: 'Verslag',           icon: 'file-text',        route: 'report',           page: () => import('./pages/report.js') },
+  { id: 'sync',             label: 'Sync',              icon: 'upload',           route: 'sync',             page: () => import('./pages/sync.js') },
   { id: 'vault',            label: 'Vault',             icon: 'lock',             route: 'vault',            page: () => import('./pages/vault.js') },
   { id: 'export',           label: 'Export',             icon: 'download',         route: 'export',           page: () => import('./pages/export.js') },
   { id: 'settings',         label: 'Instellingen',      icon: 'settings',         route: 'settings',         page: () => import('./pages/settings.js') },
 ];
 
 async function init() {
-  // Init IndexedDB
   await initDB();
 
   // Apply saved theme
@@ -41,24 +45,60 @@ async function init() {
     document.documentElement.setAttribute('data-theme', theme);
   }
 
-  // Create app shell
+  // Apply saved accent color
+  const accentId = await getSetting('accentColor');
+  if (accentId) {
+    const color = ACCENT_COLORS.find(c => c.id === accentId);
+    if (color) applyAccentColor(color.hex);
+  }
+
+  // Apply compact mode
+  const compact = await getSetting('compact');
+  if (compact) {
+    document.documentElement.setAttribute('data-compact', 'true');
+  }
+
+  // Ensure device_id exists
+  let deviceId = await getSetting('device_id');
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    const { setSetting: ss } = await import('./db.js');
+    await ss('device_id', deviceId);
+  }
+
   const app = document.getElementById('app');
   createShell(app);
-
-  // Init router
   createRouter();
-
-  // Init keyboard shortcuts
   initShortcuts();
 
   // Register service worker
   if ('serviceWorker' in navigator) {
     try {
-      await navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js');
+      const reg = await navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js');
+      // Check for updates
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
     } catch (e) {
-      // SW registration failed — app still works
+      // SW registration failed
     }
   }
+}
+
+function showUpdateBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'update-banner';
+  banner.innerHTML = `Nieuwe versie beschikbaar <button id="update-btn">Ververs</button>`;
+  document.body.prepend(banner);
+  banner.querySelector('#update-btn').addEventListener('click', () => {
+    window.location.reload();
+  });
 }
 
 init();

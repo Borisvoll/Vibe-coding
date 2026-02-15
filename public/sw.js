@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bpv-tracker-v2';
+const CACHE_NAME = 'bpv-tracker-v3';
 const BASE = self.location.pathname.replace(/\/sw\.js$/, '/');
 
 // Install: cache app shell
@@ -13,19 +13,24 @@ self.addEventListener('install', (event) => {
       ]);
     })
   );
-  self.skipWaiting();
 });
 
-// Activate: clean old caches
+// Activate: clean old caches + claim clients
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(
         keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
+});
+
+// Listen for SKIP_WAITING message from the app
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 // Fetch: cache-first for app assets, network-first for everything else

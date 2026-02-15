@@ -179,11 +179,17 @@ async function download() {
     emit('autosync:status', { state: 'idle', lastSync: snapshot.syncedAt });
 
     if (merged > 0) {
-      // Notify UI to refresh
+      // Notify UI to refresh across all synced modules
       emit('hours:updated');
       emit('logbook:updated');
       emit('competencies:updated');
       emit('assignments:updated');
+      emit('goals:updated');
+      emit('quality:updated');
+      emit('planning:updated');
+      emit('reference:updated');
+      emit('energy:updated');
+      emit('learningMoments:updated');
     }
   } catch (err) {
     console.error('Auto-sync download failed:', err);
@@ -249,6 +255,6 @@ export async function restartAutoSync() {
 export async function syncNow() {
   await loadConfig();
   if (!isConfigured()) return;
-  await upload();
   await download();
+  await upload();
 }

@@ -12,6 +12,7 @@ import { initShortcuts } from './shortcuts.js';
 import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
+import { runBootSequence } from './boot.js';
 
 export const APP_VERSION = '2.0.0';
 export const SCHEMA_VERSION = 2;
@@ -66,6 +67,8 @@ async function init() {
     const { setSetting: ss } = await import('./db.js');
     await ss('device_id', deviceId);
   }
+
+  await runBootSequence();
 
   const app = document.getElementById('app');
   createShell(app);

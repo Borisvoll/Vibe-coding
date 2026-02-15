@@ -1,9 +1,10 @@
 import { getSetting, setSetting, clearAllData } from '../db.js';
 import { icon } from '../icons.js';
-import { emit } from '../state.js';
+import { emit, on } from '../state.js';
 import { showToast } from '../toast.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { APP_VERSION } from '../main.js';
+import { restartAutoSync, stopAutoSync, syncNow } from '../auto-sync.js';
 
 export function createPage(container) {
 
@@ -12,6 +13,13 @@ export function createPage(container) {
     const accentId = await getSetting('accentColor') || 'blue';
     const compact = await getSetting('compact') || false;
     const deviceId = await getSetting('device_id') || '-';
+
+    // Auto-sync settings
+    const autoSyncEnabled = await getSetting('autosync_enabled') || false;
+    const autoSyncApiKey = await getSetting('autosync_apikey') || '';
+    const autoSyncBinId = await getSetting('autosync_binid') || '';
+    const autoSyncPassword = await getSetting('autosync_password') || '';
+    const autoSyncLast = await getSetting('autosync_last') || 'Nog niet gesynchroniseerd';
 
     // SW status
     let swStatus = 'Niet beschikbaar';
@@ -68,6 +76,50 @@ export function createPage(container) {
             <div class="settings-desc">Minder witruimte, dichtere layout</div>
           </div>
           <div class="toggle ${compact ? 'active' : ''}" id="compact-toggle"></div>
+        </div>
+      </div>
+
+      <div class="settings-section card">
+        <h3>Auto-sync</h3>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Automatisch synchroniseren</div>
+            <div class="settings-desc">Real-time sync tussen apparaten via jsonbin.io</div>
+          </div>
+          <div class="toggle ${autoSyncEnabled ? 'active' : ''}" id="autosync-toggle"></div>
+        </div>
+        <div id="autosync-config" style="${autoSyncEnabled ? '' : 'display:none'}">
+          <div class="settings-row">
+            <div style="width:100%">
+              <div class="settings-label">jsonbin.io API Key</div>
+              <div class="settings-desc" style="margin-bottom:var(--space-2)">Maak gratis aan op <a href="https://jsonbin.io" target="_blank" rel="noopener">jsonbin.io</a> → API Keys</div>
+              <input type="password" class="form-input" id="autosync-apikey" value="${autoSyncApiKey}" placeholder="$2a$10$...">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="width:100%">
+              <div class="settings-label">Sync wachtwoord</div>
+              <div class="settings-desc" style="margin-bottom:var(--space-2)">Versleutelt je data (AES-256). Gebruik hetzelfde wachtwoord op alle apparaten.</div>
+              <input type="password" class="form-input" id="autosync-password" value="${autoSyncPassword}" placeholder="Sterk wachtwoord">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="width:100%">
+              <div class="settings-label">Bin ID</div>
+              <div class="settings-desc" style="margin-bottom:var(--space-2)">Wordt automatisch aangemaakt. Kopieer dit naar je andere apparaat.</div>
+              <input type="text" class="form-input" id="autosync-binid" value="${autoSyncBinId}" placeholder="Wordt automatisch gevuld" style="font-family:var(--font-mono);font-size:0.8125rem">
+            </div>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-label">Laatste sync</div>
+              <div class="settings-desc" id="autosync-last-label">${autoSyncLast}</div>
+            </div>
+            <div style="display:flex;gap:var(--space-2)">
+              <button class="btn btn-secondary btn-sm" data-action="save-autosync">Opslaan</button>
+              <button class="btn btn-primary btn-sm" data-action="sync-now">Sync nu</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -173,6 +225,82 @@ export function createPage(container) {
       }
     });
 
+    // Auto-sync toggle
+    container.querySelector('#autosync-toggle')?.addEventListener('click', async function() {
+      this.classList.toggle('active');
+      const enabled = this.classList.contains('active');
+      await setSetting('autosync_enabled', enabled);
+      const configEl = container.querySelector('#autosync-config');
+      if (configEl) configEl.style.display = enabled ? '' : 'none';
+      if (!enabled) stopAutoSync();
+    });
+
+    // Save auto-sync config
+    container.querySelector('[data-action="save-autosync"]')?.addEventListener('click', async () => {
+      const apiKey = container.querySelector('#autosync-apikey')?.value.trim();
+      const password = container.querySelector('#autosync-password')?.value;
+      const binId = container.querySelector('#autosync-binid')?.value.trim();
+
+      if (!apiKey || !password) {
+        showToast('Vul API key en wachtwoord in', { type: 'warning' });
+        return;
+      }
+      if (password.length < 4) {
+        showToast('Wachtwoord moet minimaal 4 tekens zijn', { type: 'warning' });
+        return;
+      }
+
+      await setSetting('autosync_apikey', apiKey);
+      await setSetting('autosync_password', password);
+      if (binId) await setSetting('autosync_binid', binId);
+      await setSetting('autosync_enabled', true);
+
+      try {
+        await restartAutoSync();
+        // Update bin ID field if it was auto-created
+        const newBinId = await getSetting('autosync_binid');
+        const binInput = container.querySelector('#autosync-binid');
+        if (binInput && newBinId) binInput.value = newBinId;
+        showToast('Auto-sync ingeschakeld', { type: 'success' });
+      } catch (err) {
+        showToast('Sync fout: ' + err.message, { type: 'error' });
+      }
+    });
+
+    // Sync now button
+    container.querySelector('[data-action="sync-now"]')?.addEventListener('click', async () => {
+      const apiKey = container.querySelector('#autosync-apikey')?.value.trim();
+      const password = container.querySelector('#autosync-password')?.value;
+      if (!apiKey || !password) {
+        showToast('Sla eerst de instellingen op', { type: 'warning' });
+        return;
+      }
+      try {
+        showToast('Synchroniseren...', { type: 'info', duration: 1500 });
+        await syncNow();
+        const lastSync = await getSetting('autosync_last');
+        const label = container.querySelector('#autosync-last-label');
+        if (label && lastSync) label.textContent = lastSync;
+        // Update bin ID in case it was just created
+        const newBinId = await getSetting('autosync_binid');
+        const binInput = container.querySelector('#autosync-binid');
+        if (binInput && newBinId) binInput.value = newBinId;
+        showToast('Synchronisatie voltooid', { type: 'success' });
+      } catch (err) {
+        showToast('Sync fout: ' + err.message, { type: 'error' });
+      }
+    });
+
+    // Listen for sync status updates
+    const offStatus = on('autosync:status', ({ state, lastSync }) => {
+      const label = container.querySelector('#autosync-last-label');
+      if (!label) return;
+      if (state === 'uploading') label.textContent = 'Uploaden...';
+      else if (state === 'downloading') label.textContent = 'Downloaden...';
+      else if (state === 'error') label.textContent = 'Fout bij sync';
+      else if (lastSync) label.textContent = lastSync;
+    });
+
     // Seed data
     container.querySelector('[data-action="seed"]')?.addEventListener('click', async () => {
       try {
@@ -222,5 +350,9 @@ export function createPage(container) {
   }
 
   render();
-  return {};
+  return {
+    destroy() {
+      // offStatus cleanup handled by page re-render
+    }
+  };
 }

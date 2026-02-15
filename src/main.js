@@ -11,6 +11,7 @@ import { createShell } from './components/shell.js';
 import { initShortcuts } from './shortcuts.js';
 import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
+import { initAutoSync } from './auto-sync.js';
 
 export const APP_VERSION = '2.0.0';
 export const SCHEMA_VERSION = 2;
@@ -70,6 +71,9 @@ async function init() {
   createShell(app);
   createRouter();
   initShortcuts();
+
+  // Start auto-sync (if configured)
+  initAutoSync().catch(() => {});
 
   // Register service worker
   if ('serviceWorker' in navigator) {

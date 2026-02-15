@@ -1,7 +1,7 @@
 export const BPV_START = '2026-02-09';
 export const BPV_END = '2026-04-24';
 export const WEEKLY_GOAL_HOURS = 40;
-export const DEFAULT_BREAK_MINUTES = 30;
+export const DEFAULT_BREAK_MINUTES = 45;
 
 export const TAGS = [
   'CNC', 'draaien', 'frezen', 'meten', 'kwaliteit',

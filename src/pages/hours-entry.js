@@ -32,7 +32,7 @@ export function createPage(container, params) {
   function render() {
     const type = entry?.type || 'work';
     const startTime = entry?.startTime || '08:00';
-    const endTime = entry?.endTime || '16:30';
+    const endTime = entry?.endTime || '16:45';
     const breakMin = entry?.breakMinutes ?? DEFAULT_BREAK_MINUTES;
     const note = entry?.note || '';
     const net = type === 'work' ? calcNetMinutes(startTime, endTime, breakMin) : 0;

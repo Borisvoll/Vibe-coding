@@ -41,6 +41,9 @@ function handleRoute() {
       loadPage(loader, params);
       emit('navigate', { path, params });
       updateActiveNav(parts[0] || '');
+      // Set header title based on parent module
+      const parentMod = modules.find(m => m.route === (parts[0] || ''));
+      if (parentMod) updateHeaderTitle(parentMod.label);
       return;
     }
   }
@@ -75,6 +78,12 @@ function matchRoute(pattern, parts) {
 
 async function loadPage(loader, params) {
   if (!mainEl) return;
+
+  // Trigger page enter animation
+  mainEl.classList.remove('page-enter');
+  void mainEl.offsetWidth; // force reflow to restart animation
+  mainEl.classList.add('page-enter');
+
   try {
     const mod = await loader();
     const createFn = mod.createPage || mod.default;

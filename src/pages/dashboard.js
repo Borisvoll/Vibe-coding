@@ -53,9 +53,9 @@ export function createPage(container) {
     const todayEntry = allHours.find(h => h.date === today);
     const todayLogs = allLogbook.filter(l => l.date === today);
 
-    // Goals summary
-    const goalsActive = allGoals.filter(g => g.status === 'active' || g.status === 'in_progress').length;
-    const goalsCompleted = allGoals.filter(g => g.status === 'completed').length;
+    // Goals summary (statuses: gestart, loopt, behaald)
+    const goalsActive = allGoals.filter(g => g.status === 'gestart' || g.status === 'loopt').length;
+    const goalsCompleted = allGoals.filter(g => g.status === 'behaald').length;
     const goalsTotal = allGoals.length;
 
     // Competencies summary
@@ -154,7 +154,7 @@ export function createPage(container) {
             const uniqueLogDays = new Set(allLogbook.map(l => l.date)).size;
             const workDays = allHours.filter(h => h.type === 'work').length;
             const logPct = workDays > 0 ? Math.min(100, Math.round((uniqueLogDays / workDays) * 100)) : 0;
-            const activeGoals = allGoals.filter(g => g.status === 'active' || g.status === 'in_progress').length;
+            const activeGoals = allGoals.filter(g => g.status === 'gestart' || g.status === 'loopt').length;
 
             return `
               <div>

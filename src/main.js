@@ -38,7 +38,7 @@ export const modules = [
 ];
 
 async function init() {
-  await runOneTimeBootscreenCleanup();
+  await disableLegacyBootCache();
   await initDB();
 
   // Apply saved theme
@@ -76,14 +76,11 @@ async function init() {
   // Start auto-sync (if configured)
   initAutoSync().catch(() => {});
 
-  // Service worker registration is intentionally disabled to prevent users
-  // from getting stuck on outdated cached boot-screen builds.
+  // Service worker deliberately disabled: older cached app-shell versions could
+  // keep users stuck on outdated boot screens.
 }
 
-async function runOneTimeBootscreenCleanup() {
-  const CLEANUP_FLAG = 'bootscreen_cleanup_v1_done';
-  if (localStorage.getItem(CLEANUP_FLAG) === '1') return;
-
+async function disableLegacyBootCache() {
   if ('serviceWorker' in navigator) {
     try {
       const regs = await navigator.serviceWorker.getRegistrations();
@@ -96,14 +93,11 @@ async function runOneTimeBootscreenCleanup() {
   if ('caches' in window) {
     try {
       const keys = await caches.keys();
-      const legacyKeys = keys.filter((key) => key.startsWith('bpv-tracker-'));
-      await Promise.all(legacyKeys.map((key) => caches.delete(key)));
+      await Promise.all(keys.map((key) => caches.delete(key)));
     } catch {
       // Ignore cache cleanup errors and continue loading the app.
     }
   }
-
-  localStorage.setItem(CLEANUP_FLAG, '1');
 }
 
 init();

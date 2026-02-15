@@ -38,6 +38,7 @@ export const modules = [
 ];
 
 async function init() {
+  await runOneTimeBootscreenCleanup();
   await initDB();
 
   // Apply saved theme
@@ -75,34 +76,34 @@ async function init() {
   // Start auto-sync (if configured)
   initAutoSync().catch(() => {});
 
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    try {
-      const reg = await navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js');
-      // Check for updates
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateBanner();
-          }
-        });
-      });
-    } catch (e) {
-      // SW registration failed
-    }
-  }
+  // Service worker registration is intentionally disabled to prevent users
+  // from getting stuck on outdated cached boot-screen builds.
 }
 
-function showUpdateBanner() {
-  const banner = document.createElement('div');
-  banner.className = 'update-banner';
-  banner.innerHTML = `Nieuwe versie beschikbaar <button id="update-btn">Ververs</button>`;
-  document.body.prepend(banner);
-  banner.querySelector('#update-btn').addEventListener('click', () => {
-    window.location.reload();
-  });
+async function runOneTimeBootscreenCleanup() {
+  const CLEANUP_FLAG = 'bootscreen_cleanup_v1_done';
+  if (localStorage.getItem(CLEANUP_FLAG) === '1') return;
+
+  if ('serviceWorker' in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((reg) => reg.unregister()));
+    } catch {
+      // Ignore cleanup errors and continue loading the app.
+    }
+  }
+
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      const legacyKeys = keys.filter((key) => key.startsWith('bpv-tracker-'));
+      await Promise.all(legacyKeys.map((key) => caches.delete(key)));
+    } catch {
+      // Ignore cache cleanup errors and continue loading the app.
+    }
+  }
+
+  localStorage.setItem(CLEANUP_FLAG, '1');
 }
 
 init();

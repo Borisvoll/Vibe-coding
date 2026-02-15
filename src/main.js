@@ -38,6 +38,7 @@ export const modules = [
 ];
 
 async function init() {
+  await disableLegacyBootCache();
   await initDB();
 
   // Apply saved theme
@@ -75,34 +76,28 @@ async function init() {
   // Start auto-sync (if configured)
   initAutoSync().catch(() => {});
 
-  // Register service worker
-  if ('serviceWorker' in navigator) {
-    try {
-      const reg = await navigator.serviceWorker.register(import.meta.env.BASE_URL + 'sw.js');
-      // Check for updates
-      reg.addEventListener('updatefound', () => {
-        const newWorker = reg.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', () => {
-          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-            showUpdateBanner();
-          }
-        });
-      });
-    } catch (e) {
-      // SW registration failed
-    }
-  }
+  // Service worker deliberately disabled: older cached app-shell versions could
+  // keep users stuck on outdated boot screens.
 }
 
-function showUpdateBanner() {
-  const banner = document.createElement('div');
-  banner.className = 'update-banner';
-  banner.innerHTML = `Nieuwe versie beschikbaar <button id="update-btn">Ververs</button>`;
-  document.body.prepend(banner);
-  banner.querySelector('#update-btn').addEventListener('click', () => {
-    window.location.reload();
-  });
+async function disableLegacyBootCache() {
+  if ('serviceWorker' in navigator) {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((reg) => reg.unregister()));
+    } catch {
+      // Ignore cleanup errors and continue loading the app.
+    }
+  }
+
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((key) => caches.delete(key)));
+    } catch {
+      // Ignore cache cleanup errors and continue loading the app.
+    }
+  }
 }
 
 init();

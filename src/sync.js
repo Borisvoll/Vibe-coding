@@ -3,7 +3,7 @@
  * Transactional: atomic snapshot for export, 2-phase import
  */
 
-import { getAll, put, clearAllData, getSetting, setSetting, exportAllData } from './db.js';
+import { getAll, put, remove, clearAllData, getSetting } from './db.js';
 import { encryptBinary, decryptBinary } from './crypto.js';
 import { APP_VERSION, SCHEMA_VERSION } from './main.js';
 
@@ -11,11 +11,24 @@ import { APP_VERSION, SCHEMA_VERSION } from './main.js';
 const SYNC_STORES = [
   'hours', 'logbook', 'photos', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
-  'learningMoments', 'reference', 'energy'
+  'learningMoments', 'reference', 'energy', 'deleted'
 ];
 
 // Stores that contain sensitive data (Vault) — opt-in
 const VAULT_STORES = ['vault', 'vaultFiles'];
+
+
+function parseTime(value) {
+  if (!value) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const ts = Date.parse(value);
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function getRecordTimestamp(record) {
+  return parseTime(record?.updatedAt || record?.date);
+}
+
 
 /**
  * Create an atomic snapshot of all data stores
@@ -141,6 +154,27 @@ export async function applyMerge(importedData) {
       continue;
     }
 
+    if (storeName === 'deleted') {
+      for (const tombstone of records) {
+        if (!tombstone?.id || !tombstone?.store) { skipped++; continue; }
+
+        const localStoreRecords = await getAll(tombstone.store).catch(() => []);
+        const localRecord = localStoreRecords.find((entry) => entry.id === tombstone.id);
+        const deletedAt = parseTime(tombstone.deletedAt);
+        const localUpdatedAt = getRecordTimestamp(localRecord);
+
+        if (!localRecord || deletedAt > localUpdatedAt) {
+          await put('deleted', tombstone);
+          // Clearing by id is safe even when record does not exist.
+          await remove(tombstone.store, tombstone.id).catch(() => {});
+          merged++;
+        } else {
+          skipped++;
+        }
+      }
+      continue;
+    }
+
     const existingRecords = await getAll(storeName).catch(() => []);
     const existingMap = new Map(existingRecords.map(r => [r.id, r]));
 
@@ -158,9 +192,9 @@ export async function applyMerge(importedData) {
         continue;
       }
 
-      // Conflict: compare updated_at or date
-      const existingTime = existing.updatedAt || existing.date || '';
-      const importedTime = record.updatedAt || record.date || '';
+      // Conflict: compare updatedAt/date using parsed timestamps
+      const existingTime = getRecordTimestamp(existing);
+      const importedTime = getRecordTimestamp(record);
 
       if (importedTime > existingTime) {
         // Imported is newer — overwrite

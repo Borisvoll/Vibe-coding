@@ -4,7 +4,7 @@
  * Debounced upload on data changes, periodic polling for remote updates
  */
 
-import { getSetting, setSetting, getAll, put } from './db.js';
+import { getSetting, setSetting, getAll, put, remove } from './db.js';
 import { encryptData, decryptData } from './crypto.js';
 import { on, emit } from './state.js';
 
@@ -16,7 +16,7 @@ const POLL_INTERVAL_MS = 30000;
 const SYNC_STORES = [
   'hours', 'logbook', 'photos', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
-  'learningMoments', 'reference', 'energy'
+  'learningMoments', 'reference', 'energy', 'deleted'
 ];
 
 let debounceTimer = null;
@@ -37,6 +37,17 @@ async function loadConfig() {
 
 function isConfigured() {
   return config && config.enabled && config.apiKey && config.password;
+}
+
+function parseTime(value) {
+  if (!value) return 0;
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const ts = Date.parse(value);
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+function getRecordTimestamp(record) {
+  return parseTime(record?.updatedAt || record?.date);
 }
 
 // ===== jsonbin.io API =====
@@ -103,6 +114,52 @@ async function decryptSnapshot(encrypted, password) {
   return JSON.parse(json);
 }
 
+async function mergeRemoteSnapshot(snapshot) {
+  let merged = 0;
+
+  for (const [storeName, records] of Object.entries(snapshot?.data || {})) {
+    if (!Array.isArray(records) || !SYNC_STORES.includes(storeName)) continue;
+
+    if (storeName === 'deleted') {
+      for (const tombstone of records) {
+        if (!tombstone?.id || !tombstone?.store) continue;
+
+        const localStoreRecords = await getAll(tombstone.store).catch(() => []);
+        const localRecord = localStoreRecords.find((entry) => entry.id === tombstone.id);
+        const deletedAt = parseTime(tombstone.deletedAt);
+        const localUpdatedAt = getRecordTimestamp(localRecord);
+
+        if (!localRecord || deletedAt > localUpdatedAt) {
+          await put('deleted', tombstone);
+          await remove(tombstone.store, tombstone.id).catch(() => {});
+          merged++;
+        }
+      }
+      continue;
+    }
+
+    const existing = await getAll(storeName).catch(() => []);
+    const existingMap = new Map(existing.map((r) => [r.id, r]));
+
+    for (const record of records) {
+      const local = existingMap.get(record.id);
+      if (!local) {
+        await put(storeName, record);
+        merged++;
+      } else {
+        const localTime = getRecordTimestamp(local);
+        const remoteTime = getRecordTimestamp(record);
+        if (remoteTime > localTime) {
+          await put(storeName, record);
+          merged++;
+        }
+      }
+    }
+  }
+
+  return merged;
+}
+
 // ===== Upload =====
 
 async function upload() {
@@ -111,19 +168,43 @@ async function upload() {
   emit('autosync:status', { state: 'uploading' });
 
   try {
-    const snapshot = await createSyncSnapshot();
-    const encrypted = await encryptSnapshot(snapshot, config.password);
-
     if (!config.binId) {
       // First sync: create a new bin
+      const snapshot = await createSyncSnapshot();
+      const encrypted = await encryptSnapshot(snapshot, config.password);
       const binId = await createBin(config.apiKey, encrypted);
       await setSetting('autosync_binid', binId);
       config.binId = binId;
-    } else {
-      await updateBin(config.apiKey, config.binId, encrypted);
+      await setSetting('autosync_lastPushed', snapshot.syncedAt);
+      await setSetting('autosync_last', snapshot.syncedAt);
+      emit('autosync:status', { state: 'idle', lastSync: snapshot.syncedAt });
+      return;
     }
 
+    // Pull-before-push: prevent overwriting newer remote data with stale local snapshot.
+    const encryptedRemote = await readBin(config.apiKey, config.binId);
+    const remoteSnapshot = await decryptSnapshot(encryptedRemote, config.password);
+    const merged = await mergeRemoteSnapshot(remoteSnapshot);
+    if (remoteSnapshot?.syncedAt) {
+      await setSetting('autosync_lastPulled', remoteSnapshot.syncedAt);
+      await setSetting('autosync_last', remoteSnapshot.syncedAt);
+    }
+
+    // Snapshot after merge, then upload full consistent state.
+    const snapshot = await createSyncSnapshot();
+    const encrypted = await encryptSnapshot(snapshot, config.password);
+    await updateBin(config.apiKey, config.binId, encrypted);
+
+    await setSetting('autosync_lastPushed', snapshot.syncedAt);
     await setSetting('autosync_last', snapshot.syncedAt);
+
+    if (merged > 0) {
+      emit('hours:updated');
+      emit('logbook:updated');
+      emit('competencies:updated');
+      emit('assignments:updated');
+    }
+
     emit('autosync:status', { state: 'idle', lastSync: snapshot.syncedAt });
   } catch (err) {
     console.error('Auto-sync upload failed:', err);
@@ -144,37 +225,16 @@ async function download() {
     const encrypted = await readBin(config.apiKey, config.binId);
     const snapshot = await decryptSnapshot(encrypted, config.password);
 
-    // Check if remote is newer than our last sync
-    const lastSync = await getSetting('autosync_last');
-    if (lastSync && snapshot.syncedAt <= lastSync) {
-      emit('autosync:status', { state: 'idle', lastSync });
+    // Check if remote is newer than our last pull
+    const lastPulledAt = await getSetting('autosync_lastPulled');
+    if (lastPulledAt && parseTime(snapshot.syncedAt) <= parseTime(lastPulledAt)) {
+      emit('autosync:status', { state: 'idle', lastSync: lastPulledAt });
       return; // Already up to date
     }
 
-    // Merge: newest updatedAt/date wins
-    let merged = 0;
-    for (const [storeName, records] of Object.entries(snapshot.data)) {
-      if (!Array.isArray(records) || !SYNC_STORES.includes(storeName)) continue;
+    const merged = await mergeRemoteSnapshot(snapshot);
 
-      const existing = await getAll(storeName).catch(() => []);
-      const existingMap = new Map(existing.map(r => [r.id, r]));
-
-      for (const record of records) {
-        const local = existingMap.get(record.id);
-        if (!local) {
-          await put(storeName, record);
-          merged++;
-        } else {
-          const localTime = local.updatedAt || local.date || '';
-          const remoteTime = record.updatedAt || record.date || '';
-          if (remoteTime > localTime) {
-            await put(storeName, record);
-            merged++;
-          }
-        }
-      }
-    }
-
+    await setSetting('autosync_lastPulled', snapshot.syncedAt);
     await setSetting('autosync_last', snapshot.syncedAt);
     emit('autosync:status', { state: 'idle', lastSync: snapshot.syncedAt });
 

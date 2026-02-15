@@ -1,5 +1,5 @@
 const DB_NAME = 'bpv-tracker';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance = null;
 
@@ -63,7 +63,22 @@ export function initDB() {
         const weekReviews = db.createObjectStore('weekReviews', { keyPath: 'id' });
         weekReviews.createIndex('week', 'week', { unique: true });
       }
-      // Future migrations: if (oldVersion < 2) { ... }
+      if (oldVersion < 2) {
+        const learningMoments = db.createObjectStore('learningMoments', { keyPath: 'id' });
+        learningMoments.createIndex('date', 'date', { unique: false });
+        learningMoments.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+
+        const reference = db.createObjectStore('reference', { keyPath: 'id' });
+        reference.createIndex('category', 'category', { unique: false });
+
+        const vault = db.createObjectStore('vault', { keyPath: 'id' });
+        vault.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+
+        db.createObjectStore('vaultFiles', { keyPath: 'id' });
+
+        const energy = db.createObjectStore('energy', { keyPath: 'id' });
+        energy.createIndex('date', 'date', { unique: true });
+      }
     };
 
     request.onsuccess = (event) => {
@@ -248,7 +263,7 @@ export async function getAllLogbookSorted() {
 
 export async function clearAllData() {
   const db = getDB();
-  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted'];
+  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy'];
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeNames, 'readwrite');
     storeNames.forEach(name => tx.objectStore(name).clear());
@@ -279,7 +294,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  base: "/Vibe-coding/",
+  base: '/Vibe-coding/',
   build: {
     target: "es2022",
     outDir: "dist",

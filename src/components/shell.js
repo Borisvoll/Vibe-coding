@@ -5,8 +5,8 @@ import { getSetting, setSetting } from '../db.js';
 // Only show these modules in bottom nav (mobile) — max 5
 const bottomNavIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook'];
 // Sidebar shows all modules, grouped
-const sidebarMainIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook', 'goals', 'competencies', 'quality', 'assignments', 'report'];
-const sidebarSecondaryIds = ['export', 'settings'];
+const sidebarMainIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
+const sidebarSecondaryIds = ['vault', 'export', 'settings'];
 
 // Color dots for sidebar nav items
 const navColors = {
@@ -18,8 +18,12 @@ const navColors = {
   goals: '#f43f5e',
   competencies: '#06b6d4',
   quality: '#6366f1',
+  'learning-moments': '#f43f5e',
+  'process-map': '#10b981',
+  reference: '#06b6d4',
   assignments: '#f97316',
   report: '#14b8a6',
+  vault: '#6366f1',
   export: '#9094ad',
   settings: '#9094ad',
 };

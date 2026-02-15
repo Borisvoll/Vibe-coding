@@ -41,6 +41,29 @@ export function createPage(container) {
             ${icon('plus', 14)} Nieuw meetplan
           </button>
 
+          ${(() => {
+            const warnings = [];
+            items.forEach(q => {
+              const f = q.fields || {};
+              if (!f.acceptatiecriteria) warnings.push(`"${q.title || 'Meetplan'}": Acceptatiecriteria ontbreken`);
+              if (!f.meetmomenten) warnings.push(`"${q.title || 'Meetplan'}": Meetmomenten niet ingevuld`);
+              if (!f.meetgereedschap) warnings.push(`"${q.title || 'Meetplan'}": Meetgereedschap niet opgegeven`);
+              if (!f.toleranties) warnings.push(`"${q.title || 'Meetplan'}": Toleranties ontbreken`);
+            });
+            return warnings.length > 0 ? `
+              <div class="card" style="border-left: 3px solid var(--color-amber); margin-bottom:var(--space-4); background: var(--color-amber-light, rgba(245,158,11,0.08))">
+                <h4 style="color:var(--color-amber); margin-bottom:var(--space-2)">${icon('shield', 16)} Meetstrategie-check</h4>
+                <ul style="font-size:0.875rem; padding-left:var(--space-4); margin:0">
+                  ${warnings.map(w => `<li style="margin-bottom:var(--space-1)">${escapeHTML(w)}</li>`).join('')}
+                </ul>
+              </div>
+            ` : `
+              <div class="card" style="border-left: 3px solid var(--color-emerald); margin-bottom:var(--space-4)">
+                <p style="color:var(--color-emerald)">${icon('check-circle', 16)} Alle meetplannen zijn compleet ingevuld</p>
+              </div>
+            `;
+          })()}
+
           <div style="display:flex; flex-direction:column; gap:var(--space-4)">
             ${items.map(q => `
               <div class="card">

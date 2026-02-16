@@ -133,8 +133,20 @@ export function createPage(container) {
           <div class="settings-row">
             <div style="width:100%">
               <div class="settings-label">Bin ID</div>
-              <div class="settings-desc" style="margin-bottom:var(--space-2)">Wordt automatisch aangemaakt. Kopieer dit naar je andere apparaat.</div>
-              <input type="text" class="form-input" id="autosync-binid" value="${autoSyncBinId}" placeholder="Wordt automatisch gevuld" style="font-family:var(--font-mono);font-size:0.8125rem">
+              <div class="settings-desc" style="margin-bottom:var(--space-2)">
+                ${autoSyncBinId
+                  ? 'Kopieer deze ID en plak het op je andere apparaat zodat ze dezelfde data delen.'
+                  : 'Wordt aangemaakt bij eerste sync. OF plak hier de Bin ID van je andere apparaat.'}
+              </div>
+              <div style="display:flex;gap:var(--space-2);align-items:center">
+                <input type="text" class="form-input" id="autosync-binid" value="${autoSyncBinId}" placeholder="Plak Bin ID van ander apparaat, of laat leeg" style="font-family:var(--font-mono);font-size:0.8125rem;flex:1">
+                ${autoSyncBinId ? '<button class="btn btn-secondary btn-sm" data-action="copy-binid" title="Kopieer Bin ID">Kopieer</button>' : ''}
+              </div>
+              ${autoSyncBinId ? '' : `
+              <div style="margin-top:var(--space-2);padding:var(--space-3);background:var(--color-warning-light);border-radius:var(--radius-md);font-size:0.8125rem;color:var(--color-warning);border:1px solid var(--color-warning)">
+                <strong>Belangrijk:</strong> Als je al sync hebt ingesteld op een ander apparaat, plak dan eerst de Bin ID van dat apparaat hier voordat je op "Sync nu" drukt. Anders worden twee aparte bins aangemaakt en zien je apparaten elkaars data niet!
+              </div>
+              `}
             </div>
           </div>
           <div class="settings-row">
@@ -309,6 +321,24 @@ export function createPage(container) {
       }
     });
 
+    // Copy Bin ID button
+    container.querySelector('[data-action="copy-binid"]')?.addEventListener('click', async () => {
+      const binId = container.querySelector('#autosync-binid')?.value.trim();
+      if (!binId) {
+        showToast('Geen Bin ID om te kopiëren', { type: 'warning' });
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(binId);
+        showToast('Bin ID gekopieerd! Plak dit op je andere apparaat.', { type: 'success', duration: 4000 });
+      } catch {
+        // Fallback: select the input text
+        const input = container.querySelector('#autosync-binid');
+        input.select();
+        showToast('Selecteer en kopieer de Bin ID handmatig', { type: 'info' });
+      }
+    });
+
     // Sync now button
     container.querySelector('[data-action="sync-now"]')?.addEventListener('click', async () => {
       const apiKey = container.querySelector('#autosync-apikey')?.value.trim();
@@ -331,9 +361,10 @@ export function createPage(container) {
           label.textContent = new Date(lastSync).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
         // Update bin ID in case it was just created
-        const newBinId = await getSetting('autosync_binid');
+        const createdBinId = await getSetting('autosync_binid');
         const binInput = container.querySelector('#autosync-binid');
-        if (binInput && newBinId) binInput.value = newBinId;
+        if (binInput && createdBinId) binInput.value = createdBinId;
+
         // Show detailed result
         const details = [];
         if (result?.binCreated) details.push('Nieuwe bin aangemaakt');
@@ -343,6 +374,13 @@ export function createPage(container) {
         const msg = details.length > 0 ? details.join(', ') : 'Sync voltooid';
         showToast(msg, { type: 'success', duration: 4000 });
         if (diag) diag.textContent = 'Sync resultaat:\n' + details.join('\n');
+
+        // If a new bin was created, show prominent instruction to copy Bin ID
+        if (result?.binCreated && createdBinId) {
+          showToast('Kopieer de Bin ID naar je andere apparaat!', { type: 'warning', duration: 8000 });
+          // Re-render to show the copy button and remove the warning
+          render();
+        }
       } catch (err) {
         showToast('Sync fout: ' + err.message, { type: 'error', duration: 5000 });
         if (label) label.textContent = 'Fout: ' + err.message;

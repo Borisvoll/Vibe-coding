@@ -234,18 +234,21 @@ async function mergeRemoteSnapshot(snapshot) {
  */
 function emitRefreshEvents() {
   suppressEvents = true;
-  emit('hours:updated');
-  emit('logbook:updated');
-  emit('competencies:updated');
-  emit('assignments:updated');
-  emit('goals:updated');
-  emit('quality:updated');
-  emit('planning:updated');
-  emit('reference:updated');
-  emit('energy:updated');
-  emit('learningMoments:updated');
-  emit('checklists:updated');
-  suppressEvents = false;
+  try {
+    emit('hours:updated');
+    emit('logbook:updated');
+    emit('competencies:updated');
+    emit('assignments:updated');
+    emit('goals:updated');
+    emit('quality:updated');
+    emit('planning:updated');
+    emit('reference:updated');
+    emit('energy:updated');
+    emit('learningMoments:updated');
+    emit('checklists:updated');
+  } finally {
+    suppressEvents = false;
+  }
 }
 
 // ===== Upload (push local -> remote) =====

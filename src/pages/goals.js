@@ -151,8 +151,8 @@ export function createPage(container) {
           bewijs: '',
           startDate: new Date().toISOString().split('T')[0],
           endDate: '',
-          createdAt: Date.now(),
-          updatedAt: Date.now()
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
         emit('goals:updated');
         showToast('Template leerdoel geladen', { type: 'success' });
@@ -212,8 +212,8 @@ export function createPage(container) {
           bewijs: document.getElementById('goal-bewijs').value.trim(),
           startDate: existing?.startDate || new Date().toISOString().split('T')[0],
           endDate: existing?.endDate || '',
-          createdAt: existing?.createdAt || Date.now(),
-          updatedAt: Date.now()
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
 
         await put('goals', record);

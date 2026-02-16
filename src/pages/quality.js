@@ -168,8 +168,8 @@ export function createPage(container) {
         title: document.getElementById('q-title').value.trim() || 'Meetplan',
         fields,
         linkedLogbook: document.getElementById('q-linked')?.value.trim() || '',
-        createdAt: existing?.createdAt || Date.now(),
-        updatedAt: Date.now()
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       await put('quality', record);

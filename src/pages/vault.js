@@ -196,7 +196,7 @@ export function createPage(container) {
             size: file.size,
             date: getToday(),
             tags: [],
-            createdAt: Date.now()
+            createdAt: new Date().toISOString()
           };
 
           await put('vault', meta);

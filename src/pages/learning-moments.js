@@ -170,8 +170,8 @@ export function createPage(container) {
         adjustment: document.getElementById('m-adjustment').value.trim(),
         prevention: document.getElementById('m-prevention').value.trim(),
         tags,
-        createdAt: existing?.createdAt || Date.now(),
-        updatedAt: Date.now()
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       await put('learningMoments', record);

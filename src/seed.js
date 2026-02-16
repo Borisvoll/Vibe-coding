@@ -52,8 +52,8 @@ async function seedHours() {
       breakMinutes: e.breakMinutes,
       netMinutes,
       note: '',
-      createdAt: Date.now(),
-      updatedAt: Date.now()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
   }
 }
@@ -146,8 +146,8 @@ async function seedLogbook() {
       learnings: e.learnings,
       tags: e.tags,
       photos: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
   }
 }
@@ -181,8 +181,8 @@ async function seedCompetencies() {
       level: seedLevels[i] ?? 0,
       notes: seedNotes[i] || '',
       logbookRefs: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now()
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
   }
 }
@@ -205,8 +205,8 @@ async function seedAssignments() {
       leerdoel5: '',
     },
     draft: true,
-    createdAt: Date.now(),
-    updatedAt: Date.now()
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
   });
 }
 

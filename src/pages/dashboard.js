@@ -1,4 +1,4 @@
-import { getAll } from '../db.js';
+import { getAll, getSetting } from '../db.js';
 import { icon } from '../icons.js';
 import { navigate } from '../router.js';
 import { on } from '../state.js';
@@ -12,7 +12,7 @@ export function createPage(container) {
   let unsubs = [];
 
   async function render() {
-    const [allHours, allLogbook, allGoals, allCompetencies, allQuality, allPlans, allWeekReviews] = await Promise.all([
+    const [allHours, allLogbook, allGoals, allCompetencies, allQuality, allPlans, allWeekReviews, userName, companyName] = await Promise.all([
       getAll('hours'),
       getAll('logbook'),
       getAll('goals'),
@@ -20,6 +20,8 @@ export function createPage(container) {
       getAll('quality'),
       getAll('dailyPlans'),
       getAll('weekReviews'),
+      getSetting('user_name'),
+      getSetting('company_name'),
     ]);
 
     const weeks = getWeeksInBPV();
@@ -71,8 +73,8 @@ export function createPage(container) {
 
     container.innerHTML = `
       <div class="dashboard-welcome">
-        <h2>Welkom terug, Boris</h2>
-        <p>BPV Stage bij Boers & Co — Week ${weekNumber(currentWeek)} van ${weeks.length}</p>
+        <h2>Welkom terug${userName ? `, ${userName}` : ''}</h2>
+        <p>${companyName ? `BPV Stage bij ${companyName}` : 'BPV Stage'} — Week ${weekNumber(currentWeek)} van ${weeks.length}</p>
       </div>
 
       <div class="dashboard-stats">

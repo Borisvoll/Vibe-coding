@@ -212,10 +212,10 @@ export async function resizeImage(file, maxPx = 200) {
 /**
  * Escape HTML entities
  */
+const escapeMap = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 export function escapeHTML(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  if (!str) return '';
+  return str.replace(/[&<>"']/g, ch => escapeMap[ch]);
 }
 
 /**

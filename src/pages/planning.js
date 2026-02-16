@@ -206,8 +206,8 @@ export function createPage(container) {
           id: existing?.id || generateId(),
           date: today,
           level,
-          createdAt: existing?.createdAt || Date.now(),
-          updatedAt: Date.now()
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
         emit('energy:updated');
         showToast(`Energie: ${level}/5`, { type: 'success' });
@@ -327,8 +327,8 @@ export function createPage(container) {
         ].filter(Boolean),
         evaluation: document.getElementById('evaluation').value.trim(),
         nextStep: document.getElementById('next-step').value.trim(),
-        createdAt: existing?.createdAt || Date.now(),
-        updatedAt: Date.now()
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       await put('dailyPlans', record);
       emit('planning:updated');
@@ -347,8 +347,8 @@ export function createPage(container) {
         proces: document.getElementById('wr-proces').value.trim(),
         vraag: document.getElementById('wr-vraag').value.trim(),
         focus: document.getElementById('wr-focus').value.trim(),
-        createdAt: existing?.createdAt || Date.now(),
-        updatedAt: Date.now()
+        createdAt: existing?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       await put('weekReviews', record);
       emit('planning:updated');

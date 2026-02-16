@@ -319,11 +319,13 @@ export function createPage(container) {
       }
       const btn = container.querySelector('[data-action="sync-now"]');
       const label = container.querySelector('#autosync-last-label');
+      const diag = container.querySelector('#sync-diagnostic');
       try {
         btn.disabled = true;
         btn.textContent = 'Bezig...';
         if (label) label.textContent = 'Synchroniseren...';
-        await syncNow();
+        if (diag) { diag.style.display = 'block'; diag.textContent = 'Sync bezig...\n'; }
+        const result = await syncNow();
         const lastSync = await getSetting('autosync_last');
         if (label && lastSync) {
           label.textContent = new Date(lastSync).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -332,10 +334,19 @@ export function createPage(container) {
         const newBinId = await getSetting('autosync_binid');
         const binInput = container.querySelector('#autosync-binid');
         if (binInput && newBinId) binInput.value = newBinId;
-        showToast('Synchronisatie voltooid', { type: 'success' });
+        // Show detailed result
+        const details = [];
+        if (result?.binCreated) details.push('Nieuwe bin aangemaakt');
+        if (result?.pulled > 0) details.push(`${result.pulled} records gedownload`);
+        if (result?.pulled === 0 && !result?.binCreated) details.push('Geen nieuwe data op remote');
+        if (result?.pushed) details.push('Lokale data gepusht');
+        const msg = details.length > 0 ? details.join(', ') : 'Sync voltooid';
+        showToast(msg, { type: 'success', duration: 4000 });
+        if (diag) diag.textContent = 'Sync resultaat:\n' + details.join('\n');
       } catch (err) {
         showToast('Sync fout: ' + err.message, { type: 'error', duration: 5000 });
         if (label) label.textContent = 'Fout: ' + err.message;
+        if (diag) { diag.style.display = 'block'; diag.textContent = 'Sync fout: ' + err.message; }
       } finally {
         btn.disabled = false;
         btn.textContent = 'Sync nu';

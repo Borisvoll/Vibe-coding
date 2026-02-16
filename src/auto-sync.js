@@ -8,6 +8,9 @@
  * - Tombstones (deleted store) propagate deletes across devices
  * - Upload debounce prevents API spam during rapid edits
  * - A syncing guard prevents circular event loops
+ * - Photos excluded: Blob objects can't be JSON-serialized,
+ *   and images exceed jsonbin.io's 100KB free-tier limit.
+ *   Use manual .bpv export for full backups including photos.
  */
 
 import { getSetting, setSetting, getAll, put, remove } from './db.js';
@@ -18,18 +21,24 @@ const API_BASE = 'https://api.jsonbin.io/v3/b';
 const DEBOUNCE_MS = 3000;
 const POLL_INTERVAL_MS = 30000;
 
-// Stores to sync (must match sync.js SYNC_STORES)
+// Stores to sync — photos excluded (Blob objects + jsonbin.io size limit)
 const SYNC_STORES = [
-  'hours', 'logbook', 'photos', 'competencies', 'assignments',
+  'hours', 'logbook', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
   'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs', 'deleted'
 ];
+
+// Stores where the 'date' field has a unique index
+const UNIQUE_DATE_STORES = ['hours', 'dailyPlans', 'energy'];
+// Stores where the 'week' field has a unique index
+const UNIQUE_WEEK_STORES = ['weekReviews'];
 
 let debounceTimer = null;
 let pollTimer = null;
 let isSyncing = false;
 let suppressEvents = false; // prevents merge -> emit -> upload loop
 let config = null;
+let eventUnsubs = []; // track event listeners for cleanup
 
 // ===== Configuration =====
 
@@ -136,11 +145,6 @@ async function decryptSnapshot(encrypted, password) {
   return JSON.parse(json);
 }
 
-// Stores where the 'date' field has a unique index
-const UNIQUE_DATE_STORES = ['hours', 'dailyPlans', 'energy'];
-// Stores where the 'week' field has a unique index
-const UNIQUE_WEEK_STORES = ['weekReviews'];
-
 /**
  * Merge remote snapshot into local DB.
  * Returns count of records that were actually changed.
@@ -246,8 +250,9 @@ function emitRefreshEvents() {
 
 // ===== Upload (push local -> remote) =====
 
-async function upload() {
-  if (!isConfigured() || isSyncing) return;
+async function upload(force = false) {
+  if (!isConfigured()) return;
+  if (isSyncing && !force) return;
   isSyncing = true;
   emit('autosync:status', { state: 'uploading' });
 
@@ -306,8 +311,9 @@ async function upload() {
 
 // ===== Download & Merge (pull remote -> local) =====
 
-async function download() {
-  if (!hasBin() || isSyncing) return;
+async function download(force = false) {
+  if (!hasBin()) return;
+  if (isSyncing && !force) return;
   isSyncing = true;
   emit('autosync:status', { state: 'downloading' });
 
@@ -315,11 +321,13 @@ async function download() {
     const encrypted = await readBin(config.apiKey, config.binId);
     const snapshot = await decryptSnapshot(encrypted, config.password);
 
-    // Check if remote is newer than our last pull
-    const lastPulledAt = await getSetting('autosync_lastPulled');
-    if (lastPulledAt && parseTime(snapshot.syncedAt) <= parseTime(lastPulledAt)) {
-      emit('autosync:status', { state: 'idle', lastSync: lastPulledAt });
-      return; // Already up to date
+    // Check if remote is newer than our last pull (skip for forced/manual sync)
+    if (!force) {
+      const lastPulledAt = await getSetting('autosync_lastPulled');
+      if (lastPulledAt && parseTime(snapshot.syncedAt) <= parseTime(lastPulledAt)) {
+        emit('autosync:status', { state: 'idle', lastSync: lastPulledAt });
+        return; // Already up to date
+      }
     }
 
     const merged = await mergeRemoteSnapshot(snapshot);
@@ -331,9 +339,12 @@ async function download() {
     if (merged > 0) {
       emitRefreshEvents();
     }
+
+    return merged;
   } catch (err) {
     console.error('Auto-sync download failed:', err);
     emit('autosync:status', { state: 'error', message: err.message });
+    throw err; // re-throw so syncNow() can report it
   } finally {
     isSyncing = false;
   }
@@ -363,7 +374,10 @@ export async function initAutoSync() {
     'planning:updated', 'reference:updated', 'energy:updated',
     'learningMoments:updated', 'checklists:updated'
   ];
-  events.forEach(evt => on(evt, scheduleUpload));
+  events.forEach(evt => {
+    const unsub = on(evt, scheduleUpload);
+    eventUnsubs.push(unsub);
+  });
 
   // Initial download to get latest remote data
   if (hasBin()) {
@@ -375,12 +389,15 @@ export async function initAutoSync() {
 }
 
 /**
- * Stop auto-sync
+ * Stop auto-sync and clean up all listeners
  */
 export function stopAutoSync() {
   clearTimeout(debounceTimer);
   clearInterval(pollTimer);
   pollTimer = null;
+  // Remove event listeners to prevent stacking on restart
+  eventUnsubs.forEach(fn => fn());
+  eventUnsubs = [];
 }
 
 /**
@@ -393,26 +410,43 @@ export async function restartAutoSync() {
 
 /**
  * Force a sync now (manual trigger).
- * On a fresh device with a binId, downloads first to pull data.
- * On the primary device, uploads then checks for remote changes.
+ * Bypasses isSyncing guard and "already up to date" checks.
+ * Returns detailed result object for UI display.
  */
 export async function syncNow() {
   await loadConfig();
   if (!isConfigured()) throw new Error('Vul API key en wachtwoord in');
 
-  if (hasBin()) {
-    // Pull first, then push — this is the safe order for a second device
-    await download();
-    await upload();
-  } else {
-    // No bin yet — create one by uploading
-    await upload();
+  // Force-reset syncing state in case it got stuck
+  isSyncing = false;
+
+  const result = { pulled: 0, pushed: false, binCreated: false, error: null };
+
+  try {
+    if (hasBin()) {
+      // Pull remote data first (force=true bypasses guards)
+      const merged = await download(true);
+      result.pulled = merged || 0;
+
+      // Then push local data
+      await upload(true);
+      result.pushed = true;
+    } else {
+      // No bin yet — create one by uploading
+      await upload(true);
+      result.binCreated = true;
+      result.pushed = true;
+    }
+  } catch (err) {
+    result.error = err.message;
+    throw err;
   }
+
+  return result;
 }
 
 /**
- * Test the connection and return diagnostic info.
- * Useful for debugging sync issues on mobile.
+ * Test the connection and return comprehensive diagnostic info.
  */
 export async function testSync() {
   await loadConfig();
@@ -421,9 +455,25 @@ export async function testSync() {
   // Step 1: Config check
   if (!config?.apiKey) { result.steps.push('API key ontbreekt'); return result; }
   if (!config?.password) { result.steps.push('Wachtwoord ontbreekt'); return result; }
-  result.steps.push('Config OK');
+  result.steps.push('Config OK (enabled=' + !!config.enabled + ')');
 
-  // Step 2: API connectivity
+  // Step 2: Check local data size
+  try {
+    const snapshot = await createSyncSnapshot();
+    const json = JSON.stringify(snapshot);
+    const sizeKB = Math.round(json.length / 1024);
+    const storeSizes = Object.entries(snapshot.data)
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.length : 0}`)
+      .join(', ');
+    result.steps.push(`Lokale data: ${sizeKB}KB (${storeSizes})`);
+    if (sizeKB > 90) {
+      result.steps.push(`LET OP: Data is ${sizeKB}KB, jsonbin.io limiet is 100KB!`);
+    }
+  } catch (err) {
+    result.steps.push('Snapshot fout: ' + err.message);
+  }
+
+  // Step 3: API connectivity
   try {
     const res = await fetch(`${API_BASE}/${config.binId || 'test'}/latest`, {
       headers: { 'X-Master-Key': config.apiKey }
@@ -435,7 +485,7 @@ export async function testSync() {
     return result;
   }
 
-  // Step 3: Bin read
+  // Step 4: Bin read
   if (!config.binId) {
     result.steps.push('Geen Bin ID — eerste sync maakt deze aan');
     result.ok = true;
@@ -444,15 +494,41 @@ export async function testSync() {
 
   try {
     const encrypted = await readBin(config.apiKey, config.binId);
-    result.steps.push('Bin gelezen (' + JSON.stringify(encrypted).length + ' bytes)');
+    const rawSize = JSON.stringify(encrypted).length;
+    result.steps.push('Bin gelezen (' + Math.round(rawSize / 1024) + 'KB)');
 
-    // Step 4: Decryption
+    // Step 5: Decryption
     const snapshot = await decryptSnapshot(encrypted, config.password);
     const storeCount = Object.keys(snapshot?.data || {}).length;
     const recordCount = Object.values(snapshot?.data || {}).reduce((s, arr) => s + (Array.isArray(arr) ? arr.length : 0), 0);
     result.steps.push(`Ontsleuteld: ${storeCount} stores, ${recordCount} records`);
-    if (snapshot?.syncedAt) result.steps.push('Laatste sync: ' + snapshot.syncedAt);
-    if (snapshot?.deviceId) result.steps.push('Device: ' + snapshot.deviceId);
+    if (snapshot?.syncedAt) result.steps.push('Laatst gepusht: ' + new Date(snapshot.syncedAt).toLocaleString('nl-NL'));
+    if (snapshot?.deviceId) result.steps.push('Door device: ' + snapshot.deviceId);
+
+    // Step 6: Compare with local
+    const localDeviceId = await getSetting('device_id') || 'unknown';
+    result.steps.push('Dit device: ' + localDeviceId);
+    if (snapshot?.deviceId === localDeviceId) {
+      result.steps.push('Remote data komt van DIT device');
+    } else {
+      result.steps.push('Remote data komt van ANDER device — sync zou moeten werken');
+    }
+
+    // Step 7: Check what would be merged
+    let wouldMerge = 0;
+    for (const [storeName, records] of Object.entries(snapshot?.data || {})) {
+      if (!Array.isArray(records) || !SYNC_STORES.includes(storeName)) continue;
+      const local = await getAll(storeName).catch(() => []);
+      const localMap = new Map(local.map(r => [r.id, r]));
+      for (const record of records) {
+        if (!record?.id) continue;
+        const existing = localMap.get(record.id);
+        if (!existing) { wouldMerge++; continue; }
+        if (getRecordTimestamp(record) > getRecordTimestamp(existing)) wouldMerge++;
+      }
+    }
+    result.steps.push(`Records die gemerged zouden worden: ${wouldMerge}`);
+
     result.ok = true;
   } catch (err) {
     result.steps.push('Fout: ' + err.message);

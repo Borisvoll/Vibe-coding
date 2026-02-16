@@ -64,10 +64,16 @@ function getRecordTimestamp(record) {
 // ===== jsonbin.io API =====
 
 async function apiFetch(url, options = {}) {
-  const res = await fetch(url, options);
+  let res;
+  try {
+    res = await fetch(url, options);
+  } catch (networkErr) {
+    throw new Error('Geen internetverbinding of server onbereikbaar');
+  }
   if (res.status === 401) throw new Error('Ongeldige API key — controleer je jsonbin.io API key');
   if (res.status === 403) throw new Error('Toegang geweigerd — controleer of de API key juist is');
   if (res.status === 404) throw new Error('Bin niet gevonden — controleer de Bin ID');
+  if (res.status === 413) throw new Error('Data te groot voor gratis jsonbin.io (max 100KB)');
   if (res.status === 429) throw new Error('Te veel verzoeken — probeer het over een minuut opnieuw');
   if (!res.ok) throw new Error(`Sync mislukt (HTTP ${res.status})`);
   return res.json();
@@ -364,4 +370,55 @@ export async function syncNow() {
     // No bin yet — create one by uploading
     await upload();
   }
+}
+
+/**
+ * Test the connection and return diagnostic info.
+ * Useful for debugging sync issues on mobile.
+ */
+export async function testSync() {
+  await loadConfig();
+  const result = { steps: [], ok: false };
+
+  // Step 1: Config check
+  if (!config?.apiKey) { result.steps.push('API key ontbreekt'); return result; }
+  if (!config?.password) { result.steps.push('Wachtwoord ontbreekt'); return result; }
+  result.steps.push('Config OK');
+
+  // Step 2: API connectivity
+  try {
+    const res = await fetch(`${API_BASE}/${config.binId || 'test'}/latest`, {
+      headers: { 'X-Master-Key': config.apiKey }
+    });
+    result.steps.push(`API bereikbaar (HTTP ${res.status})`);
+    if (res.status === 401) { result.steps.push('API key ongeldig'); return result; }
+  } catch (err) {
+    result.steps.push('Netwerk fout: ' + err.message);
+    return result;
+  }
+
+  // Step 3: Bin read
+  if (!config.binId) {
+    result.steps.push('Geen Bin ID — eerste sync maakt deze aan');
+    result.ok = true;
+    return result;
+  }
+
+  try {
+    const encrypted = await readBin(config.apiKey, config.binId);
+    result.steps.push('Bin gelezen (' + JSON.stringify(encrypted).length + ' bytes)');
+
+    // Step 4: Decryption
+    const snapshot = await decryptSnapshot(encrypted, config.password);
+    const storeCount = Object.keys(snapshot?.data || {}).length;
+    const recordCount = Object.values(snapshot?.data || {}).reduce((s, arr) => s + (Array.isArray(arr) ? arr.length : 0), 0);
+    result.steps.push(`Ontsleuteld: ${storeCount} stores, ${recordCount} records`);
+    if (snapshot?.syncedAt) result.steps.push('Laatste sync: ' + snapshot.syncedAt);
+    if (snapshot?.deviceId) result.steps.push('Device: ' + snapshot.deviceId);
+    result.ok = true;
+  } catch (err) {
+    result.steps.push('Fout: ' + err.message);
+  }
+
+  return result;
 }

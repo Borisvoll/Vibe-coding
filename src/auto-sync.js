@@ -22,7 +22,7 @@ const POLL_INTERVAL_MS = 30000;
 const SYNC_STORES = [
   'hours', 'logbook', 'photos', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
-  'learningMoments', 'reference', 'energy', 'deleted'
+  'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs', 'deleted'
 ];
 
 let debounceTimer = null;
@@ -240,6 +240,7 @@ function emitRefreshEvents() {
   emit('reference:updated');
   emit('energy:updated');
   emit('learningMoments:updated');
+  emit('checklists:updated');
   suppressEvents = false;
 }
 
@@ -360,7 +361,7 @@ export async function initAutoSync() {
     'hours:updated', 'logbook:updated', 'competencies:updated',
     'assignments:updated', 'goals:updated', 'quality:updated',
     'planning:updated', 'reference:updated', 'energy:updated',
-    'learningMoments:updated'
+    'learningMoments:updated', 'checklists:updated'
   ];
   events.forEach(evt => on(evt, scheduleUpload));
 

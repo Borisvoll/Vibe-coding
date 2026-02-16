@@ -1,5 +1,5 @@
 const DB_NAME = 'bpv-tracker';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbInstance = null;
 
@@ -78,6 +78,14 @@ export function initDB() {
 
         const energy = db.createObjectStore('energy', { keyPath: 'id' });
         energy.createIndex('date', 'date', { unique: true });
+      }
+      if (oldVersion < 3) {
+        const checklists = db.createObjectStore('checklists', { keyPath: 'id' });
+        checklists.createIndex('title', 'title', { unique: false });
+
+        const checklistLogs = db.createObjectStore('checklistLogs', { keyPath: 'id' });
+        checklistLogs.createIndex('checklistId', 'checklistId', { unique: false });
+        checklistLogs.createIndex('date', 'date', { unique: false });
       }
     };
 
@@ -267,7 +275,7 @@ export async function getAllLogbookSorted() {
 
 export async function clearAllData() {
   const db = getDB();
-  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy'];
+  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'checklists', 'checklistLogs'];
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeNames, 'readwrite');
     storeNames.forEach(name => tx.objectStore(name).clear());
@@ -298,7 +306,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'checklists', 'checklistLogs'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

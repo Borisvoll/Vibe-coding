@@ -14,7 +14,7 @@ import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
 
 export const APP_VERSION = '2.0.0';
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 // Module registry
 export const modules = [
@@ -28,6 +28,7 @@ export const modules = [
   { id: 'competencies',     label: 'Leermeter',         icon: 'chart',            route: 'competencies',     page: () => import('./pages/competencies.js') },
   { id: 'quality',          label: 'Kwaliteit',         icon: 'shield',           route: 'quality',          page: () => import('./pages/quality.js') },
   { id: 'learning-moments', label: 'Leeranalyse',       icon: 'alert-triangle',   route: 'learning-moments', page: () => import('./pages/learning-moments.js') },
+  { id: 'checklists',       label: 'Checklists',         icon: 'clipboard-check',  route: 'checklists',       page: () => import('./pages/checklists.js') },
   { id: 'process-map',      label: 'Proceskaart',       icon: 'map',              route: 'process-map',      page: () => import('./pages/process-map.js') },
   { id: 'reference',        label: 'Naslagwerk',        icon: 'search',           route: 'reference',        page: () => import('./pages/reference.js') },
   { id: 'assignments',      label: 'Opdrachten',        icon: 'clipboard',        route: 'assignments',      page: () => import('./pages/assignments.js') },

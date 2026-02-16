@@ -11,7 +11,7 @@ import { APP_VERSION, SCHEMA_VERSION } from './main.js';
 const SYNC_STORES = [
   'hours', 'logbook', 'photos', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
-  'learningMoments', 'reference', 'energy', 'deleted'
+  'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs', 'deleted'
 ];
 
 // Stores that contain sensitive data (Vault) — opt-in

@@ -3,8 +3,8 @@ import { icon } from '../icons.js';
 import { getSetting, setSetting } from '../db.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 
-const bottomNavIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook'];
-const sidebarMainIds = ['dashboard', 'planning', 'hours', 'logbook', 'notebook', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
+const bottomNavIds = ['dashboard', 'today', 'hours', 'logbook', 'planning'];
+const sidebarMainIds = ['dashboard', 'today', 'planning', 'hours', 'logbook', 'notebook', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
 const sidebarSecondaryIds = ['sync', 'vault', 'export', 'settings'];
 
 export function createShell(container) {

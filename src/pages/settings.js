@@ -4,7 +4,7 @@ import { emit, on } from '../state.js';
 import { showToast } from '../toast.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { APP_VERSION } from '../main.js';
-import { restartAutoSync, stopAutoSync, syncNow } from '../auto-sync.js';
+import { restartAutoSync, stopAutoSync, syncNow, testSync } from '../auto-sync.js';
 
 export function createPage(container) {
 
@@ -145,6 +145,12 @@ export function createPage(container) {
             <div style="display:flex;gap:var(--space-2)">
               <button class="btn btn-secondary btn-sm" data-action="save-autosync">Opslaan</button>
               <button class="btn btn-primary btn-sm" data-action="sync-now">Sync nu</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="width:100%">
+              <button class="btn btn-secondary btn-sm" data-action="test-sync" style="margin-bottom:var(--space-2)">Test verbinding</button>
+              <pre id="sync-diagnostic" style="font-size:0.75rem;font-family:var(--font-mono);color:var(--color-text-secondary);white-space:pre-wrap;display:none;background:var(--color-surface-raised);padding:var(--space-3);border-radius:var(--radius-md)"></pre>
             </div>
           </div>
         </div>
@@ -333,6 +339,26 @@ export function createPage(container) {
       } finally {
         btn.disabled = false;
         btn.textContent = 'Sync nu';
+      }
+    });
+
+    // Test sync connection
+    container.querySelector('[data-action="test-sync"]')?.addEventListener('click', async () => {
+      const btn = container.querySelector('[data-action="test-sync"]');
+      const diag = container.querySelector('#sync-diagnostic');
+      btn.disabled = true;
+      btn.textContent = 'Testen...';
+      diag.style.display = 'block';
+      diag.textContent = 'Verbinding testen...\n';
+      try {
+        const result = await testSync();
+        diag.textContent = result.steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
+        diag.textContent += '\n\n' + (result.ok ? 'Resultaat: OK' : 'Resultaat: FOUT — controleer bovenstaande stappen');
+      } catch (err) {
+        diag.textContent = 'Test mislukt: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test verbinding';
       }
     });
 

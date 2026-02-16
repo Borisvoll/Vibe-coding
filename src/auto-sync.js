@@ -136,6 +136,11 @@ async function decryptSnapshot(encrypted, password) {
   return JSON.parse(json);
 }
 
+// Stores where the 'date' field has a unique index
+const UNIQUE_DATE_STORES = ['hours', 'dailyPlans', 'energy'];
+// Stores where the 'week' field has a unique index
+const UNIQUE_WEEK_STORES = ['weekReviews'];
+
 /**
  * Merge remote snapshot into local DB.
  * Returns count of records that were actually changed.
@@ -167,12 +172,44 @@ async function mergeRemoteSnapshot(snapshot) {
     const existing = await getAll(storeName).catch(() => []);
     const existingMap = new Map(existing.map((r) => [r.id, r]));
 
+    // Build a lookup by unique field (date/week) for stores with unique indexes
+    let uniqueFieldMap = null;
+    if (UNIQUE_DATE_STORES.includes(storeName)) {
+      uniqueFieldMap = new Map(existing.map((r) => [r.date, r]));
+    } else if (UNIQUE_WEEK_STORES.includes(storeName)) {
+      uniqueFieldMap = new Map(existing.map((r) => [r.week, r]));
+    }
+
     for (const record of records) {
       if (!record?.id) continue;
       const local = existingMap.get(record.id);
       if (!local) {
-        await put(storeName, record);
-        merged++;
+        // Check for unique date/week conflict before inserting
+        const uniqueKey = UNIQUE_DATE_STORES.includes(storeName) ? record.date
+          : UNIQUE_WEEK_STORES.includes(storeName) ? record.week : null;
+        const conflictByField = uniqueKey && uniqueFieldMap ? uniqueFieldMap.get(uniqueKey) : null;
+
+        if (conflictByField) {
+          // Same date/week but different id — resolve by timestamp
+          const localTime = getRecordTimestamp(conflictByField);
+          const remoteTime = getRecordTimestamp(record);
+          if (remoteTime > localTime) {
+            await remove(storeName, conflictByField.id).catch(() => {});
+            await put(storeName, record);
+            existingMap.delete(conflictByField.id);
+            uniqueFieldMap.set(uniqueKey, record);
+            merged++;
+          }
+          // else: local is newer, skip
+        } else {
+          try {
+            await put(storeName, record);
+            if (uniqueFieldMap && uniqueKey) uniqueFieldMap.set(uniqueKey, record);
+            merged++;
+          } catch {
+            // Skip records that still fail
+          }
+        }
       } else {
         const localTime = getRecordTimestamp(local);
         const remoteTime = getRecordTimestamp(record);

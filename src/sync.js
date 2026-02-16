@@ -17,6 +17,11 @@ const SYNC_STORES = [
 // Stores that contain sensitive data (Vault) — opt-in
 const VAULT_STORES = ['vault', 'vaultFiles'];
 
+// Stores where the 'date' field has a unique index
+const UNIQUE_DATE_STORES = ['hours', 'dailyPlans', 'energy'];
+// Stores where the 'week' field has a unique index
+const UNIQUE_WEEK_STORES = ['weekReviews'];
+
 
 function parseTime(value) {
   if (!value) return 0;
@@ -178,16 +183,47 @@ export async function applyMerge(importedData) {
     const existingRecords = await getAll(storeName).catch(() => []);
     const existingMap = new Map(existingRecords.map(r => [r.id, r]));
 
+    // Build a lookup by unique field (date/week) for stores with unique indexes
+    let uniqueFieldMap = null;
+    if (UNIQUE_DATE_STORES.includes(storeName)) {
+      uniqueFieldMap = new Map(existingRecords.map((r) => [r.date, r]));
+    } else if (UNIQUE_WEEK_STORES.includes(storeName)) {
+      uniqueFieldMap = new Map(existingRecords.map((r) => [r.week, r]));
+    }
+
     for (const record of records) {
       const existing = existingMap.get(record.id);
 
       if (!existing) {
-        // New record — import it
-        try {
-          await put(storeName, record);
-          merged++;
-        } catch {
-          skipped++;
+        // Check for unique date/week conflict before inserting
+        const uniqueKey = UNIQUE_DATE_STORES.includes(storeName) ? record.date
+          : UNIQUE_WEEK_STORES.includes(storeName) ? record.week : null;
+        const conflictByField = uniqueKey && uniqueFieldMap ? uniqueFieldMap.get(uniqueKey) : null;
+
+        if (conflictByField) {
+          // Same date/week but different id — resolve by timestamp
+          const existingTime = getRecordTimestamp(conflictByField);
+          const importedTime = getRecordTimestamp(record);
+          if (importedTime > existingTime) {
+            await remove(storeName, conflictByField.id).catch(() => {});
+            await put(storeName, record);
+            existingMap.delete(conflictByField.id);
+            uniqueFieldMap.set(uniqueKey, record);
+            merged++;
+            conflicts.push({ store: storeName, id: record.id, resolution: 'imported (replaced by date)' });
+          } else {
+            skipped++;
+            conflicts.push({ store: storeName, id: record.id, resolution: 'kept (existing date newer)' });
+          }
+        } else {
+          // New record — import it
+          try {
+            await put(storeName, record);
+            if (uniqueFieldMap && uniqueKey) uniqueFieldMap.set(uniqueKey, record);
+            merged++;
+          } catch {
+            skipped++;
+          }
         }
         continue;
       }

@@ -16,7 +16,7 @@ export function createPage(container, params) {
       <div class="empty-state">
         <h3>Ongeldige datum</h3>
         <p>Deze datum valt buiten de BPV-periode.</p>
-        <button class="btn btn-secondary" onclick="window.location.hash='hours'">Terug naar uren</button>
+        <a href="#hours" class="btn btn-secondary">Terug naar uren</a>
       </div>
     `;
     return {};
@@ -161,7 +161,7 @@ export function createPage(container, params) {
         showToast('Vul start- en eindtijd in', { type: 'error' });
         return;
       }
-      if (endTime <= startTime) {
+      if (calcNetMinutes(startTime, endTime, 0) <= 0) {
         showToast('Eindtijd moet na starttijd liggen', { type: 'error' });
         return;
       }
@@ -179,8 +179,8 @@ export function createPage(container, params) {
       breakMinutes,
       netMinutes,
       note,
-      createdAt: entry?.createdAt || Date.now(),
-      updatedAt: Date.now()
+      createdAt: entry?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     await put('hours', record);

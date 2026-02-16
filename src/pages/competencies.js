@@ -159,8 +159,8 @@ export function createPage(container) {
           level: 0,
           notes: '',
           logbookRefs: [],
-          createdAt: Date.now(),
-          updatedAt: Date.now()
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         });
       }
       showToast(`${DEFAULT_COMPETENCIES.length} competenties geladen`, { type: 'success' });
@@ -227,8 +227,8 @@ export function createPage(container) {
           level: parseInt(document.querySelector('#comp-form input[name="level"]:checked')?.value || '0', 10),
           notes: document.getElementById('comp-notes').value.trim(),
           logbookRefs: existing?.logbookRefs || [],
-          createdAt: existing?.createdAt || Date.now(),
-          updatedAt: Date.now()
+          createdAt: existing?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
 
         await put('competencies', record);

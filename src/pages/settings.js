@@ -4,7 +4,7 @@ import { emit, on } from '../state.js';
 import { showToast } from '../toast.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { APP_VERSION } from '../main.js';
-import { restartAutoSync, stopAutoSync, syncNow } from '../auto-sync.js';
+import { restartAutoSync, stopAutoSync, syncNow, testSync } from '../auto-sync.js';
 
 export function createPage(container) {
 
@@ -13,13 +13,18 @@ export function createPage(container) {
     const accentId = await getSetting('accentColor') || 'blue';
     const compact = await getSetting('compact') || false;
     const deviceId = await getSetting('device_id') || '-';
+    const userName = await getSetting('user_name') || '';
+    const companyName = await getSetting('company_name') || '';
 
     // Auto-sync settings
     const autoSyncEnabled = await getSetting('autosync_enabled') || false;
     const autoSyncApiKey = await getSetting('autosync_apikey') || '';
     const autoSyncBinId = await getSetting('autosync_binid') || '';
     const autoSyncPassword = await getSetting('autosync_password') || '';
-    const autoSyncLast = await getSetting('autosync_last') || 'Nog niet gesynchroniseerd';
+    const autoSyncLastRaw = await getSetting('autosync_last');
+    const autoSyncLast = autoSyncLastRaw
+      ? new Date(autoSyncLastRaw).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+      : 'Nog niet gesynchroniseerd';
 
     // SW status
     let swStatus = 'Niet beschikbaar';
@@ -35,6 +40,28 @@ export function createPage(container) {
     container.innerHTML = `
       <div class="page-header">
         <h2>Instellingen</h2>
+      </div>
+
+      <div class="settings-section card">
+        <h3>Profiel</h3>
+        <div class="settings-row">
+          <div style="width:100%">
+            <div class="settings-label">Naam</div>
+            <div class="settings-desc" style="margin-bottom:var(--space-2)">Wordt getoond op het dashboard</div>
+            <input type="text" class="form-input" id="settings-username" value="${userName}" placeholder="Je naam">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div style="width:100%">
+            <div class="settings-label">Stagebedrijf</div>
+            <div class="settings-desc" style="margin-bottom:var(--space-2)">Wordt getoond op het dashboard en in het verslag</div>
+            <input type="text" class="form-input" id="settings-company" value="${companyName}" placeholder="Bedrijfsnaam">
+          </div>
+        </div>
+        <div class="settings-row">
+          <div></div>
+          <button class="btn btn-secondary btn-sm" data-action="save-profile">Opslaan</button>
+        </div>
       </div>
 
       <div class="settings-section card">
@@ -118,6 +145,12 @@ export function createPage(container) {
             <div style="display:flex;gap:var(--space-2)">
               <button class="btn btn-secondary btn-sm" data-action="save-autosync">Opslaan</button>
               <button class="btn btn-primary btn-sm" data-action="sync-now">Sync nu</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <div style="width:100%">
+              <button class="btn btn-secondary btn-sm" data-action="test-sync" style="margin-bottom:var(--space-2)">Test verbinding</button>
+              <pre id="sync-diagnostic" style="font-size:0.75rem;font-family:var(--font-mono);color:var(--color-text-secondary);white-space:pre-wrap;display:none;background:var(--color-surface-raised);padding:var(--space-3);border-radius:var(--radius-md)"></pre>
             </div>
           </div>
         </div>
@@ -225,6 +258,15 @@ export function createPage(container) {
       }
     });
 
+    // Save profile
+    container.querySelector('[data-action="save-profile"]')?.addEventListener('click', async () => {
+      const name = container.querySelector('#settings-username')?.value.trim();
+      const company = container.querySelector('#settings-company')?.value.trim();
+      await setSetting('user_name', name);
+      await setSetting('company_name', company);
+      showToast('Profiel opgeslagen', { type: 'success' });
+    });
+
     // Auto-sync toggle
     container.querySelector('#autosync-toggle')?.addEventListener('click', async function() {
       this.classList.toggle('active');
@@ -275,30 +317,61 @@ export function createPage(container) {
         showToast('Sla eerst de instellingen op', { type: 'warning' });
         return;
       }
+      const btn = container.querySelector('[data-action="sync-now"]');
+      const label = container.querySelector('#autosync-last-label');
       try {
-        showToast('Synchroniseren...', { type: 'info', duration: 1500 });
+        btn.disabled = true;
+        btn.textContent = 'Bezig...';
+        if (label) label.textContent = 'Synchroniseren...';
         await syncNow();
         const lastSync = await getSetting('autosync_last');
-        const label = container.querySelector('#autosync-last-label');
-        if (label && lastSync) label.textContent = lastSync;
+        if (label && lastSync) {
+          label.textContent = new Date(lastSync).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
         // Update bin ID in case it was just created
         const newBinId = await getSetting('autosync_binid');
         const binInput = container.querySelector('#autosync-binid');
         if (binInput && newBinId) binInput.value = newBinId;
         showToast('Synchronisatie voltooid', { type: 'success' });
       } catch (err) {
-        showToast('Sync fout: ' + err.message, { type: 'error' });
+        showToast('Sync fout: ' + err.message, { type: 'error', duration: 5000 });
+        if (label) label.textContent = 'Fout: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sync nu';
+      }
+    });
+
+    // Test sync connection
+    container.querySelector('[data-action="test-sync"]')?.addEventListener('click', async () => {
+      const btn = container.querySelector('[data-action="test-sync"]');
+      const diag = container.querySelector('#sync-diagnostic');
+      btn.disabled = true;
+      btn.textContent = 'Testen...';
+      diag.style.display = 'block';
+      diag.textContent = 'Verbinding testen...\n';
+      try {
+        const result = await testSync();
+        diag.textContent = result.steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
+        diag.textContent += '\n\n' + (result.ok ? 'Resultaat: OK' : 'Resultaat: FOUT — controleer bovenstaande stappen');
+      } catch (err) {
+        diag.textContent = 'Test mislukt: ' + err.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Test verbinding';
       }
     });
 
     // Listen for sync status updates
-    const offStatus = on('autosync:status', ({ state, lastSync }) => {
+    const offStatus = on('autosync:status', ({ state, lastSync, message }) => {
       const label = container.querySelector('#autosync-last-label');
       if (!label) return;
       if (state === 'uploading') label.textContent = 'Uploaden...';
       else if (state === 'downloading') label.textContent = 'Downloaden...';
-      else if (state === 'error') label.textContent = 'Fout bij sync';
-      else if (lastSync) label.textContent = lastSync;
+      else if (state === 'error') label.textContent = 'Fout: ' + (message || 'onbekend');
+      else if (lastSync) {
+        label.textContent = new Date(lastSync).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+      }
     });
 
     // Seed data

@@ -106,8 +106,8 @@ export function createPage(container) {
         title: config.label,
         fields: newFields,
         draft: true,
-        createdAt: assignment?.createdAt || Date.now(),
-        updatedAt: Date.now()
+        createdAt: assignment?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
 
       await put('assignments', record);

@@ -1,6 +1,6 @@
 import {
   getByKey, put, softDelete, undoDelete,
-  getPhotosByLogbookId, put as putRecord, remove
+  getPhotosByLogbookId, remove
 } from '../db.js';
 import { icon } from '../icons.js';
 import { navigate } from '../router.js';
@@ -17,6 +17,7 @@ export function createPage(container, params) {
   let entry = null;
   let photos = [];
   let selectedTags = new Set();
+  let objectURLs = [];
 
   async function load() {
     if (!isNew) {
@@ -30,7 +31,19 @@ export function createPage(container, params) {
     render();
   }
 
+  function revokeURLs() {
+    objectURLs.forEach(u => URL.revokeObjectURL(u));
+    objectURLs = [];
+  }
+
+  function createPhotoURL(photo) {
+    const url = URL.createObjectURL(photo.thumbnail || photo.blob);
+    objectURLs.push(url);
+    return url;
+  }
+
   function render() {
+    revokeURLs();
     const date = entry?.date || getToday();
     const description = entry?.description || '';
     const withWhom = entry?.withWhom || '';
@@ -92,7 +105,7 @@ export function createPage(container, params) {
           <div class="thumbnail-grid" id="photo-grid">
             ${photos.map(p => `
               <div class="thumbnail" data-photo-id="${p.id}">
-                <img src="${URL.createObjectURL(p.thumbnail || p.blob)}" alt="Foto">
+                <img src="${createPhotoURL(p)}" alt="Foto">
                 <button class="thumbnail-delete" data-delete-photo="${p.id}" type="button">&times;</button>
               </div>
             `).join('')}
@@ -159,7 +172,7 @@ export function createPage(container, params) {
             filename: file.name,
             mimeType: file.type,
             size: file.size,
-            createdAt: Date.now()
+            createdAt: new Date().toISOString()
           };
           photos.push(photo);
         } catch (err) {
@@ -228,8 +241,8 @@ export function createPage(container, params) {
       learnings: document.getElementById('learnings').value.trim(),
       tags: Array.from(selectedTags),
       photos: photoIds,
-      createdAt: entry?.createdAt || Date.now(),
-      updatedAt: Date.now()
+      createdAt: entry?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
     await put('logbook', record);
@@ -262,5 +275,7 @@ export function createPage(container, params) {
   }
 
   load();
-  return {};
+  return {
+    destroy() { revokeURLs(); }
+  };
 }

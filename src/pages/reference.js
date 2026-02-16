@@ -166,8 +166,8 @@ export function createPage(container) {
         explanation: document.getElementById('r-explanation').value.trim(),
         usage: document.getElementById('r-usage').value.trim(),
         example: document.getElementById('r-example').value.trim(),
-        createdAt: item?.createdAt || Date.now(),
-        updatedAt: Date.now()
+        createdAt: item?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
       await put('reference', record);
       editingId = null;
@@ -214,8 +214,8 @@ export function createPage(container) {
             explanation: seed.explanation,
             usage: seed.usage,
             example: seed.example,
-            createdAt: Date.now(),
-            updatedAt: Date.now()
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           });
         }
         emit('reference:updated');

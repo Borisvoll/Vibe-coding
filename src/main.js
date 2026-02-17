@@ -12,6 +12,9 @@ import { initShortcuts } from './shortcuts.js';
 import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
+import { getFeatureFlag } from './core/featureFlags.js';
+import { createEventBus } from './core/eventBus.js';
+import { createModeManager } from './core/modeManager.js';
 
 export const APP_VERSION = '2.0.0';
 export const SCHEMA_VERSION = 2;
@@ -39,6 +42,16 @@ export const modules = [
 ];
 
 async function init() {
+  const enableNewOS = getFeatureFlag('enableNewOS');
+  if (enableNewOS) {
+    initNewOSShell();
+    return;
+  }
+
+  await initLegacy();
+}
+
+async function initLegacy() {
   await disableLegacyBootCache();
   await initDB();
 
@@ -79,6 +92,54 @@ async function init() {
 
   // Service worker deliberately disabled: older cached app-shell versions could
   // keep users stuck on outdated boot screens.
+}
+
+function initNewOSShell() {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  const eventBus = createEventBus();
+  const modeManager = createModeManager(eventBus, 'BPV');
+
+  app.innerHTML = `
+    <div id="new-os-shell" style="min-height:100vh;display:flex;flex-direction:column;">
+      <header style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #e5e7eb;">
+        <strong>New OS Shell (Experimental)</strong>
+        <div id="mode-switch" role="group" aria-label="Mode switch">
+          <button type="button" data-mode="BPV">BPV</button>
+          <button type="button" data-mode="School">School</button>
+          <button type="button" data-mode="Personal">Personal</button>
+        </div>
+      </header>
+      <nav style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;gap:16px;flex-wrap:wrap;">
+        <span>Dashboard</span>
+        <span>Vandaag</span>
+        <span>Planning</span>
+        <span>Reflectie</span>
+        <span>Archief</span>
+      </nav>
+      <main id="new-os-content" style="padding:16px;flex:1;">
+        <p style="margin:0;color:#6b7280;">Empty content area.</p>
+      </main>
+    </div>
+  `;
+
+  const modeButtons = app.querySelectorAll('#mode-switch [data-mode]');
+  const updateModeButtons = () => {
+    modeButtons.forEach((button) => {
+      const active = button.getAttribute('data-mode') === modeManager.getMode();
+      button.setAttribute('aria-pressed', String(active));
+    });
+  };
+
+  modeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      modeManager.setMode(button.getAttribute('data-mode'));
+    });
+  });
+
+  eventBus.on('mode:changed', () => updateModeButtons());
+  updateModeButtons();
 }
 
 async function disableLegacyBootCache() {

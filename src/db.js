@@ -1,5 +1,5 @@
 const DB_NAME = 'bpv-tracker';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 let dbInstance = null;
 
@@ -86,6 +86,25 @@ export function initDB() {
         const checklistLogs = db.createObjectStore('checklistLogs', { keyPath: 'id' });
         checklistLogs.createIndex('checklistId', 'checklistId', { unique: false });
         checklistLogs.createIndex('date', 'date', { unique: false });
+      }
+      if (oldVersion < 4) {
+        // BPV Leerdoelen — structured SMART goals for LIS assignments
+        const bpvLeerdoelen = db.createObjectStore('bpvLeerdoelen', { keyPath: 'id' });
+        bpvLeerdoelen.createIndex('status', 'status', { unique: false });
+        bpvLeerdoelen.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        // BPV Product projecten — structured project documentation
+        const bpvProducten = db.createObjectStore('bpvProducten', { keyPath: 'id' });
+        bpvProducten.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        // BPV Reflecties — structured reflection entries
+        const bpvReflecties = db.createObjectStore('bpvReflecties', { keyPath: 'id' });
+        bpvReflecties.createIndex('periode', 'periode', { unique: false });
+        bpvReflecties.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        // BPV Bedrijf — single company description record
+        const bpvBedrijf = db.createObjectStore('bpvBedrijf', { keyPath: 'id' });
+        bpvBedrijf.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
     };
 
@@ -275,7 +294,7 @@ export async function getAllLogbookSorted() {
 
 export async function clearAllData() {
   const db = getDB();
-  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'checklists', 'checklistLogs'];
+  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'checklists', 'checklistLogs', 'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf'];
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeNames, 'readwrite');
     storeNames.forEach(name => tx.objectStore(name).clear());
@@ -306,7 +325,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'checklists', 'checklistLogs'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'checklists', 'checklistLogs', 'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

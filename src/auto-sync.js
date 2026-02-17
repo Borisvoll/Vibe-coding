@@ -28,7 +28,8 @@ const BIN_NAME = 'bpv-tracker-sync';
 const SYNC_STORES = [
   'hours', 'logbook', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
-  'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs', 'deleted'
+  'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs',
+  'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf', 'deleted'
 ];
 
 // Stores where the 'date' field has a unique index
@@ -307,6 +308,7 @@ function emitRefreshEvents() {
     emit('energy:updated');
     emit('learningMoments:updated');
     emit('checklists:updated');
+    emit('bpv:updated');
   } finally {
     suppressEvents = false;
   }
@@ -471,7 +473,7 @@ export async function initAutoSync() {
     'hours:updated', 'logbook:updated', 'competencies:updated',
     'assignments:updated', 'goals:updated', 'quality:updated',
     'planning:updated', 'reference:updated', 'energy:updated',
-    'learningMoments:updated', 'checklists:updated'
+    'learningMoments:updated', 'checklists:updated', 'bpv:updated'
   ];
   events.forEach(evt => {
     const unsub = on(evt, scheduleUpload);

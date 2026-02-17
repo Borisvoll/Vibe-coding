@@ -13,8 +13,8 @@ import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
 
-export const APP_VERSION = '2.0.0';
-export const SCHEMA_VERSION = 3;
+export const APP_VERSION = '2.1.0';
+export const SCHEMA_VERSION = 4;
 
 // Module registry
 export const modules = [
@@ -31,7 +31,8 @@ export const modules = [
   { id: 'checklists',       label: 'Checklists',         icon: 'clipboard-check',  route: 'checklists',       page: () => import('./pages/checklists.js') },
   { id: 'process-map',      label: 'Proceskaart',       icon: 'map',              route: 'process-map',      page: () => import('./pages/process-map.js') },
   { id: 'reference',        label: 'Naslagwerk',        icon: 'search',           route: 'reference',        page: () => import('./pages/reference.js') },
-  { id: 'assignments',      label: 'Opdrachten',        icon: 'clipboard',        route: 'assignments',      page: () => import('./pages/assignments.js') },
+  { id: 'bpv-opdrachten',   label: 'BPV Opdrachten',    icon: 'clipboard',        route: 'bpv-opdrachten',   page: () => import('./pages/bpv-opdrachten.js') },
+  { id: 'assignments',      label: 'Opdrachten (oud)',  icon: 'clipboard',        route: 'assignments',      page: () => import('./pages/assignments.js') },
   { id: 'report',           label: 'Verslag',           icon: 'file-text',        route: 'report',           page: () => import('./pages/report.js') },
   { id: 'sync',             label: 'Sync',              icon: 'upload',           route: 'sync',             page: () => import('./pages/sync.js') },
   { id: 'vault',            label: 'Vault',             icon: 'lock',             route: 'vault',            page: () => import('./pages/vault.js') },

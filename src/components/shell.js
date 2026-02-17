@@ -4,7 +4,7 @@ import { getSetting, setSetting } from '../db.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 
 const bottomNavIds = ['today', 'hours', 'logbook', 'planning', 'bpv-opdrachten'];
-const sidebarMainIds = ['today', 'planning', 'hours', 'logbook', 'notebook', 'checklists', 'bpv-opdrachten', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
+const sidebarMainIds = ['today', 'dashboard', 'planning', 'hours', 'logbook', 'notebook', 'checklists', 'bpv-opdrachten', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
 const sidebarSecondaryIds = ['sync', 'vault', 'export', 'settings'];
 
 export function createShell(container) {

@@ -3,6 +3,50 @@ export const DB_VERSION = 2;
 
 let dbInstance = null;
 
+let writeGuardEnabled = false;
+let activeWriteOps = 0;
+let writeDrainResolvers = [];
+let writeResumeResolvers = [];
+
+async function waitForWriteAccess() {
+  if (!writeGuardEnabled) return;
+  await new Promise((resolve) => {
+    writeResumeResolvers.push(resolve);
+  });
+}
+
+async function withWriteAccess(operation) {
+  await waitForWriteAccess();
+  activeWriteOps += 1;
+  try {
+    return await operation();
+  } finally {
+    activeWriteOps -= 1;
+    if (activeWriteOps === 0 && writeDrainResolvers.length) {
+      writeDrainResolvers.forEach((resolve) => resolve());
+      writeDrainResolvers = [];
+    }
+  }
+}
+
+export async function acquireWriteGuard() {
+  writeGuardEnabled = true;
+  if (activeWriteOps > 0) {
+    await new Promise((resolve) => {
+      writeDrainResolvers.push(resolve);
+    });
+  }
+}
+
+export function releaseWriteGuard() {
+  writeGuardEnabled = false;
+  if (writeResumeResolvers.length) {
+    writeResumeResolvers.forEach((resolve) => resolve());
+    writeResumeResolvers = [];
+  }
+}
+
+
 export function initDB() {
   return new Promise((resolve, reject) => {
     if (dbInstance) { resolve(dbInstance); return; }
@@ -95,6 +139,10 @@ function getDB() {
   return dbInstance;
 }
 
+export function getStoreNames() {
+  return Array.from(getDB().objectStoreNames);
+}
+
 // ===== Generic CRUD =====
 
 export async function getAll(storeName) {
@@ -132,28 +180,32 @@ export async function getByIndex(storeName, indexName, value) {
 }
 
 export async function put(storeName, record) {
-  const db = getDB();
-  const normalized = record && typeof record === 'object' && 'id' in record && storeName !== 'deleted'
-    ? { ...record, updatedAt: record.updatedAt || new Date().toISOString() }
-    : record;
+  return withWriteAccess(async () => {
+    const db = getDB();
+    const normalized = record && typeof record === 'object' && 'id' in record && storeName !== 'deleted'
+      ? { ...record, updatedAt: record.updatedAt || new Date().toISOString() }
+      : record;
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.put(normalized);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.put(normalized);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   });
 }
 
 export async function remove(storeName, key) {
-  const db = getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.delete(key);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+  return withWriteAccess(async () => {
+    const db = getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.delete(key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   });
 }
 
@@ -266,33 +318,37 @@ export async function getAllLogbookSorted() {
 // ===== Bulk operations =====
 
 export async function clearAllData() {
-  const db = getDB();
-  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy'];
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeNames, 'readwrite');
-    storeNames.forEach(name => tx.objectStore(name).clear());
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+  return withWriteAccess(async () => {
+    const db = getDB();
+    const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy'];
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeNames, 'readwrite');
+      storeNames.forEach(name => tx.objectStore(name).clear());
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   });
 }
 
 export async function importAll(data) {
-  const db = getDB();
-  const storeNames = Object.keys(data).filter(k => {
-    try { db.transaction(k, 'readonly'); return true; } catch { return false; }
-  });
+  return withWriteAccess(async () => {
+    const db = getDB();
+    const storeNames = Object.keys(data).filter(k => {
+      try { db.transaction(k, 'readonly'); return true; } catch { return false; }
+    });
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeNames, 'readwrite');
-    for (const storeName of storeNames) {
-      const store = tx.objectStore(storeName);
-      const records = data[storeName];
-      if (Array.isArray(records)) {
-        records.forEach(record => store.put(record));
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeNames, 'readwrite');
+      for (const storeName of storeNames) {
+        const store = tx.objectStore(storeName);
+        const records = data[storeName];
+        if (Array.isArray(records)) {
+          records.forEach(record => store.put(record));
+        }
       }
-    }
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   });
 }
 

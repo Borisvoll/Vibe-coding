@@ -1,0 +1,17 @@
+.os-block-template {
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.os-block-template__title {
+  margin: 0 0 6px;
+  font-size: 14px;
+}
+
+.os-block-template__text,
+.os-block-template__meta {
+  margin: 0;
+  color: #4b5563;
+}

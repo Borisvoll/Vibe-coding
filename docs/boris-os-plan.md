@@ -64,3 +64,12 @@
 
 `src/main.js` keeps legacy as the default path and only renders the minimal New OS shell when `enableNewOS` is enabled.
 
+
+## 7) Block host scaffolding and template
+- Added `src/blocks/_template/` with `index.js`, `view.js`, `store.js`, and `styles.css` as a copy-safe example block starter.
+- Added real starter blocks:
+  - `src/blocks/bpv-mini-card/`
+  - `src/blocks/school-mini-card/`
+  - `src/blocks/personal-mini-card/`
+- Added `src/blocks/registerBlocks.js` to register blocks into `src/core/blockRegistry.js` without hard-coded per-mode render branches.
+- New OS shell exposes host slots for `dashboard-cards` and `vandaag-widgets`; active blocks mount into those hosts by declared `hosts` + `modes` metadata.

@@ -15,6 +15,8 @@ import { initAutoSync } from './auto-sync.js';
 import { getFeatureFlag } from './core/featureFlags.js';
 import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
+import { createBlockRegistry } from './core/blockRegistry.js';
+import { registerDefaultBlocks } from './blocks/registerBlocks.js';
 
 export const APP_VERSION = '2.0.0';
 export const SCHEMA_VERSION = 2;
@@ -100,6 +102,8 @@ function initNewOSShell() {
 
   const eventBus = createEventBus();
   const modeManager = createModeManager(eventBus, 'BPV');
+  const blockRegistry = createBlockRegistry();
+  registerDefaultBlocks(blockRegistry);
 
   app.innerHTML = `
     <div id="new-os-shell" style="min-height:100vh;display:flex;flex-direction:column;">
@@ -118,16 +122,60 @@ function initNewOSShell() {
         <span>Reflectie</span>
         <span>Archief</span>
       </nav>
-      <main id="new-os-content" style="padding:16px;flex:1;">
-        <p style="margin:0;color:#6b7280;">Empty content area.</p>
+      <main id="new-os-content" style="padding:16px;flex:1;display:grid;gap:16px;">
+        <section>
+          <h2 style="margin:0 0 10px;font-size:16px;">Dashboard</h2>
+          <div class="os-host-grid" data-os-host="dashboard-cards"></div>
+        </section>
+        <section>
+          <h2 style="margin:0 0 10px;font-size:16px;">Vandaag</h2>
+          <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
+        </section>
       </main>
     </div>
   `;
 
   const modeButtons = app.querySelectorAll('#mode-switch [data-mode]');
+  let mountedBlocks = [];
+
+  const unmountAll = () => {
+    mountedBlocks.forEach((entry) => {
+      if (entry.instance?.unmount) {
+        entry.instance.unmount();
+      }
+    });
+    mountedBlocks = [];
+    app.querySelectorAll('[data-os-host]').forEach((host) => {
+      host.innerHTML = '';
+    });
+  };
+
+  const renderHosts = () => {
+    unmountAll();
+
+    const mode = modeManager.getMode();
+    const context = { mode, eventBus, modeManager };
+
+    const eligibleBlocks = blockRegistry.getEnabled().filter((block) => {
+      if (!Array.isArray(block.modes) || block.modes.length === 0) return true;
+      return block.modes.includes(mode);
+    });
+
+    eligibleBlocks.forEach((block) => {
+      const hosts = Array.isArray(block.hosts) ? block.hosts : [];
+      hosts.forEach((hostName) => {
+        const hostEl = app.querySelector(`[data-os-host="${hostName}"]`);
+        if (!hostEl || typeof block.mount !== 'function') return;
+        const instance = block.mount(hostEl, context) || null;
+        mountedBlocks.push({ blockId: block.id, hostName, instance });
+      });
+    });
+  };
+
   const updateModeButtons = () => {
+    const mode = modeManager.getMode();
     modeButtons.forEach((button) => {
-      const active = button.getAttribute('data-mode') === modeManager.getMode();
+      const active = button.getAttribute('data-mode') === mode;
       button.setAttribute('aria-pressed', String(active));
     });
   };
@@ -138,8 +186,13 @@ function initNewOSShell() {
     });
   });
 
-  eventBus.on('mode:changed', () => updateModeButtons());
+  eventBus.on('mode:changed', () => {
+    updateModeButtons();
+    renderHosts();
+  });
+
   updateModeButtons();
+  renderHosts();
 }
 
 async function disableLegacyBootCache() {

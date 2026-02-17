@@ -1,7 +1,51 @@
-const DB_NAME = 'bpv-tracker';
-const DB_VERSION = 2;
+export const DB_NAME = 'bpv-tracker';
+export const DB_VERSION = 4;
 
 let dbInstance = null;
+
+let writeGuardEnabled = false;
+let activeWriteOps = 0;
+let writeDrainResolvers = [];
+let writeResumeResolvers = [];
+
+async function waitForWriteAccess() {
+  if (!writeGuardEnabled) return;
+  await new Promise((resolve) => {
+    writeResumeResolvers.push(resolve);
+  });
+}
+
+async function withWriteAccess(operation) {
+  await waitForWriteAccess();
+  activeWriteOps += 1;
+  try {
+    return await operation();
+  } finally {
+    activeWriteOps -= 1;
+    if (activeWriteOps === 0 && writeDrainResolvers.length) {
+      writeDrainResolvers.forEach((resolve) => resolve());
+      writeDrainResolvers = [];
+    }
+  }
+}
+
+export async function acquireWriteGuard() {
+  writeGuardEnabled = true;
+  if (activeWriteOps > 0) {
+    await new Promise((resolve) => {
+      writeDrainResolvers.push(resolve);
+    });
+  }
+}
+
+export function releaseWriteGuard() {
+  writeGuardEnabled = false;
+  if (writeResumeResolvers.length) {
+    writeResumeResolvers.forEach((resolve) => resolve());
+    writeResumeResolvers = [];
+  }
+}
+
 
 export function initDB() {
   return new Promise((resolve, reject) => {
@@ -79,6 +123,46 @@ export function initDB() {
         const energy = db.createObjectStore('energy', { keyPath: 'id' });
         energy.createIndex('date', 'date', { unique: true });
       }
+
+      if (oldVersion < 3) {
+        const osSchoolProjects = db.createObjectStore('os_school_projects', { keyPath: 'id' });
+        osSchoolProjects.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osSchoolMilestones = db.createObjectStore('os_school_milestones', { keyPath: 'id' });
+        osSchoolMilestones.createIndex('dueDate', 'dueDate', { unique: false });
+        osSchoolMilestones.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osSchoolSkills = db.createObjectStore('os_school_skills', { keyPath: 'id' });
+        osSchoolSkills.createIndex('name', 'name', { unique: false });
+        osSchoolSkills.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osSchoolConcepts = db.createObjectStore('os_school_concepts', { keyPath: 'id' });
+        osSchoolConcepts.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+        osSchoolConcepts.createIndex('projectLink', 'projectLink', { unique: false });
+        osSchoolConcepts.createIndex('updated_at', 'updated_at', { unique: false });
+      }
+
+      if (oldVersion < 4) {
+        const osPersonalTasks = db.createObjectStore('os_personal_tasks', { keyPath: 'id' });
+        osPersonalTasks.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osPersonalAgenda = db.createObjectStore('os_personal_agenda', { keyPath: 'id' });
+        osPersonalAgenda.createIndex('start', 'start', { unique: false });
+        osPersonalAgenda.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osPersonalActions = db.createObjectStore('os_personal_actions', { keyPath: 'id' });
+        osPersonalActions.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osPersonalWellbeing = db.createObjectStore('os_personal_wellbeing', { keyPath: 'id' });
+        osPersonalWellbeing.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osPersonalReflections = db.createObjectStore('os_personal_reflections', { keyPath: 'id' });
+        osPersonalReflections.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osPersonalWeekPlan = db.createObjectStore('os_personal_week_plan', { keyPath: 'id' });
+        osPersonalWeekPlan.createIndex('day', 'day', { unique: false });
+        osPersonalWeekPlan.createIndex('updated_at', 'updated_at', { unique: false });
+      }
     };
 
     request.onsuccess = (event) => {
@@ -93,6 +177,10 @@ export function initDB() {
 function getDB() {
   if (!dbInstance) throw new Error('DB not initialized');
   return dbInstance;
+}
+
+export function getStoreNames() {
+  return Array.from(getDB().objectStoreNames);
 }
 
 // ===== Generic CRUD =====
@@ -132,28 +220,32 @@ export async function getByIndex(storeName, indexName, value) {
 }
 
 export async function put(storeName, record) {
-  const db = getDB();
-  const normalized = record && typeof record === 'object' && 'id' in record && storeName !== 'deleted'
-    ? { ...record, updatedAt: record.updatedAt || new Date().toISOString() }
-    : record;
+  return withWriteAccess(async () => {
+    const db = getDB();
+    const normalized = record && typeof record === 'object' && 'id' in record && storeName !== 'deleted'
+      ? { ...record, updatedAt: record.updatedAt || new Date().toISOString() }
+      : record;
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.put(normalized);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.put(normalized);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   });
 }
 
 export async function remove(storeName, key) {
-  const db = getDB();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeName, 'readwrite');
-    const store = tx.objectStore(storeName);
-    const request = store.delete(key);
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
+  return withWriteAccess(async () => {
+    const db = getDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.delete(key);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   });
 }
 
@@ -266,39 +358,43 @@ export async function getAllLogbookSorted() {
 // ===== Bulk operations =====
 
 export async function clearAllData() {
-  const db = getDB();
-  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy'];
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeNames, 'readwrite');
-    storeNames.forEach(name => tx.objectStore(name).clear());
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+  return withWriteAccess(async () => {
+    const db = getDB();
+    const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts', 'os_personal_tasks', 'os_personal_agenda', 'os_personal_actions', 'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan'];
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeNames, 'readwrite');
+      storeNames.forEach(name => tx.objectStore(name).clear());
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   });
 }
 
 export async function importAll(data) {
-  const db = getDB();
-  const storeNames = Object.keys(data).filter(k => {
-    try { db.transaction(k, 'readonly'); return true; } catch { return false; }
-  });
+  return withWriteAccess(async () => {
+    const db = getDB();
+    const storeNames = Object.keys(data).filter(k => {
+      try { db.transaction(k, 'readonly'); return true; } catch { return false; }
+    });
 
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(storeNames, 'readwrite');
-    for (const storeName of storeNames) {
-      const store = tx.objectStore(storeName);
-      const records = data[storeName];
-      if (Array.isArray(records)) {
-        records.forEach(record => store.put(record));
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(storeNames, 'readwrite');
+      for (const storeName of storeNames) {
+        const store = tx.objectStore(storeName);
+        const records = data[storeName];
+        if (Array.isArray(records)) {
+          records.forEach(record => store.put(record));
+        }
       }
-    }
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
   });
 }
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts', 'os_personal_tasks', 'os_personal_agenda', 'os_personal_actions', 'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

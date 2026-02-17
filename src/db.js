@@ -1,5 +1,5 @@
-const DB_NAME = 'bpv-tracker';
-const DB_VERSION = 2;
+export const DB_NAME = 'bpv-tracker';
+export const DB_VERSION = 2;
 
 let dbInstance = null;
 

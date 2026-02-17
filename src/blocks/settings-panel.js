@@ -1,4 +1,4 @@
-import { APP_VERSION } from '../main.js';
+import { APP_VERSION } from '../version.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { getSetting, setSetting } from '../db.js';
 import { getFeatureFlag, setFeatureFlag } from '../core/featureFlags.js';

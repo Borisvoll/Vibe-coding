@@ -18,8 +18,8 @@ import { createBlockRegistry } from './core/blockRegistry.js';
 import { registerDefaultBlocks } from './blocks/registerBlocks.js';
 import { renderSettingsBlock } from './blocks/settings-panel.js';
 import { applyDesignTokens } from './core/designSystem.js';
+import { APP_VERSION } from './version.js';
 
-export const APP_VERSION = '2.0.0';
 export const SCHEMA_VERSION = 2;
 
 // Module registry
@@ -40,12 +40,18 @@ export const modules = [
   { id: 'report',           label: 'Verslag',           icon: 'file-text',        route: 'report',           page: () => import('./pages/report.js') },
   { id: 'sync',             label: 'Sync',              icon: 'upload',           route: 'sync',             page: () => import('./pages/sync.js') },
   { id: 'vault',            label: 'Vault',             icon: 'lock',             route: 'vault',            page: () => import('./pages/vault.js') },
-  { id: 'export',           label: 'Export',             icon: 'download',         route: 'export',           page: () => import('./pages/export.js') },
+  { id: 'export',           label: 'Export',            icon: 'download',         route: 'export',           page: () => import('./pages/export.js') },
+  { id: 'diagnostics',      label: 'Diagnostiek',       icon: 'settings',         route: 'diagnostics',      page: () => import('./pages/diagnostics.js') },
   { id: 'settings',         label: 'Instellingen',      icon: 'settings',         route: 'settings',         page: () => import('./pages/settings.js') },
 ];
 
+let updateBanner = null;
+
 async function init() {
   applyDesignTokens();
+  await initDB();
+  await initServiceWorker();
+
   const enableNewOS = getFeatureFlag('enableNewOS');
   if (enableNewOS) {
     initNewOSShell();
@@ -56,9 +62,6 @@ async function init() {
 }
 
 async function initLegacy() {
-  await disableLegacyBootCache();
-  await initDB();
-
   // Apply saved theme
   const theme = await getSetting('theme');
   if (theme && theme !== 'system') {
@@ -93,9 +96,6 @@ async function initLegacy() {
 
   // Start auto-sync (if configured)
   initAutoSync().catch(() => {});
-
-  // Service worker deliberately disabled: older cached app-shell versions could
-  // keep users stuck on outdated boot screens.
 }
 
 function initNewOSShell() {
@@ -139,7 +139,6 @@ function initNewOSShell() {
       </main>
     </div>
   `;
-
 
   const applyFocusMode = async () => {
     const focusMode = await getSetting('focusMode');
@@ -230,24 +229,53 @@ function initNewOSShell() {
   applyFocusMode();
 }
 
-async function disableLegacyBootCache() {
-  if ('serviceWorker' in navigator) {
-    try {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((reg) => reg.unregister()));
-    } catch {
-      // Ignore cleanup errors and continue loading the app.
-    }
-  }
+async function initServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
 
-  if ('caches' in window) {
-    try {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((key) => caches.delete(key)));
-    } catch {
-      // Ignore cache cleanup errors and continue loading the app.
+  const swUrl = `${import.meta.env.BASE_URL}sw.js?v=${encodeURIComponent(APP_VERSION)}`;
+
+  try {
+    const registration = await navigator.serviceWorker.register(swUrl);
+
+    if (registration.waiting) {
+      showUpdateBanner(registration);
     }
+
+    registration.addEventListener('updatefound', () => {
+      const installing = registration.installing;
+      if (!installing) return;
+
+      installing.addEventListener('statechange', () => {
+        if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateBanner(registration);
+        }
+      });
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+  } catch (error) {
+    console.warn('Service worker registration failed', error);
   }
+}
+
+function showUpdateBanner(registration) {
+  if (updateBanner) return;
+
+  const banner = document.createElement('aside');
+  banner.className = 'update-banner';
+  banner.innerHTML = `
+    <span>Nieuwe versie beschikbaar</span>
+    <button type="button" class="btn btn-secondary btn-sm">Ververs</button>
+  `;
+
+  banner.querySelector('button')?.addEventListener('click', () => {
+    registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+  });
+
+  document.body.appendChild(banner);
+  updateBanner = banner;
 }
 
 init();

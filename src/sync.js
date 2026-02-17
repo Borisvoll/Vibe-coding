@@ -5,7 +5,8 @@
 
 import { getAll, put, remove, clearAllData, getSetting } from './db.js';
 import { encryptBinary, decryptBinary } from './crypto.js';
-import { APP_VERSION, SCHEMA_VERSION } from './main.js';
+import { APP_VERSION } from './version.js';
+import { SCHEMA_VERSION } from './main.js';
 
 // All data stores that participate in sync
 const SYNC_STORES = [

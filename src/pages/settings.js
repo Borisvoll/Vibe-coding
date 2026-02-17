@@ -2,7 +2,7 @@ import { getSetting, setSetting, clearAllData } from '../db.js';
 import { icon } from '../icons.js';
 import { emit, on } from '../state.js';
 import { showToast } from '../toast.js';
-import { APP_VERSION } from '../main.js';
+import { APP_VERSION } from '../version.js';
 import { restartAutoSync, stopAutoSync, syncNow, testSync } from '../auto-sync.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 

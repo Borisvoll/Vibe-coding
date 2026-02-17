@@ -26,3 +26,36 @@
   color: var(--color-text-tertiary);
   margin-left: 6px;
 }
+
+.school-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.school-block__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.school-block__subtitle {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.school-block__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.school-block__field > span {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.school-block__actions {
+  display: flex;
+  justify-content: flex-end;
+}

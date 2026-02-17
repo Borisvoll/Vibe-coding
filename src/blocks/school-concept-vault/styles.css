@@ -1,0 +1,27 @@
+.school-inline-form--concept {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.school-inline-form--concept textarea {
+  grid-column: 1 / -1;
+}
+
+.school-concept-list {
+  margin-top: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.school-concept-item {
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--space-2);
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.school-concept-item small {
+  display: block;
+  color: var(--color-text-secondary);
+}

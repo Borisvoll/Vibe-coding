@@ -5,6 +5,7 @@ import { showToast } from '../toast.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { APP_VERSION } from '../main.js';
 import { restartAutoSync, stopAutoSync, syncNow, testSync } from '../auto-sync.js';
+import { changePassword, removePassword } from '../lock-screen.js';
 
 export function createPage(container) {
 
@@ -15,6 +16,7 @@ export function createPage(container) {
     const deviceId = await getSetting('device_id') || '-';
     const userName = await getSetting('user_name') || '';
     const companyName = await getSetting('company_name') || '';
+    const hasLockPassword = !!localStorage.getItem('bpv_pw_hash');
 
     // Auto-sync settings
     const autoSyncEnabled = await getSetting('autosync_enabled') || false;
@@ -62,6 +64,50 @@ export function createPage(container) {
           <div></div>
           <button class="btn btn-secondary btn-sm" data-action="save-profile">Opslaan</button>
         </div>
+      </div>
+
+      <div class="settings-section card">
+        <h3>Beveiliging</h3>
+        <div class="settings-row">
+          <div>
+            <div class="settings-label">Wachtwoordbeveiliging</div>
+            <div class="settings-desc">${hasLockPassword ? 'Je app is beveiligd met een wachtwoord' : 'Niet ingesteld'}</div>
+          </div>
+          <span class="badge ${hasLockPassword ? 'badge-success' : 'badge-warning'}">${hasLockPassword ? 'Actief' : 'Uit'}</span>
+        </div>
+        ${hasLockPassword ? `
+        <div class="settings-row">
+          <div style="width:100%">
+            <div class="settings-label">Wachtwoord wijzigen</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-2)">
+              <input type="password" class="form-input" id="pw-current" placeholder="Huidig wachtwoord">
+              <input type="password" class="form-input" id="pw-new" placeholder="Nieuw wachtwoord">
+              <input type="password" class="form-input" id="pw-confirm" placeholder="Bevestig nieuw wachtwoord">
+            </div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div></div>
+          <div style="display:flex;gap:var(--space-2)">
+            <button class="btn btn-secondary btn-sm" data-action="change-pw">Wijzigen</button>
+            <button class="btn btn-danger btn-sm" data-action="remove-pw">Verwijderen</button>
+          </div>
+        </div>
+        ` : `
+        <div class="settings-row">
+          <div style="width:100%">
+            <div class="settings-label">Wachtwoord instellen</div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-2);margin-top:var(--space-2)">
+              <input type="password" class="form-input" id="pw-new" placeholder="Nieuw wachtwoord">
+              <input type="password" class="form-input" id="pw-confirm" placeholder="Bevestig wachtwoord">
+            </div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div></div>
+          <button class="btn btn-primary btn-sm" data-action="set-pw">Instellen</button>
+        </div>
+        `}
       </div>
 
       <div class="settings-section card">
@@ -263,6 +309,74 @@ export function createPage(container) {
       await setSetting('user_name', name);
       await setSetting('company_name', company);
       showToast('Profiel opgeslagen', { type: 'success' });
+    });
+
+    // Change password
+    container.querySelector('[data-action="change-pw"]')?.addEventListener('click', async () => {
+      const cur = container.querySelector('#pw-current')?.value;
+      const newPw = container.querySelector('#pw-new')?.value;
+      const conf = container.querySelector('#pw-confirm')?.value;
+      if (!cur || !newPw || !conf) {
+        showToast('Vul alle velden in', { type: 'warning' });
+        return;
+      }
+      if (newPw !== conf) {
+        showToast('Nieuwe wachtwoorden komen niet overeen', { type: 'warning' });
+        return;
+      }
+      if (newPw.length < 4) {
+        showToast('Wachtwoord moet minimaal 4 tekens zijn', { type: 'warning' });
+        return;
+      }
+      try {
+        await changePassword(cur, newPw);
+        showToast('Wachtwoord gewijzigd', { type: 'success' });
+        render();
+      } catch (err) {
+        showToast(err.message, { type: 'error' });
+      }
+    });
+
+    // Set password (when none exists)
+    container.querySelector('[data-action="set-pw"]')?.addEventListener('click', async () => {
+      const newPw = container.querySelector('#pw-new')?.value;
+      const conf = container.querySelector('#pw-confirm')?.value;
+      if (!newPw || !conf) {
+        showToast('Vul beide velden in', { type: 'warning' });
+        return;
+      }
+      if (newPw !== conf) {
+        showToast('Wachtwoorden komen niet overeen', { type: 'warning' });
+        return;
+      }
+      if (newPw.length < 4) {
+        showToast('Wachtwoord moet minimaal 4 tekens zijn', { type: 'warning' });
+        return;
+      }
+      try {
+        await changePassword('', newPw);
+        showToast('Wachtwoord ingesteld', { type: 'success' });
+        render();
+      } catch (err) {
+        showToast(err.message, { type: 'error' });
+      }
+    });
+
+    // Remove password
+    container.querySelector('[data-action="remove-pw"]')?.addEventListener('click', async () => {
+      const cur = container.querySelector('#pw-current')?.value;
+      if (!cur) {
+        showToast('Voer je huidige wachtwoord in', { type: 'warning' });
+        return;
+      }
+      if (!confirm('Weet je zeker dat je de wachtwoordbeveiliging wilt uitschakelen?')) return;
+      try {
+        await removePassword(cur);
+        showToast('Wachtwoordbeveiliging verwijderd', { type: 'info' });
+        render();
+      } catch (err) {
+        showToast(err.message, { type: 'error' });
+      }
     });
 
     // Auto-sync toggle

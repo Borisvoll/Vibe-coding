@@ -1,3 +1,114 @@
+/* ===== Lock Screen ===== */
+.lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg, #ffffff);
+  padding: var(--space-4, 1rem);
+}
+
+.lock-card {
+  width: 100%;
+  max-width: 380px;
+  text-align: center;
+}
+
+.lock-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-accent-light, #eef1fe);
+  color: var(--color-accent, #4f6ef7);
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.lock-card h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text, #1f1f1f);
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+.lock-sub {
+  color: var(--color-text-secondary, #6b6b6b);
+  font-size: 0.9375rem;
+  margin-bottom: var(--space-8, 2rem);
+  line-height: 1.5;
+}
+
+.lock-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 1rem);
+}
+
+.lock-input-wrap {
+  position: relative;
+}
+
+.lock-input-wrap input {
+  width: 100%;
+  padding: var(--space-4, 1rem) var(--space-12, 3rem) var(--space-4, 1rem) var(--space-4, 1rem);
+  border: 2px solid var(--color-border, #e8e8e4);
+  border-radius: var(--radius-lg, 12px);
+  font-size: 1rem;
+  background: var(--color-surface, #ffffff);
+  color: var(--color-text, #1f1f1f);
+  transition: border-color var(--duration, 200ms) var(--ease, ease);
+  box-sizing: border-box;
+}
+
+.lock-input-wrap input:focus {
+  outline: none;
+  border-color: var(--color-accent, #4f6ef7);
+}
+
+.lock-toggle-vis {
+  position: absolute;
+  right: var(--space-3, 0.75rem);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-tertiary, #9b9b9b);
+  cursor: pointer;
+  padding: var(--space-1, 0.25rem);
+  display: flex;
+}
+
+.lock-toggle-vis:hover {
+  color: var(--color-text-secondary, #6b6b6b);
+}
+
+.lock-btn {
+  width: 100%;
+  padding: var(--space-4, 1rem);
+  background: var(--color-accent, #4f6ef7);
+  color: var(--color-accent-text, #ffffff);
+  border: none;
+  border-radius: var(--radius-lg, 12px);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration, 200ms) var(--ease, ease);
+}
+
+.lock-btn:hover {
+  background: var(--color-accent-hover, #3d5ce5);
+}
+
+.lock-error {
+  color: var(--color-error, #f43f5e);
+  font-size: 0.875rem;
+  min-height: 1.25rem;
+}
+
 /* ===== Dashboard ===== */
 .dashboard-stats {
   display: grid;

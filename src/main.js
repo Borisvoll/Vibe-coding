@@ -12,6 +12,7 @@ import { initShortcuts } from './shortcuts.js';
 import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
+import { checkLock } from './lock-screen.js';
 
 export const APP_VERSION = '2.1.0';
 export const SCHEMA_VERSION = 4;
@@ -42,6 +43,10 @@ export const modules = [
 
 async function init() {
   await disableLegacyBootCache();
+
+  // Password lock — blocks until user enters correct password
+  await checkLock();
+
   await initDB();
 
   // Apply saved theme

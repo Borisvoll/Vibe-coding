@@ -22,7 +22,6 @@ import { APP_VERSION } from './version.js';
 
 export const SCHEMA_VERSION = 4;
 
-// Module registry
 export const modules = [
   { id: 'dashboard',        label: 'Dashboard',         icon: 'dashboard',        route: '',                page: () => import('./pages/dashboard.js') },
   { id: 'today',            label: 'Vandaag',           icon: 'clipboard-check',  route: 'today',            page: () => import('./pages/today.js') },
@@ -46,6 +45,7 @@ export const modules = [
 ];
 
 let updateBanner = null;
+let swControllerChangeBound = false;
 
 async function init() {
   applyDesignTokens();
@@ -62,26 +62,22 @@ async function init() {
 }
 
 async function initLegacy() {
-  // Apply saved theme
   const theme = await getSetting('theme');
   if (theme && theme !== 'system') {
     document.documentElement.setAttribute('data-theme', theme);
   }
 
-  // Apply saved accent color
   const accentId = await getSetting('accentColor');
   if (accentId) {
-    const color = ACCENT_COLORS.find(c => c.id === accentId);
+    const color = ACCENT_COLORS.find((c) => c.id === accentId);
     if (color) applyAccentColor(color.hex);
   }
 
-  // Apply compact mode
   const compact = await getSetting('compact');
   if (compact) {
     document.documentElement.setAttribute('data-compact', 'true');
   }
 
-  // Ensure device_id exists
   let deviceId = await getSetting('device_id');
   if (!deviceId) {
     deviceId = crypto.randomUUID();
@@ -94,7 +90,6 @@ async function initLegacy() {
   createRouter();
   initShortcuts();
 
-  // Start auto-sync (if configured)
   initAutoSync().catch(() => {});
 }
 
@@ -107,80 +102,115 @@ function initNewOSShell() {
   const blockRegistry = createBlockRegistry();
   registerDefaultBlocks(blockRegistry);
 
+  const shellTabs = ['dashboard', 'today', 'planning', 'reflectie', 'archief'];
+  let activeTab = 'dashboard';
+  let mountedBlocks = [];
+
   app.innerHTML = `
-    <div id="new-os-shell" style="min-height:100vh;display:flex;flex-direction:column;">
-      <header style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--color-border);">
-        <strong>New OS Shell (Experimental)</strong>
-        <div id="mode-switch" role="group" aria-label="Mode switch">
-          <button type="button" data-mode="BPV">BPV</button>
-          <button type="button" data-mode="School">School</button>
-          <button type="button" data-mode="Personal">Personal</button>
+    <div id="new-os-shell" class="os-shell">
+      <header class="os-shell__header">
+        <h1 class="os-shell__title">BORIS OS (experimenteel)</h1>
+        <div id="mode-switch" class="os-mode-switch" role="group" aria-label="Moduskeuze">
+          <button type="button" class="btn btn-secondary btn-sm" data-mode="BPV">BPV</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-mode="School">School</button>
+          <button type="button" class="btn btn-secondary btn-sm" data-mode="Personal">Persoonlijk</button>
         </div>
       </header>
-      <nav id="os-nav" style="padding:12px 16px;border-bottom:1px solid var(--color-border);display:flex;gap:16px;flex-wrap:wrap;">
-        <span data-os-tab="dashboard">Dashboard</span>
-        <span data-os-tab="today">Vandaag</span>
-        <span data-os-tab="planning">Planning</span>
-        <span data-os-tab="reflectie">Reflectie</span>
-        <span data-os-tab="archief">Archief</span>
+      <nav id="os-nav" class="os-nav" aria-label="BORIS navigatie">
+        <button class="os-nav__button" type="button" data-os-tab="dashboard">Dashboard</button>
+        <button class="os-nav__button" type="button" data-os-tab="today">Vandaag</button>
+        <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
+        <button class="os-nav__button" type="button" data-os-tab="reflectie">Reflectie</button>
+        <button class="os-nav__button" type="button" data-os-tab="archief">Archief</button>
       </nav>
-      <main id="new-os-content" style="padding:16px;flex:1;display:grid;gap:16px;">
-        <section data-os-section="dashboard">
-          <h2 style="margin:0 0 10px;font-size:16px;">Dashboard</h2>
+      <main id="new-os-content" class="os-shell__content">
+        <section class="os-section" data-os-section="dashboard">
+          <h2 class="os-section__title">Dashboard</h2>
           <div class="os-host-grid" data-os-host="dashboard-cards"></div>
         </section>
-        <section data-os-section="today">
-          <h2 style="margin:0 0 10px;font-size:16px;">Vandaag</h2>
+        <section class="os-section" data-os-section="today" hidden>
+          <h2 class="os-section__title">Vandaag</h2>
           <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
         </section>
-        <section data-os-section="settings">
+        <section class="os-section" data-os-section="planning" hidden>
+          <h2 class="os-section__title">Planning</h2>
+          <p class="os-host-empty">Planningmodules volgen in een volgende iteratie.</p>
+        </section>
+        <section class="os-section" data-os-section="reflectie" hidden>
+          <h2 class="os-section__title">Reflectie</h2>
+          <p class="os-host-empty">Reflectie-overzicht volgt in een volgende iteratie.</p>
+        </section>
+        <section class="os-section" data-os-section="archief" hidden>
+          <h2 class="os-section__title">Archief</h2>
+          <p class="os-host-empty">Archiefweergave volgt in een volgende iteratie.</p>
+        </section>
+        <section class="os-section" data-os-section="settings">
           <div id="new-os-settings-block"></div>
         </section>
       </main>
     </div>
   `;
 
-  const applyFocusMode = async () => {
+  function setActiveTab(tab) {
+    activeTab = shellTabs.includes(tab) ? tab : 'dashboard';
+    app.querySelectorAll('[data-os-section]').forEach((section) => {
+      const sectionName = section.getAttribute('data-os-section');
+      if (sectionName === 'settings') return;
+      section.hidden = sectionName !== activeTab;
+    });
+    app.querySelectorAll('[data-os-tab]').forEach((button) => {
+      const pressed = button.getAttribute('data-os-tab') === activeTab;
+      button.setAttribute('aria-pressed', String(pressed));
+    });
+  }
+
+  async function applyFocusMode() {
     const focusMode = await getSetting('focusMode');
     const sections = app.querySelectorAll('[data-os-section]');
     const navTabs = app.querySelectorAll('[data-os-tab]');
 
     if (focusMode) {
+      activeTab = 'today';
       sections.forEach((section) => {
-        const keep = section.getAttribute('data-os-section') === 'today';
-        section.setAttribute('style', keep ? '' : 'display:none');
+        const sectionName = section.getAttribute('data-os-section');
+        const keep = sectionName === 'today' || sectionName === 'settings';
+        section.hidden = !keep;
       });
       navTabs.forEach((tab) => {
         const keep = tab.getAttribute('data-os-tab') === 'today';
-        tab.setAttribute('style', keep ? '' : 'display:none');
+        tab.hidden = !keep;
       });
     } else {
-      sections.forEach((section) => section.removeAttribute('style'));
-      navTabs.forEach((tab) => tab.removeAttribute('style'));
+      navTabs.forEach((tab) => {
+        tab.hidden = false;
+      });
+      setActiveTab(activeTab);
     }
-  };
+  }
 
-  const modeButtons = app.querySelectorAll('#mode-switch [data-mode]');
-  let mountedBlocks = [];
-
-  const unmountAll = () => {
-    mountedBlocks.forEach((entry) => {
-      if (entry.instance?.unmount) {
-        entry.instance.unmount();
+  function ensureHostEmptyStates() {
+    app.querySelectorAll('[data-os-host]').forEach((host) => {
+      const hasContent = host.children.length > 0;
+      if (!hasContent) {
+        host.innerHTML = '<p class="os-host-empty">Nog geen actieve blokken voor deze weergave.</p>';
       }
+    });
+  }
+
+  function unmountAll() {
+    mountedBlocks.forEach((entry) => {
+      entry.instance?.unmount?.();
     });
     mountedBlocks = [];
     app.querySelectorAll('[data-os-host]').forEach((host) => {
       host.innerHTML = '';
     });
-  };
+  }
 
-  const renderHosts = () => {
+  function renderHosts() {
     unmountAll();
-
     const mode = modeManager.getMode();
     const context = { mode, eventBus, modeManager };
-
     const eligibleBlocks = blockRegistry.getEnabled().filter((block) => {
       if (!Array.isArray(block.modes) || block.modes.length === 0) return true;
       return block.modes.includes(mode);
@@ -195,23 +225,33 @@ function initNewOSShell() {
         mountedBlocks.push({ blockId: block.id, hostName, instance });
       });
     });
-  };
 
-  const updateModeButtons = () => {
+    ensureHostEmptyStates();
+  }
+
+  function updateModeButtons() {
     const mode = modeManager.getMode();
-    modeButtons.forEach((button) => {
+    app.querySelectorAll('#mode-switch [data-mode]').forEach((button) => {
       const active = button.getAttribute('data-mode') === mode;
       button.setAttribute('aria-pressed', String(active));
+      button.classList.toggle('btn-primary', active);
+      button.classList.toggle('btn-secondary', !active);
     });
-  };
+  }
 
-  modeButtons.forEach((button) => {
+  app.querySelectorAll('#mode-switch [data-mode]').forEach((button) => {
     button.addEventListener('click', () => {
       modeManager.setMode(button.getAttribute('data-mode'));
     });
   });
 
-  eventBus.on('mode:changed', () => {
+  app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
+    tabButton.addEventListener('click', () => {
+      setActiveTab(tabButton.getAttribute('data-os-tab'));
+    });
+  });
+
+  const unsubscribeMode = eventBus.on('mode:changed', () => {
     updateModeButtons();
     renderHosts();
   });
@@ -226,7 +266,13 @@ function initNewOSShell() {
 
   updateModeButtons();
   renderHosts();
+  setActiveTab(activeTab);
   applyFocusMode();
+
+  window.addEventListener('beforeunload', () => {
+    unsubscribeMode?.();
+    eventBus.clear();
+  }, { once: true });
 }
 
 async function initServiceWorker() {
@@ -252,9 +298,12 @@ async function initServiceWorker() {
       });
     });
 
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
-    });
+    if (!swControllerChangeBound) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+      });
+      swControllerChangeBound = true;
+    }
   } catch (error) {
     console.warn('Service worker registration failed', error);
   }

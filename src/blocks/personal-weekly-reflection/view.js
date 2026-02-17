@@ -11,10 +11,10 @@ export function renderPersonalWeeklyReflection(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Weekly balance reflection</h3>
+      <h3 class="school-block__title">Wekelijkse balansreflectie</h3>
       <p class="school-block__subtitle">Week ${escapeHTML(weekKey)}</p>
-      <label class="school-block__field"><span>What felt balanced?</span><textarea class="form-textarea" data-field="balanced" rows="2">${escapeHTML(reflection?.balanced || '')}</textarea></label>
-      <label class="school-block__field"><span>What needs adjusting?</span><textarea class="form-textarea" data-field="adjust" rows="2">${escapeHTML(reflection?.adjust || '')}</textarea></label>
+      <label class="school-block__field"><span>Wat voelde in balans?</span><textarea class="form-textarea" data-field="balanced" rows="2">${escapeHTML(reflection?.balanced || '')}</textarea></label>
+      <label class="school-block__field"><span>Wat wil ik bijsturen?</span><textarea class="form-textarea" data-field="adjust" rows="2">${escapeHTML(reflection?.adjust || '')}</textarea></label>
       <div class="school-block__actions"><button class="btn btn-primary btn-sm" data-action="save">Opslaan</button></div>
     `;
 

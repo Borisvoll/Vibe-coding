@@ -10,10 +10,10 @@ export function renderPersonalEnergy(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Energy + Mood + Gratitude</h3>
-      <label class="school-block__field"><span>Energy (1-10)</span><input class="form-input" data-field="energy" type="number" min="1" max="10" value="${escapeHTML(value?.energy || '')}"></label>
-      <label class="school-block__field"><span>Mood</span><input class="form-input" data-field="mood" value="${escapeHTML(value?.mood || '')}"></label>
-      <label class="school-block__field"><span>Gratitude</span><textarea class="form-textarea" data-field="gratitude" rows="2">${escapeHTML(value?.gratitude || '')}</textarea></label>
+      <h3 class="school-block__title">Energie + stemming + dankbaarheid</h3>
+      <label class="school-block__field"><span>Energie (1-10)</span><input class="form-input" data-field="energy" type="number" min="1" max="10" value="${escapeHTML(value?.energy || '')}"></label>
+      <label class="school-block__field"><span>Stemming</span><input class="form-input" data-field="mood" value="${escapeHTML(value?.mood || '')}"></label>
+      <label class="school-block__field"><span>Dankbaarheid</span><textarea class="form-textarea" data-field="gratitude" rows="2">${escapeHTML(value?.gratitude || '')}</textarea></label>
       <div class="school-block__actions"><button class="btn btn-primary btn-sm" data-action="save">Opslaan</button></div>
     `;
 

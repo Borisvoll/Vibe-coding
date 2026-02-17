@@ -1,22 +1,94 @@
+.os-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.os-shell__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.os-shell__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.os-mode-switch {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.os-nav {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  background: var(--color-surface);
+}
+
+.os-nav__button {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.os-nav__button[aria-pressed="true"] {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.os-shell__content {
+  width: min(100%, var(--max-content-width));
+  margin: 0 auto;
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-4);
+  flex: 1;
+}
+
+.os-section[hidden] {
+  display: none !important;
+}
+
+.os-section__title {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9375rem;
+}
+
 .os-host-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-3);
+}
+
+.os-host-empty {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
 }
 
 .os-mini-card {
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
-  padding: var(--space-3);
-  font-size: 14px;
+  padding: var(--space-4);
+  font-size: 0.9375rem;
   color: var(--color-text);
-  transition: border-color var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease);
-}
-
-.os-mini-card:hover {
-  border-color: var(--color-border-light);
-  transform: translateY(-1px);
 }
 
 .settings-exp {

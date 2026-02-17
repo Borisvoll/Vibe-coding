@@ -1,11 +1,12 @@
 export const designTokens = {
   typography: {
     fontSans: 'system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+    fontSizeBase: '16px',
   },
   color: {
     background: '#f6f7f8',
     surface: '#ffffff',
-    text: '#111827',
+    text: '#1f1f1f',
     border: '#e5e7eb',
     divider: '#eceff3',
   },
@@ -17,12 +18,13 @@ export const designTokens = {
     xl: '24px',
   },
   radius: {
-    sm: '6px',
-    md: '10px',
-    lg: '14px',
+    sm: '4px',
+    md: '8px',
+    lg: '12px',
   },
   motion: {
-    calm: '180ms ease',
+    fast: '180ms',
+    calm: '300ms',
   },
 };
 
@@ -30,6 +32,8 @@ export function applyDesignTokens(root = document.documentElement) {
   if (!root || !root.style) return;
 
   root.style.setProperty('--font-sans', designTokens.typography.fontSans);
+  root.style.setProperty('--font-size-base', designTokens.typography.fontSizeBase);
+
   root.style.setProperty('--color-bg', designTokens.color.background);
   root.style.setProperty('--color-surface', designTokens.color.surface);
   root.style.setProperty('--color-text', designTokens.color.text);
@@ -46,6 +50,7 @@ export function applyDesignTokens(root = document.documentElement) {
   root.style.setProperty('--radius-md', designTokens.radius.md);
   root.style.setProperty('--radius-lg', designTokens.radius.lg);
 
-  root.style.setProperty('--duration-fast', designTokens.motion.calm.split(' ')[0]);
-  root.style.setProperty('--duration', designTokens.motion.calm.split(' ')[0]);
+  root.style.setProperty('--duration-fast', designTokens.motion.fast);
+  root.style.setProperty('--duration', designTokens.motion.fast);
+  root.style.setProperty('--duration-slow', designTokens.motion.calm);
 }

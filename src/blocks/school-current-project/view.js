@@ -11,18 +11,18 @@ export function renderSchoolCurrentProject(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Current Project</h3>
-      <p class="school-block__subtitle">Big-picture school focus</p>
+      <h3 class="school-block__title">Huidig project</h3>
+      <p class="school-block__subtitle">Overzicht van je schoolfocus</p>
       <label class="school-block__field">
-        <span>What I'm building</span>
+        <span>Waar ik aan bouw</span>
         <textarea class="form-textarea" data-field="building" rows="3">${escapeHTML(project?.building || '')}</textarea>
       </label>
       <label class="school-block__field">
-        <span>What I want to learn</span>
+        <span>Wat ik wil leren</span>
         <textarea class="form-textarea" data-field="learning" rows="3">${escapeHTML(project?.learning || '')}</textarea>
       </label>
       <label class="school-block__field">
-        <span>Next milestone</span>
+        <span>Volgende mijlpaal</span>
         <input class="form-input" data-field="milestone" value="${escapeHTML(project?.milestone || '')}">
       </label>
       <div class="school-block__actions">

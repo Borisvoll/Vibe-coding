@@ -1,7 +1,7 @@
 import { escapeHTML } from '../../utils.js';
 import { addWeekItem, deleteWeekItem, listWeekPlan } from './store.js';
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAYS = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
 
 export function renderPersonalWeekPlanning(container) {
   const mountId = `personal-week-planning-${crypto.randomUUID()}`;
@@ -12,14 +12,14 @@ export function renderPersonalWeekPlanning(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Simple planning week view</h3>
+      <h3 class="school-block__title">Eenvoudige weekplanning</h3>
       <div class="school-inline-form">
         <select class="form-select" data-field="day">${DAYS.map((d) => `<option value="${d}">${d}</option>`).join('')}</select>
-        <input class="form-input" data-field="plan" placeholder="Plan item">
+        <input class="form-input" data-field="plan" placeholder="Planpunt">
         <button class="btn btn-secondary btn-sm" data-action="add">Toevoegen</button>
       </div>
       <ul class="personal-list">
-        ${items.map((item) => `<li><strong>${escapeHTML(item.day)}</strong> ${escapeHTML(item.plan || '')} <button class="btn btn-ghost btn-sm" data-action="delete" data-id="${item.id}">x</button></li>`).join('') || '<li><small>Geen weekplanning items</small></li>'}
+        ${items.map((item) => `<li><strong>${escapeHTML(item.day)}</strong> ${escapeHTML(item.plan || '')} <button class="btn btn-ghost btn-sm" data-action="delete" data-id="${item.id}">x</button></li>`).join('') || '<li><small>Nog geen weekplanning</small></li>'}
       </ul>
     `;
 

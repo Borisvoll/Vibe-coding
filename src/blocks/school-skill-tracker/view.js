@@ -11,14 +11,14 @@ export function renderSchoolSkillTracker(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Skill Tracker</h3>
+      <h3 class="school-block__title">Vaardighedentracker</h3>
       <div class="school-skill-list">
         ${skills.map((skill) => `
           <section class="school-skill-item" data-skill-id="${skill.id}">
             <h4>${escapeHTML(skill.name)}</h4>
-            <label class="school-block__field"><span>Level notes</span><textarea class="form-textarea" data-field="levelNotes" rows="2">${escapeHTML(skill.levelNotes || '')}</textarea></label>
-            <label class="school-block__field"><span>Next step</span><input class="form-input" data-field="nextStep" value="${escapeHTML(skill.nextStep || '')}"></label>
-            <label class="school-block__field"><span>Evidence links</span><input class="form-input" data-field="evidenceLinks" value="${escapeHTML(skill.evidenceLinks || '')}" placeholder="https://..."></label>
+            <label class="school-block__field"><span>Niveaunotities</span><textarea class="form-textarea" data-field="levelNotes" rows="2">${escapeHTML(skill.levelNotes || '')}</textarea></label>
+            <label class="school-block__field"><span>Volgende stap</span><input class="form-input" data-field="nextStep" value="${escapeHTML(skill.nextStep || '')}"></label>
+            <label class="school-block__field"><span>Bewijslinks</span><input class="form-input" data-field="evidenceLinks" value="${escapeHTML(skill.evidenceLinks || '')}" placeholder="https://..."></label>
             <button class="btn btn-secondary btn-sm" data-action="save">Opslaan</button>
           </section>
         `).join('')}

@@ -17,13 +17,13 @@ export function renderSchoolConceptVault(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Concept Vault</h3>
-      <p class="school-block__subtitle">Personal explanations in your own words</p>
+      <h3 class="school-block__title">Conceptkluis</h3>
+      <p class="school-block__subtitle">Persoonlijke uitleg in je eigen woorden</p>
       <div class="school-inline-form school-inline-form--concept">
-        <input class="form-input" data-field="title" placeholder="Concept title">
-        <input class="form-input" data-field="projectLink" placeholder="Linked project">
-        <input class="form-input" data-field="tags" placeholder="tags, comma-separated">
-        <textarea class="form-textarea" data-field="explanation" rows="3" placeholder="Explain in your own words"></textarea>
+        <input class="form-input" data-field="title" placeholder="Concepttitel">
+        <input class="form-input" data-field="projectLink" placeholder="Gekoppeld project">
+        <input class="form-input" data-field="tags" placeholder="tags, gescheiden met komma">
+        <textarea class="form-textarea" data-field="explanation" rows="3" placeholder="Leg uit in je eigen woorden"></textarea>
         <button class="btn btn-secondary btn-sm" data-action="save">Opslaan</button>
       </div>
       <input type="search" class="form-input" data-field="search" placeholder="Zoek concepten..." value="${escapeHTML(query)}">
@@ -31,7 +31,7 @@ export function renderSchoolConceptVault(container) {
         ${filtered.map((item) => `
           <article class="school-concept-item">
             <div>
-              <strong>${escapeHTML(item.title || 'Untitled')}</strong>
+              <strong>${escapeHTML(item.title || 'Zonder titel')}</strong>
               ${item.projectLink ? `<small>Project: ${escapeHTML(item.projectLink)}</small>` : ''}
               <p>${escapeHTML(item.explanation || '')}</p>
               ${(item.tags || []).length ? `<div>${item.tags.map((tag) => `<span class="badge badge-indigo">${escapeHTML(tag)}</span>`).join(' ')}</div>` : ''}

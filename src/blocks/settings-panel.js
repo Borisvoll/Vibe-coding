@@ -19,19 +19,19 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
 
   container.innerHTML = `
     <section class="settings-block card">
-      <h3>Settings</h3>
+      <h3>Instellingen</h3>
 
       <div class="settings-row">
         <div>
-          <div class="settings-label">Theme</div>
-          <div class="settings-desc">Light / Dark / Auto</div>
+          <div class="settings-label">Thema</div>
+          <div class="settings-desc">Licht / Donker / Auto</div>
         </div>
         <div class="radio-group" data-setting="theme">
           <label class="radio-option ${theme === 'light' ? 'selected' : ''}">
-            <input type="radio" name="theme" value="light" ${theme === 'light' ? 'checked' : ''}>Light
+            <input type="radio" name="theme" value="light" ${theme === 'light' ? 'checked' : ''}>Licht
           </label>
           <label class="radio-option ${theme === 'dark' ? 'selected' : ''}">
-            <input type="radio" name="theme" value="dark" ${theme === 'dark' ? 'checked' : ''}>Dark
+            <input type="radio" name="theme" value="dark" ${theme === 'dark' ? 'checked' : ''}>Donker
           </label>
           <label class="radio-option ${theme === 'system' ? 'selected' : ''}">
             <input type="radio" name="theme" value="system" ${theme === 'system' ? 'checked' : ''}>Auto
@@ -41,8 +41,8 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
 
       <div class="settings-row">
         <div>
-          <div class="settings-label">Accent color</div>
-          <div class="settings-desc">Tasteful preset palette</div>
+          <div class="settings-label">Accentkleur</div>
+          <div class="settings-desc">Rustige vooringestelde kleuren</div>
         </div>
         <div class="accent-picker" data-setting="accent">
           ${accents.map((c) => `<button class="accent-dot ${c.id === accentId ? 'active' : ''}" data-color="${c.id}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.label}"></button>`).join('')}
@@ -51,12 +51,12 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
 
       <div class="settings-row">
         <div>
-          <div class="settings-label">Density</div>
-          <div class="settings-desc">Relaxed / Compact</div>
+          <div class="settings-label">Dichtheid</div>
+          <div class="settings-desc">Ruim / Compact</div>
         </div>
         <div class="radio-group" data-setting="density">
           <label class="radio-option ${!compact ? 'selected' : ''}">
-            <input type="radio" name="density" value="relaxed" ${!compact ? 'checked' : ''}>Relaxed
+            <input type="radio" name="density" value="relaxed" ${!compact ? 'checked' : ''}>Ruim
           </label>
           <label class="radio-option ${compact ? 'selected' : ''}">
             <input type="radio" name="density" value="compact" ${compact ? 'checked' : ''}>Compact
@@ -67,23 +67,23 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
       ${showExperimental ? `
       <div class="settings-row">
         <div>
-          <div class="settings-label">Enable New OS <span class="settings-exp">experimental</span></div>
-          <div class="settings-desc">Opt-in shell. Legacy remains default until enabled.</div>
+          <div class="settings-label">Nieuwe OS inschakelen <span class="settings-exp">experimenteel</span></div>
+          <div class="settings-desc">Opt-in shell. Legacy blijft standaard tot je dit aanzet.</div>
         </div>
-        <button class="toggle ${enableNewOS ? 'active' : ''}" type="button" data-setting="enable-new-os" aria-label="Toggle enable new OS"></button>
+        <button class="toggle ${enableNewOS ? 'active' : ''}" type="button" data-setting="enable-new-os" aria-label="Schakel nieuwe OS in of uit"></button>
       </div>
 
       <div class="settings-row">
         <div>
-          <div class="settings-label">Focus Mode (New OS)</div>
-          <div class="settings-desc">Hide everything except Today tab in New OS.</div>
+          <div class="settings-label">Focusmodus (Nieuwe OS)</div>
+          <div class="settings-desc">Verberg alles behalve het tabblad Vandaag in de Nieuwe OS.</div>
         </div>
-        <button class="toggle ${focusMode ? 'active' : ''}" type="button" data-setting="focus-mode" aria-label="Toggle focus mode"></button>
+        <button class="toggle ${focusMode ? 'active' : ''}" type="button" data-setting="focus-mode" aria-label="Schakel focusmodus in of uit"></button>
       </div>
       ` : ''}
 
       <div class="settings-row">
-        <div class="settings-label">Version</div>
+        <div class="settings-label">Versie</div>
         <div class="settings-desc">v${APP_VERSION}</div>
       </div>
     </section>

@@ -1,82 +1,55 @@
 # Boris OS Experiment Plan
 
-## Current repo architecture snapshot
+## 1) Current architecture snapshot
 
-- **Entrypoints**
-  - HTML shell: `index.html` loads `./src/main.js` as the module entrypoint.
-  - Runtime bootstrap: `src/main.js` initializes IndexedDB, shell UI, router, shortcuts, settings, and autosync.
-- **Routing method**
-  - Uses **hash routing** (`window.location.hash`) via `src/router.js`.
-  - Route changes are handled through `hashchange`; routes are matched from module routes + `extraRoutes` patterns.
-- **IndexedDB usage**
-  - DB module: `src/db.js`.
-  - Name/version: `bpv-tracker`, version `2`.
-  - Upgrade strategy:
-    - v1 stores: `hours`, `logbook`, `photos`, `settings`, `deleted`, `competencies`, `assignments`, `goals`, `quality`, `dailyPlans`, `weekReviews`.
-    - v2 adds: `learningMoments`, `reference`, `vault`, `vaultFiles`, `energy`.
-  - Pattern: generic CRUD helpers + settings helpers + import/export utilities + soft-delete/undo.
-- **Service worker + manifest + cache strategy**
-  - Present files: `public/sw.js`, `public/manifest.json` and manifest linked from `index.html`.
-  - `sw.js` strategy:
-    - Precache app shell on install.
-    - Remove old caches on activate.
-    - Navigation requests: **network-first** with cached `index.html` fallback.
-    - Other GET assets: **cache-first**, then network, then cache response.
-  - Important current runtime behavior: `src/main.js` explicitly unregisters service workers and clears caches at startup (`disableLegacyBootCache`) to prevent stale boot screens.
+### Entrypoints
+- `index.html` is the app shell and loads `./src/main.js` as the module entrypoint.
+- `src/main.js` is the runtime bootstrap for legacy vs experimental shell selection.
 
-## Legacy preserved strategy
+### Current routing method
+- Routing is **hash-based**.
+- `src/router.js` reads `window.location.hash`, listens to `hashchange`, and resolves module routes + parameterized `extraRoutes`.
 
-- Keep the existing BPV Tracker flow as the **default path** with no behavior change for current users.
-- Introduce Boris OS as an opt-in layer that is never activated unless explicitly enabled.
-- Avoid changes to existing module registry and page contracts until feature-flag guardrails are in place.
+### IndexedDB usage
+- Primary DB module: `src/db.js`.
+- DB name/version: `bpv-tracker` / `2`.
+- Versioned stores:
+  - **v1**: `hours`, `logbook`, `photos`, `settings`, `deleted`, `competencies`, `assignments`, `goals`, `quality`, `dailyPlans`, `weekReviews`
+  - **v2**: `learningMoments`, `reference`, `vault`, `vaultFiles`, `energy`
+- Access pattern is centralized helper-based CRUD (`getAll`, `getByKey`, `getByIndex`, `put`, `remove`) plus soft-delete and import/export helpers.
 
-## Feature flag strategy (`enableNewOS = false` by default)
+### Service worker + manifest + cache strategy
+- Present: `public/sw.js` and `public/manifest.json`; manifest linked from `index.html`.
+- `public/sw.js` strategy:
+  - Install: precache minimal app shell.
+  - Activate: remove old caches.
+  - Navigation: **network-first** with cached `index.html` fallback.
+  - Other GET assets: **cache-first**, then network and cache update.
+- Runtime note: legacy bootstrap currently unregisters service workers and clears caches (`disableLegacyBootCache`) to avoid stale boot-cache behavior.
 
-- Add a single source-of-truth feature flag in settings/config:
-  - Key: `enableNewOS`
-  - Default: `false`
-- Bootstrap decision in `src/main.js`:
-  - `false`: run legacy boot exactly as today.
-  - `true`: run experimental Boris OS boot path.
-- Keep route compatibility:
-  - Legacy hashes remain primary.
-  - New OS routes should be namespaced (e.g. `#os/...`) to avoid collision.
-- Add kill-switch semantics:
-  - If new OS boot fails, hard-fallback to legacy shell.
+## 2) Legacy preserved strategy
+- Keep current BPV Tracker behavior as the default execution path.
+- Keep existing route/module/page contracts unchanged unless guarded.
+- Any Boris OS experiment must be additive and easy to bypass.
 
-## Proposed modular block system skeleton
+## 3) Feature flag strategy (`enableNewOS=false` default)
+- Use `enableNewOS` as the top-level gate with default `false`.
+- Bootstrap split in `src/main.js`:
+  - `false` -> run legacy init exactly as-is.
+  - `true` -> run experimental Boris OS shell/runtime.
+- Add fail-safe: if New OS init throws, log + immediately fallback to legacy init.
 
-- Introduce a light block registry abstraction for Boris OS:
-  - `src/os/registry.js`
-  - `src/os/blocks/<block-id>/index.js`
-  - `src/os/layouts/default.js`
-  - `src/os/runtime.js`
-- Block contract (minimum):
-  - `id`, `title`, `mount(el, ctx)`, optional `unmount()`.
-- Runtime responsibilities:
-  - Resolve enabled blocks.
-  - Render layout slots.
-  - Pass shared context (db adapters, settings, events).
-- Data access boundary:
-  - Blocks should consume scoped adapters instead of direct raw store calls where possible.
+## 4) Proposed modular block system skeleton
+- Suggested additive structure:
+  - `src/os/runtime.js` (boot + lifecycle)
+  - `src/os/registry.js` (register/resolve enabled blocks)
+  - `src/os/layouts/default.js` (slot layout)
+  - `src/os/blocks/<block-id>/index.js` (block modules)
+- Minimal block contract:
+  - `id`, `title`, `mount(container, context)`, optional `unmount()`.
+- Context passed to blocks should expose adapters (settings/db/events) instead of raw global dependencies.
 
-## Migration safety notes
-
-- **No store deletion** in migrations.
-- Introduce all Boris OS data stores with `os_` prefix (e.g. `os_blocks`, `os_layouts`, `os_state`).
-- Only append schema versions; never repurpose old store names.
-- Keep existing export/import behavior backward-compatible.
-- Add additive migrations only; no destructive data transforms.
-
-## Implemented BORIS core skeleton files
-
-The BORIS core skeleton now includes these new files under `src/core`:
-
-- `blockRegistry.js`: register/unregister/list enabled modular blocks.
-- `modeManager.js`: shared mode state for `BPV`, `School`, `Personal`.
-- `eventBus.js`: lightweight pub/sub for core events.
-- `featureFlags.js`: default-off `enableNewOS` plus per-block flags.
-- `designSystem.js`: token-only design primitives (colors, spacing, type, radius).
-- `migrationManager.js`: placeholder migration runner and append-only schema version strategy.
-
-These files are additive and designed to run in parallel with legacy behavior, with legacy remaining the default path unless `enableNewOS` is explicitly enabled.
+## 5) Migration safety notes
+- No destructive schema migration (no store deletion/renaming of legacy stores).
+- New Boris OS stores must be additive and prefixed with `os_` (e.g., `os_blocks`, `os_layouts`, `os_state`).
+- Only bump schema version forward; keep import/export backward compatible for legacy data.

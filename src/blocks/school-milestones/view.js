@@ -1,5 +1,6 @@
 import { escapeHTML } from '../../utils.js';
 import { addMilestone, deleteMilestone, listMilestones } from './store.js';
+import { getTaskCap } from '../../core/modeCaps.js';
 import './styles.css';
 
 export function renderSchoolMilestones(container) {
@@ -7,15 +8,17 @@ export function renderSchoolMilestones(container) {
 
   async function render() {
     const list = await listMilestones();
+    const cap = getTaskCap('School');
     const host = container.querySelector(`[data-block-id="${mountId}"]`);
     if (!host) return;
 
     host.innerHTML = `
       <h3 class="school-block__title">Milestones / Planning</h3>
+      <p class="school-block__subtitle">Items (${list.length}/${cap})</p>
       <div class="school-inline-form">
         <input class="form-input" data-field="title" placeholder="Milestone">
         <input class="form-input" data-field="dueDate" type="date">
-        <button class="btn btn-secondary btn-sm" data-action="add">Toevoegen</button>
+        <button class="btn btn-secondary btn-sm" data-action="add" ${list.length >= cap ? 'disabled' : ''}>Toevoegen</button>
       </div>
       <ul class="school-timeline">
         ${list.map((item) => `
@@ -33,7 +36,7 @@ export function renderSchoolMilestones(container) {
     host.querySelector('[data-action="add"]')?.addEventListener('click', async () => {
       const title = host.querySelector('[data-field="title"]').value.trim();
       const dueDate = host.querySelector('[data-field="dueDate"]').value;
-      if (!title) return;
+      if (!title || list.length >= cap) return;
       await addMilestone({ title, dueDate });
       render();
     });

@@ -5,11 +5,10 @@ import './styles/components.css';
 import './styles/pages.css';
 import './styles/print.css';
 
-import { initDB } from './db.js';
+import { initDB, getSetting } from './db.js';
 import { createRouter } from './router.js';
 import { createShell } from './components/shell.js';
 import { initShortcuts } from './shortcuts.js';
-import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
 import { getFeatureFlag } from './core/featureFlags.js';
@@ -17,6 +16,8 @@ import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
 import { createBlockRegistry } from './core/blockRegistry.js';
 import { registerDefaultBlocks } from './blocks/registerBlocks.js';
+import { renderSettingsBlock } from './blocks/settings-panel.js';
+import { applyDesignTokens } from './core/designSystem.js';
 
 export const APP_VERSION = '2.0.0';
 export const SCHEMA_VERSION = 2;
@@ -44,6 +45,7 @@ export const modules = [
 ];
 
 async function init() {
+  applyDesignTokens();
   const enableNewOS = getFeatureFlag('enableNewOS');
   if (enableNewOS) {
     initNewOSShell();
@@ -107,7 +109,7 @@ function initNewOSShell() {
 
   app.innerHTML = `
     <div id="new-os-shell" style="min-height:100vh;display:flex;flex-direction:column;">
-      <header style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid #e5e7eb;">
+      <header style="display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--color-border);">
         <strong>New OS Shell (Experimental)</strong>
         <div id="mode-switch" role="group" aria-label="Mode switch">
           <button type="button" data-mode="BPV">BPV</button>
@@ -115,25 +117,49 @@ function initNewOSShell() {
           <button type="button" data-mode="Personal">Personal</button>
         </div>
       </header>
-      <nav style="padding:12px 16px;border-bottom:1px solid #e5e7eb;display:flex;gap:16px;flex-wrap:wrap;">
-        <span>Dashboard</span>
-        <span>Vandaag</span>
-        <span>Planning</span>
-        <span>Reflectie</span>
-        <span>Archief</span>
+      <nav id="os-nav" style="padding:12px 16px;border-bottom:1px solid var(--color-border);display:flex;gap:16px;flex-wrap:wrap;">
+        <span data-os-tab="dashboard">Dashboard</span>
+        <span data-os-tab="today">Vandaag</span>
+        <span data-os-tab="planning">Planning</span>
+        <span data-os-tab="reflectie">Reflectie</span>
+        <span data-os-tab="archief">Archief</span>
       </nav>
       <main id="new-os-content" style="padding:16px;flex:1;display:grid;gap:16px;">
-        <section>
+        <section data-os-section="dashboard">
           <h2 style="margin:0 0 10px;font-size:16px;">Dashboard</h2>
           <div class="os-host-grid" data-os-host="dashboard-cards"></div>
         </section>
-        <section>
+        <section data-os-section="today">
           <h2 style="margin:0 0 10px;font-size:16px;">Vandaag</h2>
           <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
+        </section>
+        <section data-os-section="settings">
+          <div id="new-os-settings-block"></div>
         </section>
       </main>
     </div>
   `;
+
+
+  const applyFocusMode = async () => {
+    const focusMode = await getSetting('focusMode');
+    const sections = app.querySelectorAll('[data-os-section]');
+    const navTabs = app.querySelectorAll('[data-os-tab]');
+
+    if (focusMode) {
+      sections.forEach((section) => {
+        const keep = section.getAttribute('data-os-section') === 'today';
+        section.setAttribute('style', keep ? '' : 'display:none');
+      });
+      navTabs.forEach((tab) => {
+        const keep = tab.getAttribute('data-os-tab') === 'today';
+        tab.setAttribute('style', keep ? '' : 'display:none');
+      });
+    } else {
+      sections.forEach((section) => section.removeAttribute('style'));
+      navTabs.forEach((tab) => tab.removeAttribute('style'));
+    }
+  };
 
   const modeButtons = app.querySelectorAll('#mode-switch [data-mode]');
   let mountedBlocks = [];
@@ -191,8 +217,17 @@ function initNewOSShell() {
     renderHosts();
   });
 
+  renderSettingsBlock(app.querySelector('#new-os-settings-block'), {
+    onChange: async ({ key }) => {
+      if (key === 'focusMode') {
+        await applyFocusMode();
+      }
+    },
+  });
+
   updateModeButtons();
   renderHosts();
+  applyFocusMode();
 }
 
 async function disableLegacyBootCache() {

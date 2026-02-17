@@ -2,16 +2,13 @@ import { getSetting, setSetting, clearAllData } from '../db.js';
 import { icon } from '../icons.js';
 import { emit, on } from '../state.js';
 import { showToast } from '../toast.js';
-import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { APP_VERSION } from '../main.js';
 import { restartAutoSync, stopAutoSync, syncNow, testSync } from '../auto-sync.js';
+import { renderSettingsBlock } from '../blocks/settings-panel.js';
 
 export function createPage(container) {
 
   async function render() {
-    const theme = await getSetting('theme') || 'system';
-    const accentId = await getSetting('accentColor') || 'blue';
-    const compact = await getSetting('compact') || false;
     const deviceId = await getSetting('device_id') || '-';
     const userName = await getSetting('user_name') || '';
     const companyName = await getSetting('company_name') || '';
@@ -64,47 +61,7 @@ export function createPage(container) {
         </div>
       </div>
 
-      <div class="settings-section card">
-        <h3>Weergave</h3>
-        <div class="settings-row">
-          <div>
-            <div class="settings-label">Thema</div>
-            <div class="settings-desc">Kies licht, donker of systeemvoorkeur</div>
-          </div>
-          <div class="radio-group">
-            <label class="radio-option ${theme === 'system' ? 'selected' : ''}">
-              <input type="radio" name="theme" value="system" ${theme === 'system' ? 'checked' : ''}>
-              Systeem
-            </label>
-            <label class="radio-option ${theme === 'light' ? 'selected' : ''}">
-              <input type="radio" name="theme" value="light" ${theme === 'light' ? 'checked' : ''}>
-              Licht
-            </label>
-            <label class="radio-option ${theme === 'dark' ? 'selected' : ''}">
-              <input type="radio" name="theme" value="dark" ${theme === 'dark' ? 'checked' : ''}>
-              Donker
-            </label>
-          </div>
-        </div>
-        <div class="settings-row">
-          <div>
-            <div class="settings-label">Accentkleur</div>
-            <div class="settings-desc">Kies een kleur voor knoppen en accenten</div>
-          </div>
-          <div class="accent-picker" id="settings-accent-picker">
-            ${ACCENT_COLORS.map(c => `
-              <button class="accent-dot ${c.id === accentId ? 'active' : ''}" data-color="${c.id}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.label}"></button>
-            `).join('')}
-          </div>
-        </div>
-        <div class="settings-row">
-          <div>
-            <div class="settings-label">Compact modus</div>
-            <div class="settings-desc">Minder witruimte, dichtere layout</div>
-          </div>
-          <div class="toggle ${compact ? 'active' : ''}" id="compact-toggle"></div>
-        </div>
-      </div>
+      <div id="shared-settings-block"></div>
 
       <div class="settings-section card">
         <h3>Auto-sync</h3>
@@ -214,49 +171,7 @@ export function createPage(container) {
       </div>
     `;
 
-    // Theme radio
-    container.querySelectorAll('.radio-option').forEach(opt => {
-      opt.addEventListener('click', async () => {
-        container.querySelectorAll('.radio-option').forEach(o => o.classList.remove('selected'));
-        opt.classList.add('selected');
-        opt.querySelector('input').checked = true;
-        const val = opt.querySelector('input').value;
-        await setSetting('theme', val);
-        if (val === 'system') {
-          document.documentElement.removeAttribute('data-theme');
-        } else {
-          document.documentElement.setAttribute('data-theme', val);
-        }
-      });
-    });
-
-    // Accent color picker
-    container.querySelector('#settings-accent-picker').addEventListener('click', async (e) => {
-      const dot = e.target.closest('.accent-dot');
-      if (!dot) return;
-      const colorId = dot.dataset.color;
-      const hex = dot.dataset.hex;
-      container.querySelectorAll('.accent-dot').forEach(d => d.classList.remove('active'));
-      dot.classList.add('active');
-      await setSetting('accentColor', colorId);
-      applyAccentColor(hex);
-      // Also update shell accent picker
-      document.querySelectorAll('.hamburger-menu .accent-dot').forEach(d => {
-        d.classList.toggle('active', d.dataset.color === colorId);
-      });
-    });
-
-    // Compact toggle
-    container.querySelector('#compact-toggle').addEventListener('click', async function() {
-      this.classList.toggle('active');
-      const isCompact = this.classList.contains('active');
-      await setSetting('compact', isCompact);
-      if (isCompact) {
-        document.documentElement.setAttribute('data-compact', 'true');
-      } else {
-        document.documentElement.removeAttribute('data-compact');
-      }
-    });
+    await renderSettingsBlock(container.querySelector('#shared-settings-block'));
 
     // Save profile
     container.querySelector('[data-action="save-profile"]')?.addEventListener('click', async () => {

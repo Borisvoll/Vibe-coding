@@ -107,11 +107,15 @@ export function createPage(container) {
       </div>
 
       <div class="settings-section card">
-        <h3>Auto-sync</h3>
+        <h3>Sync tussen apparaten</h3>
+        <div class="settings-desc" style="margin-bottom:var(--space-3)">
+          Synchroniseer je data automatisch tussen telefoon en laptop.
+          Gebruik dezelfde API key en hetzelfde wachtwoord op beide apparaten.
+        </div>
         <div class="settings-row">
           <div>
-            <div class="settings-label">Automatisch synchroniseren</div>
-            <div class="settings-desc">Real-time sync tussen apparaten via jsonbin.io</div>
+            <div class="settings-label">Synchronisatie aan</div>
+            <div class="settings-desc">Via jsonbin.io (gratis)</div>
           </div>
           <div class="toggle ${autoSyncEnabled ? 'active' : ''}" id="autosync-toggle"></div>
         </div>
@@ -119,40 +123,22 @@ export function createPage(container) {
           <div class="settings-row">
             <div style="width:100%">
               <div class="settings-label">jsonbin.io API Key</div>
-              <div class="settings-desc" style="margin-bottom:var(--space-2)">Maak gratis aan op <a href="https://jsonbin.io" target="_blank" rel="noopener">jsonbin.io</a> → API Keys</div>
+              <div class="settings-desc" style="margin-bottom:var(--space-2)">Maak gratis aan op <a href="https://jsonbin.io" target="_blank" rel="noopener">jsonbin.io</a> → API Keys. Gebruik dezelfde key op beide apparaten.</div>
               <input type="password" class="form-input" id="autosync-apikey" value="${autoSyncApiKey}" placeholder="$2a$10$...">
             </div>
           </div>
           <div class="settings-row">
             <div style="width:100%">
               <div class="settings-label">Sync wachtwoord</div>
-              <div class="settings-desc" style="margin-bottom:var(--space-2)">Versleutelt je data (AES-256). Gebruik hetzelfde wachtwoord op alle apparaten.</div>
+              <div class="settings-desc" style="margin-bottom:var(--space-2)">Versleutelt je data (AES-256). Gebruik hetzelfde wachtwoord op beide apparaten.</div>
               <input type="password" class="form-input" id="autosync-password" value="${autoSyncPassword}" placeholder="Sterk wachtwoord">
             </div>
           </div>
           <div class="settings-row">
-            <div style="width:100%">
-              <div class="settings-label">Bin ID</div>
-              <div class="settings-desc" style="margin-bottom:var(--space-2)">
-                ${autoSyncBinId
-                  ? 'Kopieer deze ID en plak het op je andere apparaat zodat ze dezelfde data delen.'
-                  : 'Wordt aangemaakt bij eerste sync. OF plak hier de Bin ID van je andere apparaat.'}
-              </div>
-              <div style="display:flex;gap:var(--space-2);align-items:center">
-                <input type="text" class="form-input" id="autosync-binid" value="${autoSyncBinId}" placeholder="Plak Bin ID van ander apparaat, of laat leeg" style="font-family:var(--font-mono);font-size:0.8125rem;flex:1">
-                ${autoSyncBinId ? '<button class="btn btn-secondary btn-sm" data-action="copy-binid" title="Kopieer Bin ID">Kopieer</button>' : ''}
-              </div>
-              ${autoSyncBinId ? '' : `
-              <div style="margin-top:var(--space-2);padding:var(--space-3);background:var(--color-warning-light);border-radius:var(--radius-md);font-size:0.8125rem;color:var(--color-warning);border:1px solid var(--color-warning)">
-                <strong>Belangrijk:</strong> Als je al sync hebt ingesteld op een ander apparaat, plak dan eerst de Bin ID van dat apparaat hier voordat je op "Sync nu" drukt. Anders worden twee aparte bins aangemaakt en zien je apparaten elkaars data niet!
-              </div>
-              `}
-            </div>
-          </div>
-          <div class="settings-row">
             <div>
-              <div class="settings-label">Laatste sync</div>
+              <div class="settings-label">Status</div>
               <div class="settings-desc" id="autosync-last-label">${autoSyncLast}</div>
+              ${autoSyncBinId ? `<div class="settings-desc" style="font-family:var(--font-mono);font-size:0.6875rem;margin-top:var(--space-1);opacity:0.6">Bin: ${autoSyncBinId}</div>` : ''}
             </div>
             <div style="display:flex;gap:var(--space-2)">
               <button class="btn btn-secondary btn-sm" data-action="save-autosync">Opslaan</button>
@@ -293,7 +279,6 @@ export function createPage(container) {
     container.querySelector('[data-action="save-autosync"]')?.addEventListener('click', async () => {
       const apiKey = container.querySelector('#autosync-apikey')?.value.trim();
       const password = container.querySelector('#autosync-password')?.value;
-      const binId = container.querySelector('#autosync-binid')?.value.trim();
 
       if (!apiKey || !password) {
         showToast('Vul API key en wachtwoord in', { type: 'warning' });
@@ -306,36 +291,13 @@ export function createPage(container) {
 
       await setSetting('autosync_apikey', apiKey);
       await setSetting('autosync_password', password);
-      if (binId) await setSetting('autosync_binid', binId);
       await setSetting('autosync_enabled', true);
 
       try {
         await restartAutoSync();
-        // Update bin ID field if it was auto-created
-        const newBinId = await getSetting('autosync_binid');
-        const binInput = container.querySelector('#autosync-binid');
-        if (binInput && newBinId) binInput.value = newBinId;
-        showToast('Auto-sync ingeschakeld', { type: 'success' });
+        showToast('Sync instellingen opgeslagen', { type: 'success' });
       } catch (err) {
         showToast('Sync fout: ' + err.message, { type: 'error' });
-      }
-    });
-
-    // Copy Bin ID button
-    container.querySelector('[data-action="copy-binid"]')?.addEventListener('click', async () => {
-      const binId = container.querySelector('#autosync-binid')?.value.trim();
-      if (!binId) {
-        showToast('Geen Bin ID om te kopiëren', { type: 'warning' });
-        return;
-      }
-      try {
-        await navigator.clipboard.writeText(binId);
-        showToast('Bin ID gekopieerd! Plak dit op je andere apparaat.', { type: 'success', duration: 4000 });
-      } catch {
-        // Fallback: select the input text
-        const input = container.querySelector('#autosync-binid');
-        input.select();
-        showToast('Selecteer en kopieer de Bin ID handmatig', { type: 'info' });
       }
     });
 
@@ -347,6 +309,12 @@ export function createPage(container) {
         showToast('Sla eerst de instellingen op', { type: 'warning' });
         return;
       }
+
+      // Save settings first (in case user changed them)
+      await setSetting('autosync_apikey', apiKey);
+      await setSetting('autosync_password', password);
+      await setSetting('autosync_enabled', true);
+
       const btn = container.querySelector('[data-action="sync-now"]');
       const label = container.querySelector('#autosync-last-label');
       const diag = container.querySelector('#sync-diagnostic');
@@ -355,32 +323,26 @@ export function createPage(container) {
         btn.textContent = 'Bezig...';
         if (label) label.textContent = 'Synchroniseren...';
         if (diag) { diag.style.display = 'block'; diag.textContent = 'Sync bezig...\n'; }
+
         const result = await syncNow();
         const lastSync = await getSetting('autosync_last');
         if (label && lastSync) {
           label.textContent = new Date(lastSync).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
         }
-        // Update bin ID in case it was just created
-        const createdBinId = await getSetting('autosync_binid');
-        const binInput = container.querySelector('#autosync-binid');
-        if (binInput && createdBinId) binInput.value = createdBinId;
 
         // Show detailed result
         const details = [];
-        if (result?.binCreated) details.push('Nieuwe bin aangemaakt');
+        if (result?.binFound) details.push('Bestaande sync gevonden en verbonden');
+        if (result?.binCreated) details.push('Nieuwe sync aangemaakt');
         if (result?.pulled > 0) details.push(`${result.pulled} records gedownload`);
-        if (result?.pulled === 0 && !result?.binCreated) details.push('Geen nieuwe data op remote');
+        if (result?.pulled === 0 && !result?.binCreated && !result?.binFound) details.push('Alles is up-to-date');
         if (result?.pushed) details.push('Lokale data gepusht');
         const msg = details.length > 0 ? details.join(', ') : 'Sync voltooid';
-        showToast(msg, { type: 'success', duration: 4000 });
+        showToast(msg, { type: 'success', duration: 5000 });
         if (diag) diag.textContent = 'Sync resultaat:\n' + details.join('\n');
 
-        // If a new bin was created, show prominent instruction to copy Bin ID
-        if (result?.binCreated && createdBinId) {
-          showToast('Kopieer de Bin ID naar je andere apparaat!', { type: 'warning', duration: 8000 });
-          // Re-render to show the copy button and remove the warning
-          render();
-        }
+        // Re-render to update bin ID display
+        render();
       } catch (err) {
         showToast('Sync fout: ' + err.message, { type: 'error', duration: 5000 });
         if (label) label.textContent = 'Fout: ' + err.message;
@@ -412,11 +374,12 @@ export function createPage(container) {
     });
 
     // Listen for sync status updates
-    const offStatus = on('autosync:status', ({ state, lastSync, message }) => {
+    on('autosync:status', ({ state, lastSync, message }) => {
       const label = container.querySelector('#autosync-last-label');
       if (!label) return;
       if (state === 'uploading') label.textContent = 'Uploaden...';
       else if (state === 'downloading') label.textContent = 'Downloaden...';
+      else if (state === 'searching') label.textContent = 'Bestaande sync zoeken...';
       else if (state === 'error') label.textContent = 'Fout: ' + (message || 'onbekend');
       else if (lastSync) {
         label.textContent = new Date(lastSync).toLocaleString('nl-NL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });

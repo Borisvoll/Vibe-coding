@@ -3,6 +3,8 @@
  * Uses existing AES-256-GCM encryption from crypto.js
  *
  * Key design decisions:
+ * - Auto-discovery: finds existing "bpv-tracker-sync" bin automatically
+ *   so both devices use the same bin without manual Bin ID copying
  * - Pull-before-push prevents overwriting newer remote data
  * - Merge uses updatedAt/date timestamps (newest wins)
  * - Tombstones (deleted store) propagate deletes across devices
@@ -20,6 +22,7 @@ import { on, emit } from './state.js';
 const API_BASE = 'https://api.jsonbin.io/v3/b';
 const DEBOUNCE_MS = 3000;
 const POLL_INTERVAL_MS = 30000;
+const BIN_NAME = 'bpv-tracker-sync';
 
 // Stores to sync — photos excluded (Blob objects + jsonbin.io size limit)
 const SYNC_STORES = [
@@ -88,6 +91,64 @@ async function apiFetch(url, options = {}) {
   return res.json();
 }
 
+/**
+ * Search for an existing bin named "bpv-tracker-sync" using jsonbin.io API.
+ * Returns the bin ID if found, null otherwise.
+ */
+async function findExistingBin(apiKey) {
+  try {
+    // jsonbin.io v3: list bins in uncategorized collection
+    const res = await fetch('https://api.jsonbin.io/v3/c/uncategorized/bins', {
+      headers: { 'X-Master-Key': apiKey }
+    });
+    if (!res.ok) {
+      // If collection listing fails, try the /e metadata endpoint
+      console.warn('Bin listing via collection failed, trying metadata...');
+      return await findExistingBinViaMetadata(apiKey);
+    }
+    const bins = await res.json();
+    // bins is an array of objects with metadata
+    if (Array.isArray(bins)) {
+      for (const bin of bins) {
+        const name = bin?.snippetMeta?.name || bin?.metadata?.name || bin?.name;
+        const id = bin?.snippetMeta?.id || bin?.metadata?.id || bin?.record;
+        if (name === BIN_NAME && id) {
+          console.log('Found existing sync bin:', id);
+          return id;
+        }
+      }
+    }
+    return null;
+  } catch (err) {
+    console.warn('Bin auto-discovery failed:', err.message);
+    return null;
+  }
+}
+
+/**
+ * Fallback: try to find bin via metadata/bins endpoint
+ */
+async function findExistingBinViaMetadata(apiKey) {
+  try {
+    const res = await fetch('https://api.jsonbin.io/v3/e/metadata', {
+      headers: { 'X-Master-Key': apiKey }
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const bins = data?.record || data;
+    if (Array.isArray(bins)) {
+      for (const bin of bins) {
+        if (bin?.private === BIN_NAME || bin?.name === BIN_NAME) {
+          return bin?.id || bin?.snippetMeta?.id;
+        }
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 async function createBin(apiKey, data) {
   const json = await apiFetch(API_BASE, {
     method: 'POST',
@@ -95,7 +156,7 @@ async function createBin(apiKey, data) {
       'Content-Type': 'application/json',
       'X-Master-Key': apiKey,
       'X-Bin-Private': 'true',
-      'X-Bin-Name': 'bpv-tracker-sync'
+      'X-Bin-Name': BIN_NAME
     },
     body: JSON.stringify(data)
   });
@@ -251,6 +312,35 @@ function emitRefreshEvents() {
   }
 }
 
+/**
+ * Find or create a sync bin. Automatically discovers existing bins
+ * so multiple devices with the same API key share the same bin.
+ */
+async function findOrCreateBin(apiKey, password) {
+  // Step 1: Try to find an existing bin named "bpv-tracker-sync"
+  emit('autosync:status', { state: 'searching' });
+  const existingBinId = await findExistingBin(apiKey);
+
+  if (existingBinId) {
+    // Verify we can read and decrypt it (same password)
+    try {
+      const encrypted = await readBin(apiKey, existingBinId);
+      await decryptSnapshot(encrypted, password);
+      // Success! This bin works with our password
+      return { binId: existingBinId, created: false };
+    } catch (err) {
+      console.warn('Found bin but cannot decrypt (different password?):', err.message);
+      // The bin exists but uses a different password — create a new one
+    }
+  }
+
+  // Step 2: No existing bin found (or wrong password) — create a new one
+  const snapshot = await createSyncSnapshot();
+  const encrypted = await encryptSnapshot(snapshot, password);
+  const newBinId = await createBin(apiKey, encrypted);
+  return { binId: newBinId, created: true, snapshot };
+}
+
 // ===== Upload (push local -> remote) =====
 
 async function upload(force = false) {
@@ -261,16 +351,22 @@ async function upload(force = false) {
 
   try {
     if (!config.binId) {
-      // First sync on this device: create a new bin
-      const snapshot = await createSyncSnapshot();
-      const encrypted = await encryptSnapshot(snapshot, config.password);
-      const binId = await createBin(config.apiKey, encrypted);
+      // First sync: auto-discover or create bin
+      const { binId, created, snapshot } = await findOrCreateBin(config.apiKey, config.password);
       await setSetting('autosync_binid', binId);
       config.binId = binId;
-      await setSetting('autosync_lastPushed', snapshot.syncedAt);
-      await setSetting('autosync_last', snapshot.syncedAt);
-      emit('autosync:status', { state: 'idle', lastSync: snapshot.syncedAt });
-      return;
+
+      if (created && snapshot) {
+        // We just created a new bin with our data
+        await setSetting('autosync_lastPushed', snapshot.syncedAt);
+        await setSetting('autosync_last', snapshot.syncedAt);
+        emit('autosync:status', { state: 'idle', lastSync: snapshot.syncedAt });
+        emit('autosync:binFound', { binId, created: true });
+        return;
+      }
+
+      // Found existing bin — now do a proper pull+push below
+      emit('autosync:binFound', { binId, created: false });
     }
 
     // Pull-before-push: merge any remote changes first
@@ -423,7 +519,7 @@ export async function syncNow() {
   // Force-reset syncing state in case it got stuck
   isSyncing = false;
 
-  const result = { pulled: 0, pushed: false, binCreated: false, error: null };
+  const result = { pulled: 0, pushed: false, binCreated: false, binFound: false, error: null };
 
   try {
     if (hasBin()) {
@@ -435,10 +531,26 @@ export async function syncNow() {
       await upload(true);
       result.pushed = true;
     } else {
-      // No bin yet — create one by uploading
+      // No bin yet — auto-discover or create
       await upload(true);
-      result.binCreated = true;
-      result.pushed = true;
+      // Check if bin was found or created
+      const binId = await getSetting('autosync_binid');
+      if (binId) {
+        result.pushed = true;
+        // Try to pull data from the found bin (might have data from other device)
+        await loadConfig();
+        if (hasBin()) {
+          const merged = await download(true);
+          result.pulled = merged || 0;
+          if (merged > 0) {
+            // Push merged data back
+            await upload(true);
+          }
+          result.binFound = true;
+        } else {
+          result.binCreated = true;
+        }
+      }
     }
   } catch (err) {
     result.error = err.message;
@@ -488,19 +600,26 @@ export async function testSync() {
     return result;
   }
 
-  // Step 4: Bin read
+  // Step 4: Auto-discovery check
   if (!config.binId) {
-    result.steps.push('Geen Bin ID — eerste sync maakt deze aan');
+    result.steps.push('Geen Bin ID — zoeken naar bestaande bin...');
+    const found = await findExistingBin(config.apiKey);
+    if (found) {
+      result.steps.push('Bestaande bin gevonden: ' + found);
+    } else {
+      result.steps.push('Geen bestaande bin gevonden — eerste sync maakt deze aan');
+    }
     result.ok = true;
     return result;
   }
 
+  // Step 5: Bin read
   try {
     const encrypted = await readBin(config.apiKey, config.binId);
     const rawSize = JSON.stringify(encrypted).length;
     result.steps.push('Bin gelezen (' + Math.round(rawSize / 1024) + 'KB)');
 
-    // Step 5: Decryption
+    // Step 6: Decryption
     const snapshot = await decryptSnapshot(encrypted, config.password);
     const storeCount = Object.keys(snapshot?.data || {}).length;
     const recordCount = Object.values(snapshot?.data || {}).reduce((s, arr) => s + (Array.isArray(arr) ? arr.length : 0), 0);
@@ -508,7 +627,7 @@ export async function testSync() {
     if (snapshot?.syncedAt) result.steps.push('Laatst gepusht: ' + new Date(snapshot.syncedAt).toLocaleString('nl-NL'));
     if (snapshot?.deviceId) result.steps.push('Door device: ' + snapshot.deviceId);
 
-    // Step 6: Compare with local
+    // Step 7: Compare with local
     const localDeviceId = await getSetting('device_id') || 'unknown';
     result.steps.push('Dit device: ' + localDeviceId);
     if (snapshot?.deviceId === localDeviceId) {
@@ -517,7 +636,7 @@ export async function testSync() {
       result.steps.push('Remote data komt van ANDER device — sync zou moeten werken');
     }
 
-    // Step 7: Check what would be merged
+    // Step 8: Check what would be merged
     let wouldMerge = 0;
     for (const [storeName, records] of Object.entries(snapshot?.data || {})) {
       if (!Array.isArray(records) || !SYNC_STORES.includes(storeName)) continue;

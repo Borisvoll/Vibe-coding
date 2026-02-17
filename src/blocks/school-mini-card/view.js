@@ -4,7 +4,7 @@ export function renderSchoolMiniCard(container, context) {
   const mountId = `school-mini-${crypto.randomUUID()}`;
   container.insertAdjacentHTML(
     'beforeend',
-    `<article class="os-mini-card os-mini-card--school" data-mount-id="${mountId}">School mode active</article>`
+    `<article class="os-mini-card os-mini-card--school" data-mount-id="${mountId}">School-modus actief</article>`
   );
 
   return {

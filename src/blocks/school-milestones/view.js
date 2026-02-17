@@ -13,10 +13,10 @@ export function renderSchoolMilestones(container) {
     if (!host) return;
 
     host.innerHTML = `
-      <h3 class="school-block__title">Milestones / Planning</h3>
+      <h3 class="school-block__title">Mijlpalen / planning</h3>
       <p class="school-block__subtitle">Items (${list.length}/${cap})</p>
       <div class="school-inline-form">
-        <input class="form-input" data-field="title" placeholder="Milestone">
+        <input class="form-input" data-field="title" placeholder="Mijlpaal">
         <input class="form-input" data-field="dueDate" type="date">
         <button class="btn btn-secondary btn-sm" data-action="add" ${list.length >= cap ? 'disabled' : ''}>Toevoegen</button>
       </div>
@@ -24,12 +24,12 @@ export function renderSchoolMilestones(container) {
         ${list.map((item) => `
           <li>
             <div>
-              <strong>${escapeHTML(item.title || 'Untitled')}</strong>
+              <strong>${escapeHTML(item.title || 'Zonder titel')}</strong>
               <small>${escapeHTML(item.dueDate || '-')}</small>
             </div>
             <button class="btn btn-ghost btn-sm" data-action="delete" data-id="${item.id}">Verwijder</button>
           </li>
-        `).join('') || '<li><small>Geen milestones</small></li>'}
+        `).join('') || '<li><small>Nog geen mijlpalen</small></li>'}
       </ul>
     `;
 

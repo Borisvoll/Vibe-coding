@@ -4,7 +4,7 @@ export function renderPersonalMiniCard(container, context) {
   const mountId = `personal-mini-${crypto.randomUUID()}`;
   container.insertAdjacentHTML(
     'beforeend',
-    `<article class="os-mini-card os-mini-card--personal" data-mount-id="${mountId}">Personal mode active</article>`
+    `<article class="os-mini-card os-mini-card--personal" data-mount-id="${mountId}">Persoonlijke modus actief</article>`
   );
 
   return {

@@ -53,3 +53,14 @@
 - No destructive schema migration (no store deletion/renaming of legacy stores).
 - New Boris OS stores must be additive and prefixed with `os_` (e.g., `os_blocks`, `os_layouts`, `os_state`).
 - Only bump schema version forward; keep import/export backward compatible for legacy data.
+
+## 6) Implemented BORIS core skeleton files (current state)
+- `src/core/blockRegistry.js`: minimal block registration/lookup and enabled-block resolution via feature flags.
+- `src/core/modeManager.js`: mode state manager for `BPV`, `School`, `Personal` with event emission support.
+- `src/core/eventBus.js`: lightweight pub/sub utility (`on`, `off`, `emit`, `clear`).
+- `src/core/featureFlags.js`: default-off `enableNewOS` plus per-block flags and localStorage overrides.
+- `src/core/designSystem.js`: token-only design constants (color/spacing/radius/typography), no UI components.
+- `src/core/migrationManager.js`: placeholder migration runner and append-only versioning strategy for future `os_` stores.
+
+`src/main.js` keeps legacy as the default path and only renders the minimal New OS shell when `enableNewOS` is enabled.
+

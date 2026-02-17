@@ -1,0 +1,14 @@
+.school-skill-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.school-skill-item {
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--space-3);
+}
+
+.school-skill-item h4 {
+  margin: 0 0 var(--space-2);
+}

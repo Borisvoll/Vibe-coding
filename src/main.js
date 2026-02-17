@@ -20,7 +20,7 @@ import { renderSettingsBlock } from './blocks/settings-panel.js';
 import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 // Module registry
 export const modules = [

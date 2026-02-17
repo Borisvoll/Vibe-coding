@@ -1,5 +1,5 @@
 export const DB_NAME = 'bpv-tracker';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 let dbInstance = null;
 
@@ -122,6 +122,24 @@ export function initDB() {
 
         const energy = db.createObjectStore('energy', { keyPath: 'id' });
         energy.createIndex('date', 'date', { unique: true });
+      }
+
+      if (oldVersion < 3) {
+        const osSchoolProjects = db.createObjectStore('os_school_projects', { keyPath: 'id' });
+        osSchoolProjects.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osSchoolMilestones = db.createObjectStore('os_school_milestones', { keyPath: 'id' });
+        osSchoolMilestones.createIndex('dueDate', 'dueDate', { unique: false });
+        osSchoolMilestones.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osSchoolSkills = db.createObjectStore('os_school_skills', { keyPath: 'id' });
+        osSchoolSkills.createIndex('name', 'name', { unique: false });
+        osSchoolSkills.createIndex('updated_at', 'updated_at', { unique: false });
+
+        const osSchoolConcepts = db.createObjectStore('os_school_concepts', { keyPath: 'id' });
+        osSchoolConcepts.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+        osSchoolConcepts.createIndex('projectLink', 'projectLink', { unique: false });
+        osSchoolConcepts.createIndex('updated_at', 'updated_at', { unique: false });
       }
     };
 
@@ -320,7 +338,7 @@ export async function getAllLogbookSorted() {
 export async function clearAllData() {
   return withWriteAccess(async () => {
     const db = getDB();
-    const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy'];
+    const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts'];
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeNames, 'readwrite');
       storeNames.forEach(name => tx.objectStore(name).clear());
@@ -354,7 +372,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

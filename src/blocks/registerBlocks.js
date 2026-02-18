@@ -1,0 +1,30 @@
+import './styles.css';
+import { registerBPVMiniCard } from './bpv-mini-card/index.js';
+import { registerBPVTodayBlock } from './bpv-today/index.js';
+import { registerPersonalMiniCard } from './personal-mini-card/index.js';
+import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
+import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
+import { registerSchoolSkillTrackerBlock } from './school-skill-tracker/index.js';
+import { registerSchoolConceptVaultBlock } from './school-concept-vault/index.js';
+import { registerSchoolTodayBlock } from './school-today/index.js';
+import { registerPersonalTodayBlock } from './personal-today/index.js';
+import { registerPersonalEnergyBlock } from './personal-energy/index.js';
+import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
+import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
+
+export function registerDefaultBlocks(registry) {
+  registerBPVMiniCard(registry);
+  registerBPVTodayBlock(registry);
+
+  registerSchoolCurrentProjectBlock(registry);
+  registerSchoolMilestonesBlock(registry);
+  registerSchoolSkillTrackerBlock(registry);
+  registerSchoolConceptVaultBlock(registry);
+  registerSchoolTodayBlock(registry);
+
+  registerPersonalMiniCard(registry);
+  registerPersonalTodayBlock(registry);
+  registerPersonalEnergyBlock(registry);
+  registerPersonalWeeklyReflectionBlock(registry);
+  registerPersonalWeekPlanningBlock(registry);
+}

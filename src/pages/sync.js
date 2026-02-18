@@ -289,6 +289,10 @@ export function createPage(container) {
                 <span class="label">Overgeslagen</span>
                 <span class="value">${info.skipped || 0}</span>
               </div>
+              <div class="sync-summary-item">
+                <span class="label">Conflicten</span>
+                <span class="value">${(info.conflicts || []).length}</span>
+              </div>
             ` : ''}
           </div>
         </div>

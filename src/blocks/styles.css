@@ -50,7 +50,7 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  max-width: var(--max-content-width);
+  max-width: var(--max-os-content-width);
   margin: 0 auto;
   width: 100%;
 }
@@ -380,7 +380,7 @@
   display: flex;
   gap: var(--space-1);
   padding: var(--space-2) var(--space-4);
-  max-width: var(--max-content-width);
+  max-width: var(--max-os-content-width);
   margin: 0 auto;
   width: 100%;
 }
@@ -429,7 +429,7 @@
 /* ── Content area ──────────────────────────────────────────── */
 .os-shell__content {
   width: 100%;
-  max-width: var(--max-content-width);
+  max-width: var(--max-os-content-width);
   margin: 0 auto;
   padding: var(--space-4);
   display: grid;
@@ -498,7 +498,7 @@
   font-size: 0.8125rem;
 }
 
-/* ── Desktop: wider spacing ────────────────────────────────── */
+/* ── Tablet: wider spacing ─────────────────────────────────── */
 @media (min-width: 768px) {
   .os-shell__header-inner {
     padding: var(--space-3) var(--space-6);
@@ -509,12 +509,30 @@
   }
 
   .os-shell__content {
-    padding: var(--space-6);
-    gap: var(--space-6);
+    padding: var(--space-5) var(--space-6);
+    gap: var(--space-5);
   }
 
   .os-host-grid {
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* ── Desktop: full-width utilization ──────────────────────── */
+@media (min-width: 1024px) {
+  .os-shell__content {
+    padding: var(--space-6) var(--space-8);
+    gap: var(--space-6);
+  }
+
+  .os-shell__header-inner,
+  .os-nav__inner {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+
+  .os-host-grid {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   }
 }
 

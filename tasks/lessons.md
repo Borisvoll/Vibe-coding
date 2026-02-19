@@ -27,3 +27,9 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** BPV was hardcoded as default mode, but most users are students who primarily use School/Personal modes.
 
 **Prevention:** Default to the most common use case (School). Respect persisted mode from localStorage. BPV should be available but not dominant.
+
+## 5. Mode switches need multi-layered visual feedback (2026-02-19)
+
+**Issue:** Mode switching logic worked correctly (blocks remounted, events fired) but users perceived it as "nothing changed" because: (a) shared blocks dominate the today view, (b) no persistent mode-colored accent in the content area, (c) content swap was instantaneous with no crossfade, (d) ambient wash was too subtle at 8% opacity.
+
+**Prevention:** Mode changes must have at least 3 layers of visual feedback: (1) header pill label + dot color update, (2) mode-colored accent on nav bar and active tab via `--mode-accent` CSS variable + `data-mode` attribute, (3) content crossfade (120ms fade-out → remount → 300ms fade-in). Set `data-mode` on the shell root element so CSS can react globally to mode changes.

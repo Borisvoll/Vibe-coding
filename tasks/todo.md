@@ -1425,6 +1425,166 @@ Mode accent colors (existing CSS vars):
 
 ---
 
+## Stable OS Sidebar + Settings Width + Accent Prominence Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Plan → Approve → Implement → Test → Verify
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files) |
+| Build | **Clean** |
+
+---
+
+### Analysis
+
+**Current state from screenshot + code audit:**
+
+1. **Navigation is horizontal tab bar** — 6 buttons (Dashboard, Vandaag, Inbox, Planning, Reflectie, Archief) + settings gear. Works but feels ephemeral — no stable sidebar presence.
+2. **Settings page width** — `.settings-row` uses `display: flex; justify-content: space-between` which is fine, but the parent `.settings-block.card` inherits compact padding. On wide screens the content padding is generous (64px each side at 1440px+) which effectively narrows the settings. The settings section also has no `max-width` constraint of its own — it just stretches to fill, which is the right behavior.
+3. **Mode accent bar** — Currently a 2px line under the nav bar (`os-nav::after`) and a 3px top border on cards. The screenshot shows these are subtle. The mode hero banner exists but is small. The accent should be bolder.
+4. **Settings mode pills** — Use generic `--color-accent` for the active state instead of the mode's own color. A School pill should be purple when active, Personal should be emerald, BPV should be blue.
+
+**Design approach (Rams/Ive/Jobs/Eno):**
+- Sidebar replaces horizontal tabs on desktop (≥768px), stays as bottom-bar on mobile
+- Sidebar is minimal: icon + label, thin width (~200px), always visible
+- Dashboard gets a home icon (⌂) — obvious home path (Jobs)
+- Mode accent bar thickened from 2px → 4px on nav
+- Mode card top border thickened from 3px → 4px
+- Settings gets wider content area with `max-width: 640px` centered
+- Settings mode pills use their OWN mode color (not generic accent)
+- Non-dashboard tabs get subtle "Dashboard" breadcrumb link in section title area
+
+---
+
+### Stap A — Sidebar Navigation (Desktop ≥768px)
+
+**Replace horizontal tab bar with vertical sidebar on desktop:**
+
+- [ ] `src/os/shell.js` — Restructure HTML: wrap shell in `os-shell__sidebar` + `os-shell__main` layout
+  - Sidebar contains: logo/title, nav items, divider, system items (Sync placeholder, Export placeholder, Settings)
+  - Nav items: Dashboard (⌂), Vandaag, Inbox (with badge), Projecten, Planning
+  - Divider
+  - System: Instellingen
+  - Main area: header (date + mode pill) + content
+- [ ] `src/blocks/styles.css` — New `.os-sidebar` styles:
+  - Fixed left, 200px width, full height, `var(--color-surface)` background
+  - Border-right: 1px solid `var(--color-border)`
+  - Nav items: vertical flex, icon + label, mode-accent active indicator (4px left bar)
+  - Sidebar mode accent bar: 4px left border on active item using `var(--mode-accent)`
+  - Mobile (< 768px): sidebar hidden, keep horizontal bottom nav or top tabs
+- [ ] `src/blocks/styles.css` — Keep existing `.os-nav` styles for mobile (horizontal scroll tabs)
+- [ ] Sidebar items map to same `setActiveTab(tabId)` logic — no breaking changes
+- [ ] Add "Projecten" as nav item → maps to `planning` tab for now (or its own section)
+- [ ] Settings moves from gear icon to sidebar system section
+
+**Sidebar items (stable, never change on mode switch):**
+1. ⌂ Dashboard
+2. ☀ Vandaag
+3. 📥 Inbox (badge)
+4. 📋 Planning
+5. ── (divider)
+6. ⚙ Instellingen
+
+### Stap B — Dashboard as Home Reference
+
+- [ ] Add subtle "← Dashboard" link in section title area for non-dashboard tabs
+  - Appears as small text link before the section title
+  - Calls `setActiveTab('dashboard')` on click
+  - Styled: `0.75rem`, `var(--color-text-tertiary)`, underline on hover
+  - Only visible when activeTab ≠ 'dashboard'
+- [ ] On mobile: no change (dashboard is first tab, always reachable)
+
+### Stap C — Settings Page Width + Accent Prominence
+
+- [ ] Settings section: add `max-width: 640px` to `.settings-block` in OS context
+  - Remove `width: 100%` rule, use auto centering instead
+- [ ] Settings mode pills: use mode-specific color for active state:
+  - School pill active → `var(--color-purple)` border/text, `var(--color-purple-light)` bg
+  - Personal pill active → `var(--color-emerald)` border/text, `var(--color-emerald-light)` bg
+  - BPV pill active → `var(--color-blue)` border/text, `var(--color-blue-light)` bg
+  - Implementation: add `data-mode-color` / `data-mode-color-light` attributes to pills, use in CSS
+- [ ] Mode card top border: increase from `3px` → `4px` for more prominence
+- [ ] Sidebar active indicator: 4px left accent bar (mode color)
+
+### Stap D — BPV De-emphasis (Without Hiding)
+
+- [ ] BPV is NOT in primary sidebar nav
+- [ ] BPV remains accessible via:
+  - Dashboard widget (existing "BPV" deep link card)
+  - BPV-only blocks when mode=BPV (existing behavior)
+  - When mode=BPV, BPV blocks appear on Vandaag (existing)
+- [ ] No new BPV nav item needed — it's a mode, not a destination
+- [ ] Verify: switching to BPV mode still shows BPV blocks on Dashboard/Vandaag
+
+### Stap E — Documentation
+
+- [ ] Create `docs/nav-architecture.md`:
+  - Stable OS sidebar principle
+  - Dashboard as Home
+  - Mode affects content not navigation
+  - Sidebar items list + rationale
+- [ ] Update `docs/demo.md`:
+  - Sidebar visible on desktop
+  - Mode switch does not change sidebar items
+  - "← Dashboard" link works from each tab
+  - Settings reachable from sidebar
+- [ ] Update `docs/design-principles.md`:
+  - Add "Stable Navigation" principle
+
+### Stap F — Verify
+
+- [ ] `npm test` — all 274 tests green
+- [ ] `npm run build` — clean
+- [ ] No regressions in tab switching
+- [ ] Badge counts still update on sidebar inbox item
+- [ ] Settings page is wider and better centered
+- [ ] Mode accent colors prominent (4px bars, mode-colored pills)
+- [ ] Dashboard reachable from every tab
+
+---
+
+### Acceptance Criteria
+
+- [ ] Desktop: sidebar visible with 6 items (Dashboard, Vandaag, Inbox, Planning, divider, Instellingen)
+- [ ] Mobile: horizontal tabs preserved (no sidebar)
+- [ ] Sidebar items are STABLE — mode switch does NOT change them
+- [ ] Active item has 4px mode-colored left accent bar
+- [ ] "← Dashboard" breadcrumb on non-dashboard tabs
+- [ ] Settings page wider with centered content
+- [ ] Settings mode pills use their own mode color when active
+- [ ] Card top border is 4px (was 3px)
+- [ ] All tests green, build clean
+- [ ] No hardcoded hex colors
+- [ ] BPV accessible via dashboard widget + mode blocks (not sidebar item)
+
+---
+
+### Risks + Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Sidebar pushes content too narrow on tablet | Cards overflow | Use collapsible sidebar at 768-1023px (icons only) |
+| Mobile layout breaks | UX regression | Keep existing horizontal tabs for <768px |
+| Settings gear button removal | Can't find settings | Settings is last sidebar item (always visible) |
+| Tab logic breaks | Major regression | Same `setActiveTab()` function, just different click source |
+
+---
+
+### After (To be filled)
+
+| Metric | Value |
+|--------|-------|
+| Tests | TBD |
+| Build | TBD |
+| New files | TBD |
+| Modified files | TBD |
+
+---
+
 ## Milestone 3: Cloudflare Deployment + Sync (Future)
 
 - [ ] Deploy to Cloudflare Pages (static hosting, free tier)

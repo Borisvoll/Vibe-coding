@@ -696,3 +696,191 @@
 }
 
 .os-friday-prompt__close:hover { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Tutorial — onboarding tooltips
+   ═══════════════════════════════════════════════════════════════ */
+
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 200ms var(--ease);
+}
+
+.tutorial-overlay--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tutorial-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.tutorial-card {
+  position: relative;
+  z-index: 1;
+  width: calc(100% - var(--space-4) * 2);
+  max-width: 400px;
+  background: var(--color-surface);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  padding: var(--space-5) var(--space-5) calc(var(--space-5) + env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.15);
+  transform: translateY(16px);
+  transition: transform 300ms var(--ease-spring);
+}
+
+.tutorial-overlay--visible .tutorial-card {
+  transform: translateY(0);
+}
+
+@media (min-width: 480px) {
+  .tutorial-overlay {
+    align-items: center;
+  }
+
+  .tutorial-card {
+    border-radius: var(--radius-xl);
+    padding: var(--space-5);
+    transform: translateY(12px) scale(0.97);
+  }
+
+  .tutorial-overlay--visible .tutorial-card {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tutorial-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+}
+
+.tutorial-card__step {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.tutorial-card__close {
+  border: none;
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 var(--space-1);
+  line-height: 1;
+  transition: color 150ms var(--ease);
+}
+
+.tutorial-card__close:hover {
+  color: var(--color-text);
+}
+
+.tutorial-card__title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.tutorial-card__text {
+  margin: 0 0 var(--space-4);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+.tutorial-card__actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.tutorial-card__skip {
+  border: none;
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  padding: var(--space-1) var(--space-2);
+  transition: color 150ms var(--ease);
+}
+
+.tutorial-card__skip:hover {
+  color: var(--color-text);
+}
+
+.tutorial-card__next {
+  border: none;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: opacity 150ms var(--ease), transform 100ms var(--ease);
+}
+
+.tutorial-card__next:hover {
+  opacity: 0.9;
+}
+
+.tutorial-card__next:active {
+  transform: scale(0.97);
+}
+
+/* Highlight ring on target element during tutorial */
+.tutorial-highlight {
+  position: relative;
+  z-index: 2001 !important;
+  box-shadow: 0 0 0 3px var(--color-accent), 0 0 0 6px color-mix(in srgb, var(--color-accent) 20%, transparent) !important;
+  border-radius: var(--radius-md);
+  transition: box-shadow 300ms var(--ease);
+}
+
+/* ── Tutorial tip list in settings ─────────────────────────── */
+.tutorial-tips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+}
+
+.tutorial-tip-item {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.tutorial-tip-item__title {
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.tutorial-tip-item__text {
+  color: var(--color-text-secondary);
+}

@@ -5,6 +5,7 @@ import './tasks/styles.css';
 import './bpv-log-summary/styles.css';
 import './bpv-quick-log/styles.css';
 import './bpv-weekly-overview/styles.css';
+import './school-dashboard/styles.css';
 import './daily-outcomes/styles.css';
 import './daily-reflection/styles.css';
 import './schedule-placeholder/styles.css';
@@ -12,6 +13,7 @@ import './projects/styles.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
+import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
 import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
 import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
 import { registerSchoolSkillTrackerBlock } from './school-skill-tracker/index.js';
@@ -49,6 +51,7 @@ export function registerDefaultBlocks(registry) {
   registerBPVWeeklyOverviewBlock(registry);
 
   // School mode blocks
+  registerSchoolDashboardBlock(registry);
   registerSchoolCurrentProjectBlock(registry);
   registerSchoolMilestonesBlock(registry);
   registerSchoolSkillTrackerBlock(registry);

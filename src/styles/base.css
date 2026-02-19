@@ -26,8 +26,8 @@ body {
 /* Main content */
 .app-main {
   flex: 1;
-  padding: var(--space-6);
-  padding-bottom: calc(var(--nav-height) + var(--space-6));
+  padding: var(--space-8);
+  padding-bottom: calc(var(--nav-height) + var(--space-8));
   max-width: var(--max-content-width);
   margin: 0 auto;
   width: 100%;
@@ -247,7 +247,7 @@ body {
   .app-shell { margin-left: var(--sidebar-width); transition: margin-left var(--duration-slow) var(--ease); }
   .app-shell.sidebar-collapsed { margin-left: 0; }
   .bottom-nav { display: none; }
-  .app-main { padding-bottom: var(--space-6); }
+  .app-main { padding-bottom: var(--space-8); }
 }
 
 /* Mobile sidebar open state */

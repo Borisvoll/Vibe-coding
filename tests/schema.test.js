@@ -2,12 +2,12 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { initDB, DB_NAME, DB_VERSION, getStoreNames, getAll, put } from '../src/db.js';
 
 describe('Schema migration', () => {
-  it('initializes at version 5', async () => {
+  it('initializes at version 6', async () => {
     await initDB();
-    expect(DB_VERSION).toBe(5);
+    expect(DB_VERSION).toBe(6);
   });
 
-  it('creates all 28 expected stores', async () => {
+  it('creates all 29 expected stores', async () => {
     await initDB();
     const stores = getStoreNames();
 
@@ -25,6 +25,8 @@ describe('Schema migration', () => {
       'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan',
       // v5
       'os_inbox', 'os_tasks',
+      // v6
+      'os_projects',
     ];
 
     for (const name of expected) {

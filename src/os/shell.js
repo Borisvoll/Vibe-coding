@@ -228,6 +228,23 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (shell) shell.setAttribute('data-mode', mode);
   }
 
+  // Update section titles with mode label so mode change is unmissable
+  function updateSectionTitles(mode) {
+    const meta = MODE_META[mode] || MODE_META.School;
+    const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
+    const titleMap = {
+      dashboard: `Dashboard ${badge}`,
+      today: `Vandaag ${badge}`,
+      planning: `Planning ${badge}`,
+      reflectie: `Reflectie ${badge}`,
+      archief: `Archief ${badge}`,
+    };
+    Object.entries(titleMap).forEach(([section, html]) => {
+      const el = app.querySelector(`[data-os-section="${section}"] .os-section__title`);
+      if (el) el.innerHTML = html;
+    });
+  }
+
   let focusTrapCleanup = null;
 
   function showModePicker() {
@@ -307,6 +324,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setShellMode(mode);
     triggerModeWash(mode);
     updateModeBtn();
+    updateSectionTitles(mode);
 
     // Content crossfade: brief fade-out, remount blocks, fade-in
     const content = app.querySelector('.os-shell__content');
@@ -352,6 +370,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
   setShellMode(modeManager.getMode());
   updateModeBtn();
+  updateSectionTitles(modeManager.getMode());
   renderHosts();
   setActiveTab(activeTab);
 

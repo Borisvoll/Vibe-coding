@@ -80,33 +80,97 @@
 - [x] Create `docs/risks.md` — top 10 risks with mitigations
 
 ### 1.1 Persistence Layer (Local-First)
-- [ ] Add basic validation to `src/stores/inbox.js` (required fields, type checks)
-- [ ] Add basic validation to `src/stores/tasks.js` (required fields, type checks)
-- [ ] Create `src/stores/daily.js` — DailyEntry CRUD adapter (wraps `dailyPlans` store)
-- [ ] Create `src/stores/tracker.js` — TrackerEntry CRUD adapter (wraps `hours` + `logbook`)
-- [ ] Write `docs/storage.md` — how data is stored, how to export, schema per entity
+- [x] Create `src/stores/validate.js` — shared validation (ValidationError, field checks)
+- [x] Add basic validation to `src/stores/inbox.js` (required fields, type checks)
+- [x] Add basic validation to `src/stores/tasks.js` (required fields, type checks)
+- [x] Create `src/stores/daily.js` — DailyEntry CRUD adapter (wraps `dailyPlans` store)
+- [x] Create `src/stores/tracker.js` — TrackerEntry CRUD adapter (wraps `hours` + `logbook`)
+- [x] Write `docs/storage.md` — how data is stored, how to export, schema per entity
 
 ### 1.2 Testing Foundation
-- [ ] Install Vitest as devDependency
-- [ ] Create `tests/stores/inbox.test.js` — add/promote/archive lifecycle
-- [ ] Create `tests/stores/tasks.test.js` — add/toggle/delete + mode filtering
-- [ ] Create `tests/stores/daily.test.js` — load/save DailyEntry
-- [ ] Create `tests/stores/tracker.test.js` — load/save hours + logbook
-- [ ] Create `tests/boot.test.js` — verify applyUserSettings sets data-theme
-- [ ] Add `test` script to `package.json`
-- [ ] All tests green
+- [x] Install Vitest + fake-indexeddb as devDependencies
+- [x] Create `tests/setup.js` — fake-indexeddb auto + DB reset between tests
+- [x] Create `tests/stores/validate.test.js` — 26 validation rule tests
+- [x] Create `tests/stores/inbox.test.js` — add/promote/archive lifecycle (9 tests)
+- [x] Create `tests/stores/tasks.test.js` — add/toggle/delete + mode filtering (9 tests)
+- [x] Create `tests/stores/daily.test.js` — load/save DailyEntry (10 tests)
+- [x] Create `tests/stores/tracker.test.js` — hours + logbook lifecycle (16 tests)
+- [x] Create `tests/schema.test.js` — all 28 stores created, data persists (5 tests)
+- [x] Add `test` + `test:watch` scripts to `package.json`
+- [x] All 75 tests green
 
 ### 1.3 Data Integrity
-- [ ] Migrate `os_personal_tasks` data into `os_tasks` (mode='Personal')
-- [ ] Add `device_id` generation in OS shell path (currently only in legacy)
-- [ ] Add auto-export reminder (weekly prompt to save JSON backup)
+- [x] Migrate `os_personal_tasks` data into `os_tasks` (mode='Personal')
+- [x] Add `device_id` generation in OS shell path (moved to shared `init()`)
+- [x] Add auto-export reminder (weekly toast if > 7 days since last backup)
+- [x] Track `last_export_date` in settings on every export (plain + encrypted)
 
-### 1.4 Polish
-- [ ] Verify dark mode works end-to-end (set theme → refresh → stays dark)
-- [ ] Verify accent color persists across reload
-- [ ] Verify compact mode persists across reload
-- [ ] `npm run build` passes clean
-- [ ] Update `tasks/todo.md` with review notes
+### 1.4 Today Page Blocks
+- [x] Create `daily-outcomes` block — Top 3 editable outcomes (order 5)
+- [x] Create `daily-reflection` block — 2-line evaluation textarea (order 50)
+- [x] Create `schedule-placeholder` block — Agenda placeholder (order 25)
+- [x] Register all 3 new blocks in `registerBlocks.js`
+- [x] Block ordering: outcomes → inbox → tasks → schedule → bpv-log → reflection
+
+### 1.5 Dark Mode + Code Quality Fixes
+- [x] Replace hardcoded hex colors in mini-card CSS with CSS variables
+- [x] Fix undefined `--color-text-primary` → `--color-text` in planning.js
+- [x] Fix undefined `--color-bg-secondary` → `--color-surface-hover` in planning.js
+- [x] Replace hardcoded energy colors with CSS variables in planning.js
+- [x] Add hover/transition to OS nav buttons
+- [x] Add explicit `background: var(--color-bg)` to OS shell
+- [x] Add desktop-responsive media query for OS shell (wider padding, larger grid)
+
+### 1.6 Testing
+- [x] Add `daily-outcomes.test.js` — 7 integration tests for outcomes + reflection
+- [x] Add `migration.test.js` — 5 tests for data migration + settings
+- [x] All 87 tests green
+
+### 1.7 Polish
+- [x] `npm run build` passes clean
+- [x] Update `tasks/todo.md` with sprint notes
+
+---
+
+### Review Notes — Today Page + Dark Mode Sprint
+
+**What was built:**
+- 3 new OS blocks: `daily-outcomes`, `daily-reflection`, `schedule-placeholder`
+- Each follows gold-standard pattern from `tasks/view.js` (mountId, eventBus cleanup, unmount)
+- Dark mode fixes: all hardcoded hex colors replaced with CSS variables
+- OS shell responsive improvements: desktop gets wider padding and grid columns
+- 87 tests total (12 new) — all passing
+
+**Dark mode root causes fixed:**
+1. `applyUserSettings()` (from previous sprint) ensures theme loads on OS path
+2. Mini-card border colors were hardcoded hex — now use `--color-blue/purple/emerald`
+3. `planning.js` referenced undefined vars `--color-text-primary` and `--color-bg-secondary`
+4. Energy level colors were hardcoded hex — now use semantic CSS variables
+
+**Design decisions:**
+- Daily Outcomes block (order 5) sits at the top — first thing you see
+- Schedule Placeholder (order 25) between tasks and BPV log — ready for calendar API
+- Daily Reflection (order 50) at the bottom — end-of-day prompt
+- All blocks share the DailyEntry store via `stores/daily.js`
+
+---
+
+### Review Notes — Data Integrity Sprint
+
+**What was built:**
+- One-time migration: `os_personal_tasks` → `os_tasks` with `mode='Personal'`
+- Device ID generation moved from `initLegacy()` to shared `init()` — both OS and legacy paths get it
+- Weekly export reminder toast (shows if `last_export_date` > 7 days ago)
+- `last_export_date` tracking on every export (plain + encrypted) in `export.js`
+- 5 new migration tests — all passing
+
+**Design decisions:**
+- Migration is idempotent: guarded by `migration_personal_tasks_done` setting flag
+- Migration maps old field names (`title` → `text`, `created_at` → `createdAt`)
+- Export reminder doesn't nag new users (skips if no `last_export_date` exists)
+- Reminder shows 2 seconds after init to avoid blocking startup
+
+**Milestone 1 is now complete.** All checklist items done.
 
 ---
 

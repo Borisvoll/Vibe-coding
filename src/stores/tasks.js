@@ -1,5 +1,6 @@
 import { getAll, getByKey, getByIndex, put, remove } from '../db.js';
 import { getToday } from '../utils.js';
+import { validateTask } from './validate.js';
 
 const STORE = 'os_tasks';
 
@@ -14,9 +15,10 @@ export async function getTasksForToday(mode) {
 }
 
 export async function addTask(text, mode, date = null) {
+  validateTask({ text, mode, date });
   const task = {
     id: crypto.randomUUID(),
-    text,
+    text: text.trim(),
     mode,
     status: 'todo',
     priority: 3,

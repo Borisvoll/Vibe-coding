@@ -69,6 +69,9 @@ async function init() {
   applyDesignTokens();
   await initDB();
   await applyUserSettings();
+  await ensureDeviceId();
+  await migratePersonalTasks();
+  await checkExportReminder();
   await initServiceWorker();
 
   const enableNewOS = getFeatureFlag('enableNewOS');
@@ -84,14 +87,52 @@ async function init() {
   await initLegacy();
 }
 
-async function initLegacy() {
-  let deviceId = await getSetting('device_id');
-  if (!deviceId) {
-    deviceId = crypto.randomUUID();
-    const { setSetting: ss } = await import('./db.js');
-    await ss('device_id', deviceId);
+async function ensureDeviceId() {
+  const existing = await getSetting('device_id');
+  if (!existing) {
+    const { setSetting } = await import('./db.js');
+    await setSetting('device_id', crypto.randomUUID());
   }
+}
 
+async function migratePersonalTasks() {
+  const migrated = await getSetting('migration_personal_tasks_done');
+  if (migrated) return;
+
+  const { getAll, put, setSetting } = await import('./db.js');
+  const oldTasks = await getAll('os_personal_tasks');
+  if (oldTasks.length > 0) {
+    for (const task of oldTasks) {
+      await put('os_tasks', {
+        id: task.id,
+        text: task.text || task.title || '',
+        mode: 'Personal',
+        status: task.status || 'todo',
+        priority: task.priority ?? 3,
+        date: task.date || null,
+        doneAt: task.doneAt || null,
+        createdAt: task.createdAt || task.created_at || new Date().toISOString(),
+        updated_at: task.updated_at || new Date().toISOString(),
+      });
+    }
+  }
+  await setSetting('migration_personal_tasks_done', true);
+}
+
+async function checkExportReminder() {
+  const lastExport = await getSetting('last_export_date');
+  if (!lastExport) return; // Don't nag new users who never exported
+  const daysSince = Math.floor((Date.now() - new Date(lastExport).getTime()) / 86400000);
+  if (daysSince >= 7) {
+    // Defer the toast so it doesn't block init
+    setTimeout(async () => {
+      const { showToast } = await import('./toast.js');
+      showToast(`Laatste backup: ${daysSince} dagen geleden. Exporteer je data via Instellingen.`, { type: 'info', duration: 8000 });
+    }, 2000);
+  }
+}
+
+async function initLegacy() {
   const app = document.getElementById('app');
   createShell(app);
   createRouter();

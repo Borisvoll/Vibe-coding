@@ -2,6 +2,9 @@ import './styles.css';
 import './inbox/styles.css';
 import './tasks/styles.css';
 import './bpv-log-summary/styles.css';
+import './daily-outcomes/styles.css';
+import './daily-reflection/styles.css';
+import './schedule-placeholder/styles.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
@@ -17,12 +20,18 @@ import { registerPersonalWeekPlanningBlock } from './personal-week-planning/inde
 import { registerInboxBlock } from './inbox/index.js';
 import { registerTasksBlock } from './tasks/index.js';
 import { registerBPVLogSummaryBlock } from './bpv-log-summary/index.js';
+import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
+import { registerDailyReflectionBlock } from './daily-reflection/index.js';
+import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
 
 export function registerDefaultBlocks(registry) {
-  // Core blocks (order matters for today-sections)
+  // Today page MVP blocks
+  registerDailyOutcomesBlock(registry);
   registerInboxBlock(registry);
   registerTasksBlock(registry);
+  registerSchedulePlaceholderBlock(registry);
   registerBPVLogSummaryBlock(registry);
+  registerDailyReflectionBlock(registry);
 
   // BPV mode blocks
   registerBPVMiniCard(registry);

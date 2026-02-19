@@ -104,29 +104,52 @@
 - [ ] Add `device_id` generation in OS shell path (currently only in legacy)
 - [ ] Add auto-export reminder (weekly prompt to save JSON backup)
 
-### 1.4 Polish
+### 1.4 Today Page Blocks
+- [x] Create `daily-outcomes` block — Top 3 editable outcomes (order 5)
+- [x] Create `daily-reflection` block — 2-line evaluation textarea (order 50)
+- [x] Create `schedule-placeholder` block — Agenda placeholder (order 25)
+- [x] Register all 3 new blocks in `registerBlocks.js`
+- [x] Block ordering: outcomes → inbox → tasks → schedule → bpv-log → reflection
+
+### 1.5 Dark Mode + Code Quality Fixes
+- [x] Replace hardcoded hex colors in mini-card CSS with CSS variables
+- [x] Fix undefined `--color-text-primary` → `--color-text` in planning.js
+- [x] Fix undefined `--color-bg-secondary` → `--color-surface-hover` in planning.js
+- [x] Replace hardcoded energy colors with CSS variables in planning.js
+- [x] Add hover/transition to OS nav buttons
+- [x] Add explicit `background: var(--color-bg)` to OS shell
+- [x] Add desktop-responsive media query for OS shell (wider padding, larger grid)
+
+### 1.6 Testing
+- [x] Add `daily-outcomes.test.js` — 7 integration tests for outcomes + reflection
+- [x] All 82 tests green
+
+### 1.7 Polish
 - [x] `npm run build` passes clean
-- [x] Update `tasks/todo.md` with review notes
+- [x] Update `tasks/todo.md` with sprint notes
 
 ---
 
-### Review Notes — Persistence Layer Sprint
+### Review Notes — Today Page + Dark Mode Sprint
 
 **What was built:**
-- 4 store adapters: inbox.js (updated), tasks.js (updated), daily.js (new), tracker.js (new)
-- Shared validation layer (`validate.js`) with `ValidationError` class
-- 75 unit tests across 6 test files — all passing
-- `docs/storage.md` documenting all entity schemas, CRUD APIs, export/import, and migrations
-- `_resetDB()` helper in db.js for clean test isolation
+- 3 new OS blocks: `daily-outcomes`, `daily-reflection`, `schedule-placeholder`
+- Each follows gold-standard pattern from `tasks/view.js` (mountId, eventBus cleanup, unmount)
+- Dark mode fixes: all hardcoded hex colors replaced with CSS variables
+- OS shell responsive improvements: desktop gets wider padding and grid columns
+- 82 tests total (7 new) — all passing
+
+**Dark mode root causes fixed:**
+1. `applyUserSettings()` (from previous sprint) ensures theme loads on OS path
+2. Mini-card border colors were hardcoded hex — now use `--color-blue/purple/emerald`
+3. `planning.js` referenced undefined vars `--color-text-primary` and `--color-bg-secondary`
+4. Energy level colors were hardcoded hex — now use semantic CSS variables
 
 **Design decisions:**
-- Validation throws synchronously before any DB write — fail fast
-- `ValidationError` includes field name for actionable error messages
-- Daily entries upsert by date (same date = update existing)
-- Hours entries upsert by date (one entry per day)
-- Logbook allows multiple entries per date (different activities)
-- Tracker auto-computes ISO week from date if not provided
-- Tests use `fake-indexeddb` — full IndexedDB simulation in Node.js
+- Daily Outcomes block (order 5) sits at the top — first thing you see
+- Schedule Placeholder (order 25) between tasks and BPV log — ready for calendar API
+- Daily Reflection (order 50) at the bottom — end-of-day prompt
+- All blocks share the DailyEntry store via `stores/daily.js`
 
 **What's left for M1:**
 - M1.3: Data migration (os_personal_tasks → os_tasks) + device_id in OS path

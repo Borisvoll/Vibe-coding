@@ -222,6 +222,57 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   }
 
+  // Set data-mode on shell root for mode-aware CSS accents
+  function setShellMode(mode) {
+    const shell = app.querySelector('#new-os-shell');
+    if (shell) shell.setAttribute('data-mode', mode);
+  }
+
+  // Update section titles with mode label so mode change is unmissable
+  function updateSectionTitles(mode) {
+    const meta = MODE_META[mode] || MODE_META.School;
+    const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
+    const titleMap = {
+      dashboard: `Dashboard ${badge}`,
+      today: `Vandaag ${badge}`,
+      planning: `Planning ${badge}`,
+      reflectie: `Reflectie ${badge}`,
+      archief: `Archief ${badge}`,
+    };
+    Object.entries(titleMap).forEach(([section, html]) => {
+      const el = app.querySelector(`[data-os-section="${section}"] .os-section__title`);
+      if (el) el.innerHTML = html;
+    });
+  }
+
+  // Mode hero banner — large colored bar at top of visible sections
+  function updateModeHero(mode) {
+    const meta = MODE_META[mode] || MODE_META.School;
+    const heroHTML = `
+      <div class="os-mode-hero">
+        <span class="os-mode-hero__emoji">${meta.emoji}</span>
+        <div class="os-mode-hero__text">
+          <span class="os-mode-hero__label">${meta.label}</span>
+          <span class="os-mode-hero__desc">${meta.description}</span>
+        </div>
+      </div>`;
+
+    // Insert or replace hero in dashboard + today sections
+    ['dashboard', 'today'].forEach((section) => {
+      const sectionEl = app.querySelector(`[data-os-section="${section}"]`);
+      if (!sectionEl) return;
+      const existing = sectionEl.querySelector('.os-mode-hero');
+      if (existing) {
+        existing.outerHTML = heroHTML;
+      } else {
+        const title = sectionEl.querySelector('.os-section__title');
+        if (title) {
+          title.insertAdjacentHTML('afterend', heroHTML);
+        }
+      }
+    });
+  }
+
   let focusTrapCleanup = null;
 
   function showModePicker() {
@@ -295,10 +346,28 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   });
 
+  let modeTransitionTimer = null;
+
   const unsubscribeMode = eventBus.on('mode:changed', ({ mode }) => {
+    setShellMode(mode);
     triggerModeWash(mode);
     updateModeBtn();
-    renderHosts();
+    updateSectionTitles(mode);
+    updateModeHero(mode);
+
+    // Content crossfade: brief fade-out, remount blocks, fade-in
+    const content = app.querySelector('.os-shell__content');
+    if (content) {
+      if (modeTransitionTimer) clearTimeout(modeTransitionTimer);
+      content.classList.add('os-content--switching');
+      modeTransitionTimer = setTimeout(() => {
+        modeTransitionTimer = null;
+        renderHosts();
+        content.classList.remove('os-content--switching');
+      }, 120);
+    } else {
+      renderHosts();
+    }
   });
 
   // Listen for inbox:open event (from quick-action or Ctrl+I)
@@ -328,7 +397,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     },
   });
 
+  setShellMode(modeManager.getMode());
   updateModeBtn();
+  updateSectionTitles(modeManager.getMode());
+  updateModeHero(modeManager.getMode());
   renderHosts();
   setActiveTab(activeTab);
 

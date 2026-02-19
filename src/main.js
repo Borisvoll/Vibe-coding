@@ -16,11 +16,11 @@ import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
 import { createBlockRegistry } from './core/blockRegistry.js';
 import { registerDefaultBlocks } from './blocks/registerBlocks.js';
-import { renderSettingsBlock } from './blocks/settings-panel.js';
 import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
+import { createOSShell } from './os/shell.js';
 
-export const SCHEMA_VERSION = 4;
+export const SCHEMA_VERSION = 5;
 
 export const modules = [
   { id: 'dashboard',        label: 'Dashboard',         icon: 'dashboard',        route: '',                page: () => import('./pages/dashboard.js') },
@@ -54,8 +54,12 @@ async function init() {
 
   const enableNewOS = getFeatureFlag('enableNewOS');
   if (enableNewOS) {
-    initNewOSShell();
-    return;
+    try {
+      initNewOSShell();
+      return;
+    } catch (err) {
+      console.error('BORIS OS failed to load, falling back to legacy:', err);
+    }
   }
 
   await initLegacy();
@@ -102,177 +106,7 @@ function initNewOSShell() {
   const blockRegistry = createBlockRegistry();
   registerDefaultBlocks(blockRegistry);
 
-  const shellTabs = ['dashboard', 'today', 'planning', 'reflectie', 'archief'];
-  let activeTab = 'dashboard';
-  let mountedBlocks = [];
-
-  app.innerHTML = `
-    <div id="new-os-shell" class="os-shell">
-      <header class="os-shell__header">
-        <h1 class="os-shell__title">BORIS OS (experimenteel)</h1>
-        <div id="mode-switch" class="os-mode-switch" role="group" aria-label="Moduskeuze">
-          <button type="button" class="btn btn-secondary btn-sm" data-mode="BPV">BPV</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-mode="School">School</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-mode="Personal">Persoonlijk</button>
-        </div>
-      </header>
-      <nav id="os-nav" class="os-nav" aria-label="BORIS navigatie">
-        <button class="os-nav__button" type="button" data-os-tab="dashboard">Dashboard</button>
-        <button class="os-nav__button" type="button" data-os-tab="today">Vandaag</button>
-        <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
-        <button class="os-nav__button" type="button" data-os-tab="reflectie">Reflectie</button>
-        <button class="os-nav__button" type="button" data-os-tab="archief">Archief</button>
-      </nav>
-      <main id="new-os-content" class="os-shell__content">
-        <section class="os-section" data-os-section="dashboard">
-          <h2 class="os-section__title">Dashboard</h2>
-          <div class="os-host-grid" data-os-host="dashboard-cards"></div>
-        </section>
-        <section class="os-section" data-os-section="today" hidden>
-          <h2 class="os-section__title">Vandaag</h2>
-          <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
-        </section>
-        <section class="os-section" data-os-section="planning" hidden>
-          <h2 class="os-section__title">Planning</h2>
-          <p class="os-host-empty">Planningmodules volgen in een volgende iteratie.</p>
-        </section>
-        <section class="os-section" data-os-section="reflectie" hidden>
-          <h2 class="os-section__title">Reflectie</h2>
-          <p class="os-host-empty">Reflectie-overzicht volgt in een volgende iteratie.</p>
-        </section>
-        <section class="os-section" data-os-section="archief" hidden>
-          <h2 class="os-section__title">Archief</h2>
-          <p class="os-host-empty">Archiefweergave volgt in een volgende iteratie.</p>
-        </section>
-        <section class="os-section" data-os-section="settings">
-          <div id="new-os-settings-block"></div>
-        </section>
-      </main>
-    </div>
-  `;
-
-  function setActiveTab(tab) {
-    activeTab = shellTabs.includes(tab) ? tab : 'dashboard';
-    app.querySelectorAll('[data-os-section]').forEach((section) => {
-      const sectionName = section.getAttribute('data-os-section');
-      if (sectionName === 'settings') return;
-      section.hidden = sectionName !== activeTab;
-    });
-    app.querySelectorAll('[data-os-tab]').forEach((button) => {
-      const pressed = button.getAttribute('data-os-tab') === activeTab;
-      button.setAttribute('aria-pressed', String(pressed));
-    });
-  }
-
-  async function applyFocusMode() {
-    const focusMode = await getSetting('focusMode');
-    const sections = app.querySelectorAll('[data-os-section]');
-    const navTabs = app.querySelectorAll('[data-os-tab]');
-
-    if (focusMode) {
-      activeTab = 'today';
-      sections.forEach((section) => {
-        const sectionName = section.getAttribute('data-os-section');
-        const keep = sectionName === 'today' || sectionName === 'settings';
-        section.hidden = !keep;
-      });
-      navTabs.forEach((tab) => {
-        const keep = tab.getAttribute('data-os-tab') === 'today';
-        tab.hidden = !keep;
-      });
-    } else {
-      navTabs.forEach((tab) => {
-        tab.hidden = false;
-      });
-      setActiveTab(activeTab);
-    }
-  }
-
-  function ensureHostEmptyStates() {
-    app.querySelectorAll('[data-os-host]').forEach((host) => {
-      const hasContent = host.children.length > 0;
-      if (!hasContent) {
-        host.innerHTML = '<p class="os-host-empty">Nog geen actieve blokken voor deze weergave.</p>';
-      }
-    });
-  }
-
-  function unmountAll() {
-    mountedBlocks.forEach((entry) => {
-      entry.instance?.unmount?.();
-    });
-    mountedBlocks = [];
-    app.querySelectorAll('[data-os-host]').forEach((host) => {
-      host.innerHTML = '';
-    });
-  }
-
-  function renderHosts() {
-    unmountAll();
-    const mode = modeManager.getMode();
-    const context = { mode, eventBus, modeManager };
-    const eligibleBlocks = blockRegistry.getEnabled().filter((block) => {
-      if (!Array.isArray(block.modes) || block.modes.length === 0) return true;
-      return block.modes.includes(mode);
-    });
-
-    eligibleBlocks.forEach((block) => {
-      const hosts = Array.isArray(block.hosts) ? block.hosts : [];
-      hosts.forEach((hostName) => {
-        const hostEl = app.querySelector(`[data-os-host="${hostName}"]`);
-        if (!hostEl || typeof block.mount !== 'function') return;
-        const instance = block.mount(hostEl, context) || null;
-        mountedBlocks.push({ blockId: block.id, hostName, instance });
-      });
-    });
-
-    ensureHostEmptyStates();
-  }
-
-  function updateModeButtons() {
-    const mode = modeManager.getMode();
-    app.querySelectorAll('#mode-switch [data-mode]').forEach((button) => {
-      const active = button.getAttribute('data-mode') === mode;
-      button.setAttribute('aria-pressed', String(active));
-      button.classList.toggle('btn-primary', active);
-      button.classList.toggle('btn-secondary', !active);
-    });
-  }
-
-  app.querySelectorAll('#mode-switch [data-mode]').forEach((button) => {
-    button.addEventListener('click', () => {
-      modeManager.setMode(button.getAttribute('data-mode'));
-    });
-  });
-
-  app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
-    tabButton.addEventListener('click', () => {
-      setActiveTab(tabButton.getAttribute('data-os-tab'));
-    });
-  });
-
-  const unsubscribeMode = eventBus.on('mode:changed', () => {
-    updateModeButtons();
-    renderHosts();
-  });
-
-  renderSettingsBlock(app.querySelector('#new-os-settings-block'), {
-    onChange: async ({ key }) => {
-      if (key === 'focusMode') {
-        await applyFocusMode();
-      }
-    },
-  });
-
-  updateModeButtons();
-  renderHosts();
-  setActiveTab(activeTab);
-  applyFocusMode();
-
-  window.addEventListener('beforeunload', () => {
-    unsubscribeMode?.();
-    eventBus.clear();
-  }, { once: true });
+  createOSShell(app, { eventBus, modeManager, blockRegistry });
 }
 
 async function initServiceWorker() {

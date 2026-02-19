@@ -88,6 +88,9 @@ export function createShell(container) {
               <span class="toggle compact-toggle" id="compact-toggle"></span>
             </button>
             <div class="hamburger-menu-divider"></div>
+            <button class="hamburger-menu-item" data-action="refresh">
+              ${icon('refresh-cw')} Vernieuwen
+            </button>
             <a href="#sync" class="hamburger-menu-item" data-action="nav">
               ${icon('upload')} Sync
             </a>
@@ -156,6 +159,11 @@ export function createShell(container) {
 
   hamburgerMenu.querySelectorAll('[data-action="nav"]').forEach(link => {
     link.addEventListener('click', () => hamburgerMenu.classList.remove('open'));
+  });
+
+  // Refresh page
+  hamburgerMenu.querySelector('[data-action="refresh"]')?.addEventListener('click', () => {
+    window.location.reload();
   });
 
   // Theme switcher

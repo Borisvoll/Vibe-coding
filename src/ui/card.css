@@ -1,0 +1,94 @@
+/* ═══════════════════════════════════════════════════════════════
+   UI Card System — Unified card language
+
+   Matches legacy BPV dashboard feel: border containment, subtle
+   hover shadow, generous padding, calm premium surface.
+
+   Usage:
+     <div class="ui-card">                      — plain card
+     <div class="ui-card ui-card--accent">       — mode-colored top border
+     <div class="ui-card ui-card--clickable">    — interactive (hover effects)
+   ═══════════════════════════════════════════════════════════════ */
+
+.ui-card {
+  background: var(--ui-surface);
+  border: 1px solid var(--ui-card-border);
+  border-radius: var(--ui-card-radius);
+  padding: var(--ui-card-padding);
+  transition: box-shadow var(--duration-fast) var(--ease),
+              border-color var(--duration-fast) var(--ease);
+}
+
+.ui-card:hover {
+  box-shadow: var(--ui-card-shadow);
+}
+
+/* ── Modifiers ──────────────────────────────────────────────── */
+
+/* Mode-colored 3px top border */
+.ui-card--accent {
+  border-top: 3px solid var(--mode-card-border, var(--ui-border));
+}
+
+/* Clickable card — pointer + stronger hover */
+.ui-card--clickable {
+  cursor: pointer;
+}
+
+.ui-card--clickable:hover {
+  border-color: var(--ui-accent);
+  box-shadow: var(--shadow-md);
+}
+
+.ui-card--clickable:active {
+  transform: scale(0.99);
+}
+
+/* Flush — no padding (block manages own internal spacing) */
+.ui-card--flush {
+  padding: 0;
+}
+
+/* ── Card child elements ────────────────────────────────────── */
+
+.ui-card__title {
+  margin: 0 0 var(--space-3);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+
+.ui-card__subtitle {
+  margin: 0 0 var(--space-2);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ui-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ui-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.ui-card__meta {
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+}
+
+/* ── Progress bar (unified) ─────────────────────────────────── */
+
+.ui-progress {
+  height: var(--ui-progress-h);
+  background: var(--ui-border-light);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.ui-progress__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 400ms var(--ease);
+}

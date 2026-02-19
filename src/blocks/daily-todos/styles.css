@@ -1,0 +1,122 @@
+.daily-todos__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.daily-todos__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: color 200ms var(--ease);
+}
+
+.daily-todos__count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: color 200ms var(--ease);
+}
+
+.daily-todos__add-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.daily-todos__input {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.daily-todos__add-btn {
+  flex-shrink: 0;
+  width: 32px;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.daily-todos__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.daily-todos__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: background 120ms var(--ease);
+}
+
+.daily-todos__item:hover {
+  background: var(--color-surface-hover);
+}
+
+.daily-todos__check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--todo-color, var(--color-accent));
+  background: transparent;
+  color: var(--todo-color, var(--color-accent));
+  font-size: 0.6875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 150ms var(--ease), color 150ms var(--ease);
+}
+
+.daily-todos__item--done .daily-todos__check {
+  background: var(--todo-color, var(--color-accent));
+  color: var(--color-accent-text);
+}
+
+.daily-todos__text {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  transition: opacity 150ms var(--ease);
+}
+
+.daily-todos__item--done .daily-todos__text {
+  text-decoration: line-through;
+  opacity: 0.45;
+}
+
+.daily-todos__delete {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 120ms var(--ease), color 120ms var(--ease);
+  flex-shrink: 0;
+}
+
+.daily-todos__item:hover .daily-todos__delete {
+  opacity: 1;
+}
+
+.daily-todos__delete:hover {
+  color: var(--color-error);
+}

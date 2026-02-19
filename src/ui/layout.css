@@ -1,0 +1,81 @@
+/* ═══════════════════════════════════════════════════════════════
+   UI Layout — Section wrappers, stacking helpers, hero row
+
+   Matches legacy BPV dashboard rhythm:
+   - 24px (space-6) between sections
+   - 20px (space-5) internal padding
+   - Constrained max-width for readability
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Section (vertical group of cards / blocks) ───────────────── */
+.ui-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ui-section + .ui-section {
+  margin-top: var(--space-6);
+}
+
+/* Section title bar — label + optional action */
+.ui-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-1);
+}
+
+.ui-section__title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+
+/* ── Hero row — 2-col stat highlights ─────────────────────────── */
+.ui-hero-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+@media (max-width: 480px) {
+  .ui-hero-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Stack — generic vertical flex ────────────────────────────── */
+.ui-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.ui-stack--xs { gap: var(--space-1); }
+.ui-stack--sm { gap: var(--space-2); }
+.ui-stack--md { gap: var(--space-3); }
+.ui-stack--lg { gap: var(--space-5); }
+
+/* ── Row — generic horizontal flex ────────────────────────────── */
+.ui-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ui-row--between {
+  justify-content: space-between;
+}
+
+/* ── Widget grid — 2-col responsive for dashboard ─────────────── */
+.ui-widget-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+@media (max-width: 767px) {
+  .ui-widget-grid {
+    grid-template-columns: 1fr;
+  }
+}

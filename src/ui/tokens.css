@@ -1,0 +1,43 @@
+/* ═══════════════════════════════════════════════════════════════
+   UI Design Tokens — Semantic layer over variables.css
+
+   These aliases map raw color/spacing tokens to UI-meaningful names.
+   All tokens resolve to existing CSS custom properties in variables.css.
+   Import this file BEFORE card.css / typography.css / layout.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Surface ──────────────────────────────────────────────── */
+  --ui-surface:       var(--color-surface);
+  --ui-surface-hover: var(--color-surface-hover);
+  --ui-bg:            var(--color-bg);
+
+  /* ── Borders ──────────────────────────────────────────────── */
+  --ui-border:        var(--color-border);
+  --ui-border-light:  var(--color-border-light);
+
+  /* ── Text ─────────────────────────────────────────────────── */
+  --ui-text:          var(--color-text);
+  --ui-text-muted:    var(--color-text-secondary);
+  --ui-text-faint:    var(--color-text-tertiary);
+
+  /* ── Card ─────────────────────────────────────────────────── */
+  --ui-card-padding:  var(--space-5);
+  --ui-card-radius:   var(--radius-lg);
+  --ui-card-border:   var(--ui-border);
+  --ui-card-shadow:   var(--shadow-sm);
+
+  /* ── Accent (inherits from mode system when inside OS shell) */
+  --ui-accent:        var(--mode-accent, var(--color-accent));
+  --ui-accent-light:  var(--mode-accent-light, var(--color-accent-light));
+
+  /* ── Semantic ─────────────────────────────────────────────── */
+  --ui-danger:        var(--color-error);
+  --ui-warning:       var(--color-warning);
+  --ui-success:       var(--color-success);
+
+  /* ── Sizing ───────────────────────────────────────────────── */
+  --ui-icon-sm:       20px;
+  --ui-icon-md:       40px;
+  --ui-progress-h:    6px;
+}

@@ -1,0 +1,44 @@
+/* ═══════════════════════════════════════════════════════════════
+   UI Typography — Stat numbers, labels, meta text
+
+   Matches legacy BPV dashboard hierarchy:
+   - Large stat numbers (2rem/800)
+   - Uppercase labels (0.8125rem/600)
+   - Small captions and meta text
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Large stat / metric number — e.g. "40u", "87%", "12" */
+.ui-stat {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--ui-text);
+}
+
+/* Smaller stat variant — e.g. inline counters */
+.ui-stat--sm {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+/* Uppercase label — e.g. "UREN DEZE WEEK", "TAKEN" */
+.ui-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ui-text-muted);
+}
+
+/* Secondary metadata — dates, counts */
+.ui-meta {
+  font-size: 0.75rem;
+  color: var(--ui-text-muted);
+}
+
+/* Smallest caption — hints, char counters */
+.ui-caption {
+  font-size: 0.6875rem;
+  color: var(--ui-text-faint);
+}

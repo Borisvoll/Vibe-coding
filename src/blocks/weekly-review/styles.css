@@ -38,7 +38,7 @@
   color: var(--color-success);
   background: var(--color-success-light);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   white-space: nowrap;
 }
 
@@ -127,14 +127,14 @@
 .wr__bar {
   height: 5px;
   background: var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   overflow: hidden;
   margin-bottom: 4px;
 }
 
 .wr__bar-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   transition: width 400ms var(--ease);
 }
 
@@ -159,7 +159,7 @@
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-emerald-light);
   color: var(--color-emerald);
   font-size: 0.75rem;
@@ -204,7 +204,7 @@
 .wr__chip {
   display: inline-flex;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-purple-light);
   color: var(--color-purple);
   font-size: 0.75rem;

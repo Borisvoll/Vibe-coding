@@ -85,7 +85,7 @@
   gap: var(--space-2);
   padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
   border: 1px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: 0.8125rem;
@@ -354,7 +354,7 @@
 
 .mode-card--active .mode-card__check {
   background: var(--mode-color);
-  color: #fff;
+  color: var(--color-accent-text);
 }
 
 /* ── Mode-aware accent (set via data-mode on shell root) ──── */
@@ -391,7 +391,7 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--mode-accent-light, var(--color-accent-light));
-  border-left: 3px solid var(--mode-accent, var(--color-accent));
+  border-left: 4px solid var(--mode-accent, var(--color-accent));
   margin-bottom: var(--space-3);
   animation: hero-enter 400ms var(--ease-out) both;
   transition: background 400ms var(--ease), border-color 400ms var(--ease);
@@ -425,8 +425,170 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* ── Navigation ────────────────────────────────────────────── */
-.os-nav {
+/* ═══════════════════════════════════════════════════════════════
+   Desktop Sidebar (hidden on mobile)
+   ═══════════════════════════════════════════════════════════════ */
+
+.os-sidebar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .os-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200px;
+    height: 100vh;
+    height: 100dvh;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    z-index: 100;
+    padding: var(--space-4) 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: border-color 400ms var(--ease);
+  }
+
+  /* Sidebar border follows mode accent */
+  #new-os-shell[data-mode] .os-sidebar {
+    border-right-color: color-mix(in srgb, var(--mode-accent, var(--color-border)) 30%, var(--color-border));
+  }
+
+  /* Push main content to the right */
+  .os-shell__content {
+    margin-left: 200px;
+  }
+
+  /* Hide mobile header and mobile nav on desktop */
+  .os-shell__header--mobile,
+  .os-nav--mobile {
+    display: none !important;
+  }
+}
+
+.os-sidebar__brand {
+  padding: 0 var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: var(--space-3);
+}
+
+.os-sidebar__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.os-sidebar__date {
+  font-size: 0.75rem;
+  color: var(--color-text-tertiary);
+}
+
+.os-sidebar__nav,
+.os-sidebar__system {
+  display: flex;
+  flex-direction: column;
+  padding: 0 var(--space-2);
+  gap: var(--space-1);
+}
+
+.os-sidebar__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  text-align: left;
+  position: relative;
+  transition: color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+
+.os-sidebar__item:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+/* Active sidebar item — mode-colored left accent bar */
+.os-sidebar__item--active {
+  color: var(--mode-accent, var(--color-accent));
+  background: var(--mode-accent-light, var(--color-accent-light));
+  font-weight: 600;
+}
+
+.os-sidebar__item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--space-1);
+  bottom: var(--space-1);
+  width: 4px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--mode-accent, var(--color-accent));
+  transition: background 300ms var(--ease);
+}
+
+.os-sidebar__item--muted {
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+}
+
+.os-sidebar__icon {
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 150ms var(--ease);
+}
+
+.os-sidebar__item:hover .os-sidebar__icon,
+.os-sidebar__item--active .os-sidebar__icon {
+  opacity: 1;
+}
+
+.os-sidebar__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--mode-accent, var(--color-accent));
+  color: var(--color-accent-text);
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: auto;
+}
+
+.os-sidebar__divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: var(--space-3) var(--space-4);
+}
+
+.os-sidebar__mode {
+  margin-top: auto;
+  padding: var(--space-3) var(--space-3) 0;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.os-sidebar__mode .os-mode-btn {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+/* ── Mobile Navigation (hidden on desktop) ────────────────── */
+.os-nav--mobile {
   position: relative;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -434,16 +596,16 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
-.os-nav::-webkit-scrollbar { display: none; }
+.os-nav--mobile::-webkit-scrollbar { display: none; }
 
-/* Mode accent line under nav — persistent visual mode indicator */
-.os-nav::after {
+/* Mode accent line under mobile nav */
+.os-nav--mobile::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 2px;
+  height: 3px;
   background: var(--mode-accent, var(--color-accent));
   transition: background 300ms var(--ease);
 }
@@ -493,6 +655,26 @@
   line-height: 1;
   vertical-align: middle;
   margin-left: var(--space-1);
+}
+
+/* ── Dashboard breadcrumb link ────────────────────────────── */
+.os-section__home-link {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: var(--space-2);
+  transition: color 150ms var(--ease);
+}
+
+.os-section__home-link:hover {
+  color: var(--mode-accent, var(--color-accent));
+  text-decoration: underline;
 }
 
 /* ── Content area ──────────────────────────────────────────── */
@@ -562,14 +744,8 @@
   font-size: 0.8125rem;
 }
 
-/* ── Tablet ────────────────────────────────────────────────── */
+/* ── Tablet (sidebar visible at 768px+) ───────────────────── */
 @media (min-width: 768px) {
-  .os-shell__header-inner,
-  .os-nav__inner {
-    padding-left: var(--space-6);
-    padding-right: var(--space-6);
-  }
-
   .os-shell__content {
     padding: var(--space-5) var(--space-6);
   }
@@ -581,14 +757,8 @@
 
 /* ── Desktop ──────────────────────────────────────────────── */
 @media (min-width: 1024px) {
-  .os-shell__header-inner,
-  .os-nav__inner {
-    padding-left: var(--space-10);
-    padding-right: var(--space-10);
-  }
-
   .os-shell__content {
-    padding: var(--space-6) var(--space-10);
+    padding: var(--space-6) var(--space-8);
   }
 
   .os-host-grid {
@@ -598,29 +768,28 @@
 
 /* ── Wide desktop ─────────────────────────────────────────── */
 @media (min-width: 1440px) {
-  .os-shell__header-inner,
-  .os-nav__inner {
-    padding-left: var(--space-16);
-    padding-right: var(--space-16);
-  }
-
   .os-shell__content {
-    padding: var(--space-8) var(--space-16);
+    padding: var(--space-8) var(--space-10);
   }
 }
 
 /* ── Shared block card ─────────────────────────────────────── */
 .os-mini-card {
   border: 1px solid var(--color-border);
-  border-top: 3px solid var(--mode-card-border, var(--color-border));
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  padding: var(--space-4);
+  border-top: 4px solid var(--mode-card-border, var(--color-border));
+  border-radius: var(--ui-card-radius);
+  background: var(--ui-surface);
+  padding: var(--ui-card-padding);
   font-size: 0.9375rem;
-  color: var(--color-text);
+  color: var(--ui-text);
   animation: block-enter var(--duration-slow) var(--ease-out) both;
   animation-delay: var(--stagger, 0ms);
-  transition: border-color 400ms var(--ease);
+  transition: border-color 400ms var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+
+.os-mini-card:hover {
+  box-shadow: var(--ui-card-shadow);
 }
 
 /* Block entrance — used by os-mini-card and host children after mode switch */
@@ -629,9 +798,10 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Settings section — constrained width for readability ─── */
+/* ── Settings section — wider, centered ────────────────────── */
 .os-section[data-os-section="settings"] .settings-block {
-  max-width: 700px;
+  width: 100%;
+  max-width: 640px;
 }
 
 /* ── Settings row label ────────────────────────────────────── */
@@ -692,7 +862,7 @@
   gap: var(--space-2);
   padding: var(--space-2) var(--space-4);
   border: 1.5px solid var(--color-border);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-bg);
   cursor: pointer;
   font-size: 0.8125rem;
@@ -709,11 +879,12 @@
   border-color: var(--color-text-secondary);
 }
 
+/* Default active state uses accent color; mode pills override with --pill-color */
 .settings-mode-pill--active {
-  border-color: var(--color-accent);
-  background: var(--color-accent-light);
-  color: var(--color-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 12%, transparent);
+  border-color: var(--pill-color, var(--color-accent));
+  background: var(--pill-color-light, var(--color-accent-light));
+  color: var(--pill-color, var(--color-accent));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pill-color, var(--color-accent)) 12%, transparent);
 }
 
 .settings-mode-pill__dot {

@@ -16,12 +16,12 @@ export async function getTodaySnapshot(mode) {
     const [tasks, inboxCount, dailyEntry] = await Promise.all([
       getTasksForToday(mode),
       getInboxCount(),
-      getDailyEntry(getToday()),
+      getDailyEntry(mode, getToday()),
     ]);
 
     const tasksDone = tasks.filter((t) => t.status === 'done').length;
     const tasksTotal = tasks.length;
-    const outcomes = (dailyEntry?.tasks || []).slice(0, 3).map((t) => t.text || t);
+    const outcomes = (dailyEntry?.outcomes || []).filter((o) => o.trim());
 
     return { outcomes, tasksDone, tasksTotal, inboxCount };
   } catch {

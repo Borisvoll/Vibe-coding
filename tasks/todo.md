@@ -1003,6 +1003,588 @@
 
 ---
 
+## Daily Page Sprint — Mode-Aware Daily Entries (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Plan → Approve → Implement → Test → Verify
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **244 passed**, 0 failed (19 files) |
+| Build | **Clean** |
+| DB version | 6 |
+
+---
+
+### Storage Decision: OPTIE 1 Extended ✅
+
+**Chosen:** Extend existing `dailyPlans` store via DB bump to v7 (no new store).
+
+**Argument:**
+- `dailyPlans` (v1) has `date` as a UNIQUE index → prevents multiple modes per date
+- IndexedDB cannot change an index constraint without deleting + recreating it → requires schema bump regardless
+- Creating a new store (`os_daily_entries`) would orphan `dailyPlans` and force a full rewrite of both existing blocks; extending is lower impact
+- Migration path is clean: copy existing entries with `mode: 'School'`, update id to composite `${date}__School`
+- OPTIE 2 only wins if the existing store shape is incompatible — it is compatible with minor extension
+
+**v7 migration:**
+1. Delete `date` unique index from `dailyPlans`
+2. Recreate `date` as non-unique index
+3. Add `mode` index (non-unique)
+4. For all existing entries: add `mode: 'School'`, update `id → ${entry.date}__School`, map `tasks → todos`, `evaluation → notes`, add `outcomes: ['','','']`
+
+---
+
+### New Data Shape
+
+```js
+// dailyPlans store entry (after v7)
+{
+  id:        '2026-02-19__School',     // composite: date__mode
+  date:      '2026-02-19',
+  mode:      'School',                 // 'School' | 'Personal' | 'BPV'
+  outcomes:  ['Wiskunde afronden', '', ''],  // top 3 goal strings (always length 3)
+  todos:     [                         // proper checklist with IDs
+    { id: 'uuid', text: 'Opgave 3', done: false, createdAt: '…', doneAt: null }
+  ],
+  notes:     '',                       // short reflection, max 500 chars
+  updatedAt: '2026-02-19T10:00:00Z',
+}
+```
+
+**Backward compat:** existing entries migrated; old `tasks[]` → `todos`, old `evaluation` → `notes`.
+
+---
+
+### Blocks List + Host Placement
+
+| Block | Action | Host | Modes | Order | Accent |
+|-------|--------|------|-------|-------|--------|
+| `daily-outcomes` | **UPDATE** — mode-aware, `outcomes[]`, auto-save on blur | `today-sections` | all | 5 | per-mode |
+| `daily-todos` | **NEW** — quick todo list per day+mode | `today-sections` | all | 6 | per-mode |
+| `daily-reflection` | **UPDATE** — mode-aware, `notes` field, 500 char limit | `today-sections` | all | 50 | neutral |
+
+Mode accent colors (existing CSS vars):
+- School → `--color-purple` / `--color-purple-light`
+- Personal → `--color-emerald` / `--color-emerald-light`
+- BPV → `--color-blue` / `--color-blue-light`
+
+---
+
+### Phase 0 — DB Migration (v6 → v7)
+
+- [ ] `src/db.js` — bump `DB_VERSION` to 7
+- [ ] Add `if (oldVersion < 7)` block in `onupgradeneeded`:
+  - Delete `date` unique index from `dailyPlans`
+  - Recreate `date` as non-unique index
+  - Add `mode` index (non-unique)
+- [ ] Migration of existing data runs in `onsuccess` (after upgrade) via transaction on `dailyPlans`
+  - For each existing entry: assign `mode = 'School'`, rekey `id = ${date}__School`, map fields
+
+### Phase 1 — Store Adapter (`src/stores/daily.js`)
+
+- [ ] `getDailyEntry(mode, date)` → load by composite id `${date}__mode`
+- [ ] `saveDailyEntry({ mode, date, outcomes, todos, notes })` → upsert with composite id
+- [ ] `saveOutcomes(mode, date, outcomes[3])` → partial update, preserve todos/notes
+- [ ] `addTodo(mode, date, text)` → append `{ id: uuid, text, done: false, createdAt, doneAt: null }`
+- [ ] `toggleTodo(mode, date, todoId)` → flip done, set doneAt
+- [ ] `deleteTodo(mode, date, todoId)` → remove by id
+- [ ] `saveNotes(mode, date, notes)` → partial update, enforce max 500 chars
+- [ ] Remove old `toggleDailyTask(date, taskIndex)` (replaced by toggleTodo)
+- [ ] Update `getAllDailyEntries()` → returns all entries (multi-mode)
+- [ ] Update `validate.js` → `validateDailyEntry` accepts new shape
+- [ ] Emit `daily:changed` with `{ mode, date }` payload from all write functions
+
+### Phase 2 — Update `daily-outcomes` Block
+
+- [ ] Pass `modeManager` via context, get `currentMode = modeManager.getMode()`
+- [ ] Call `getDailyEntry(currentMode, today)` — mode-aware
+- [ ] Render `outcomes[0..2]` as 3 auto-saving text inputs (blur → `saveOutcomes`)
+- [ ] Remove manual save button (auto-save pattern)
+- [ ] Show mode accent color on block header (CSS var via `data-mode` attribute on article)
+- [ ] On `mode:changed`: reload entry for new mode (same date)
+- [ ] On `daily:changed { mode, date }`: reload only if matches current mode+date
+- [ ] Proper unmount cleanup (unsubscribe both handlers)
+
+### Phase 3 — New `daily-todos` Block
+
+- [ ] Create `src/blocks/daily-todos/index.js` — register (host: today-sections, modes: [], order: 6)
+- [ ] Create `src/blocks/daily-todos/view.js`:
+  - Mode-aware header: "Taken — School 📚" with mode accent
+  - Input row: text field + add button
+  - Todo list: checkbox + text + delete button per item
+  - Done counter: "2/5 gedaan" (auto, based on todos array)
+  - `addTodo` on enter/button, `toggleTodo` on checkbox, `deleteTodo` on button
+  - On `mode:changed`: reload for new mode
+  - On `daily:changed { mode }`: reload if matching mode
+- [ ] Create `src/blocks/daily-todos/styles.css` — minimal, uses existing vars
+- [ ] Import styles in `src/blocks/registerBlocks.js`
+- [ ] Register block in `src/blocks/registerBlocks.js`
+
+### Phase 4 — Update `daily-reflection` Block
+
+- [ ] Pass `modeManager` via context
+- [ ] Call `getDailyEntry(currentMode, today)` — mode-aware
+- [ ] Load/save `notes` field (not `evaluation`)
+- [ ] Enforce max 500 chars: counter display + textarea `maxlength`
+- [ ] Auto-save on blur (remove manual save button)
+- [ ] On `mode:changed`: reload entry for new mode
+- [ ] Proper unmount cleanup
+
+### Phase 5 — Aggregators (`src/os/dailyAggregator.js`)
+
+- [ ] `getDailySummary(mode, date)` → `{ outcomesSet: number, todosTotal, todosDone, notes }`
+- [ ] `getWeeklySummary(mode, weekStr)` → `{ totalOutcomesSet, totalTodosDone, totalTodosTotal, daysWithEntries }`
+  - weekStr format: `'2026-W08'` (ISO week)
+  - Iterate Mon–Sun dates, collect daily entries, sum counts
+- [ ] `getMonthlySummary(mode, monthStr)` → `{ totalTodosDone, topOutcome: string|null }`
+  - monthStr format: `'2026-02'`
+  - topOutcome = most frequently appearing non-empty outcome string
+- [ ] All functions return stable shape even when no entries exist (zero-filled)
+- [ ] Pure functions, no side effects, no eventBus dependency
+
+### Phase 6 — Tests
+
+- [ ] **Rewrite** `tests/stores/daily.test.js`:
+  - DB v7 indexes exist (date non-unique, mode index)
+  - `getDailyEntry(mode, date)` returns null when missing
+  - `saveDailyEntry` creates composite id correctly
+  - `saveOutcomes` persists all 3 slots
+  - `addTodo` generates uuid, correct shape
+  - `toggleTodo` flips done, sets doneAt
+  - `deleteTodo` removes by id, leaves others
+  - `saveNotes` truncates at 500 chars
+  - School and Personal entries for same date are independent
+  - Migration: old entry shape reads back via new functions
+- [ ] **Create** `tests/os/dailyAggregator.test.js`:
+  - `getDailySummary` returns zeros for empty entry
+  - `getDailySummary` counts outcomes and todos correctly
+  - `getWeeklySummary` sums across 7 days
+  - `getWeeklySummary` for empty week returns zeros
+  - `getMonthlySummary` finds top outcome
+  - `getMonthlySummary` for empty month returns null topOutcome
+- [ ] Run full suite — all tests green (target: 260+)
+- [ ] Run `npm run build` — clean
+
+### Phase 7 — Documentation
+
+- [ ] `docs/architecture.md` — add "Daily Entries" entity section:
+  - Store: `dailyPlans` (v7), key: `${date}__${mode}`
+  - Source-of-truth statement: daily entries feed week/month summaries
+- [ ] `docs/demo.md` — add daily page verification steps:
+  - Switch mode → daily todos/outcomes change instantly
+  - Add todo in School, switch Personal → empty, switch back → still there
+- [ ] `tasks/lessons.md` — add lesson if any corrections needed during impl
+
+---
+
+### Acceptance Criteria
+
+- [ ] In each mode there is a separate todo list and outcomes per day
+- [ ] Mode switch makes content visibly different (not just header)
+- [ ] Data persists independently per mode/date (School todos don't appear in Personal)
+- [ ] `getDailySummary`, `getWeeklySummary`, `getMonthlySummary` return stable shapes
+- [ ] All tests green (234+ existing + new daily + aggregator tests)
+- [ ] Build clean
+- [ ] No regressions on existing blocks
+
+---
+
+### After (2026-02-19)
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files, +30 net new tests) |
+| Build | **Clean** |
+| DB version | **7** (dailyPlans: non-unique date, mode index added) |
+| New files | `src/blocks/daily-todos/` (index/view/styles), `src/os/dailyAggregator.js`, `tests/stores/daily.test.js` (rewritten), `tests/os/dailyAggregator.test.js` |
+| Modified files | `src/db.js`, `src/stores/daily.js`, `daily-outcomes/view+styles`, `daily-reflection/view+styles`, `registerBlocks.js`, `dashboardData.js`, `schema.test.js`, `daily-outcomes.test.js` |
+
+---
+
+## Visual System Alignment + Balatro Easter Egg Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Goal: Make OS blocks match legacy BPV premium card feel + future-proof design foundation + Balatro easter egg
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files) |
+| Build | **Clean** |
+
+---
+
+### Audit Summary
+
+**Gap between Legacy BPV and BORIS OS:**
+
+| Aspect | Legacy BPV | OS Blocks | Fix |
+|--------|-----------|-----------|-----|
+| Card padding | `var(--space-5)` (20px) | `var(--space-4)` (16px) | Increase to --space-5 |
+| Hover shadow | `var(--shadow-md)` on all cards | None on `.os-mini-card` | Add subtle hover shadow |
+| Stat typography | 2rem/800 numbers, 0.8125rem/600 labels | No shared pattern | Create `.ui-stat-*` classes |
+| Left border accent | `.card-color-left` (3-4px) | Top-only border (3px) | Keep top (OS identity) but add shared accent utility |
+| Progress bars | 8px consistent height | 5px/6px mixed | Normalize to 6px |
+| Hardcoded hex | None in pages | `#fff`, `#ef4444`, `#f59e0b` in blocks | Replace with vars |
+| `999px` radius | Via `var(--radius-full)` | Hardcoded `999px` in 15+ places | Replace with var |
+| Card fragmentation | Single `.card` class | `.os-mini-card`, `.dash-widget`, `.school-dash`, `.personal-dash` etc. | Unify base via shared properties |
+
+---
+
+### Proposed Semantic Token List (~20 tokens in src/ui/tokens.css)
+
+```
+/* Surface */
+--ui-surface:       var(--color-surface)
+--ui-surface-hover: var(--color-surface-hover)
+--ui-bg:            var(--color-bg)
+
+/* Borders */
+--ui-border:        var(--color-border)
+--ui-border-light:  var(--color-border-light)
+
+/* Text */
+--ui-text:          var(--color-text)
+--ui-text-muted:    var(--color-text-secondary)
+--ui-text-faint:    var(--color-text-tertiary)
+
+/* Card */
+--ui-card-padding:  var(--space-5)
+--ui-card-radius:   var(--radius-lg)
+--ui-card-shadow:   var(--shadow-sm)
+--ui-card-shadow-hover: var(--shadow-md)
+
+/* Accent (inherits from mode system) */
+--ui-accent:        var(--mode-accent, var(--color-accent))
+--ui-accent-light:  var(--mode-accent-light, var(--color-accent-light))
+
+/* Danger */
+--ui-danger:        var(--color-error)
+
+/* Sizing */
+--ui-icon-sm:       20px
+--ui-icon-md:       40px
+--ui-progress-h:    6px
+```
+
+### Card Class API (src/ui/card.css)
+
+```
+.ui-card                — Base card (surface, border, radius, padding, hover shadow)
+.ui-card--accent        — Mode-colored top border (3px)
+.ui-card--clickable     — Pointer cursor, hover border-color change
+.ui-card--flush         — No padding (for blocks managing own internal layout)
+.ui-card__title         — 0.9375rem, 600 weight, bottom margin
+.ui-card__subtitle      — 0.75rem, secondary color, uppercase, letter-spacing
+.ui-card__body          — flex column, gap --space-3
+```
+
+### Typography Classes (src/ui/typography.css)
+
+```
+.ui-stat                — 2rem, 800 weight, -0.03em tracking, line-height 1
+.ui-stat--sm            — 1.25rem, 700 weight
+.ui-label               — 0.8125rem, 600 weight, uppercase, 0.04em tracking
+.ui-meta                — 0.75rem, secondary color
+.ui-caption             — 0.6875rem, tertiary color
+```
+
+### Layout Classes (src/ui/layout.css)
+
+```
+.ui-section             — margin-bottom: --space-8
+.ui-section__title      — inherits os-section__title pattern
+.ui-row                 — flex row, gap --space-4, wrap
+.ui-hero-row            — grid: repeat(auto-fit, minmax(160px, 1fr)), gap --space-4
+.ui-stack               — flex column, gap --space-4
+```
+
+### File Touch List
+
+**CREATE:**
+- `src/ui/tokens.css` — semantic token aliases
+- `src/ui/card.css` — unified card classes
+- `src/ui/typography.css` — stat/label/meta classes
+- `src/ui/layout.css` — section/row/hero layout
+- `src/ui/balatro.js` — easter egg controller (keyboard listener + overlay)
+- `src/ui/balatro.css` — swirl background + CRT effect + card animations
+- `docs/ui-guidelines.md` — how to build a new block using the system
+
+**MODIFY:**
+- `src/blocks/styles.css` — upgrade `.os-mini-card` (padding, hover, shadow)
+- `src/blocks/daily-todos/styles.css` — replace `#fff`, `#ef4444`
+- `src/blocks/daily-reflection/styles.css` — replace `#f59e0b`
+- `src/blocks/bpv-quick-log/styles.css` — replace `999px`
+- `src/blocks/bpv-weekly-overview/styles.css` — replace `999px`, normalize bar height
+- `src/blocks/personal-dashboard/styles.css` — replace `999px`
+- `src/blocks/school-dashboard/styles.css` — replace `999px`
+- `src/blocks/weekly-review/styles.css` — replace `999px`
+- `src/main.js` — import `src/ui/tokens.css`
+- `src/os/shell.js` — wire Balatro key listener (non-invasive)
+- `docs/design-principles.md` — add "Unified Card Language" section
+- `docs/demo.md` — add visual verification steps
+- `tasks/todo.md` — this checklist
+
+---
+
+### Phase A — Token Layer + Card System
+
+- [ ] Create `src/ui/tokens.css` with ~20 semantic aliases
+- [ ] Create `src/ui/card.css` with `.ui-card` family
+- [ ] Create `src/ui/typography.css` with `.ui-stat`, `.ui-label`, `.ui-meta`
+- [ ] Create `src/ui/layout.css` with `.ui-section`, `.ui-hero-row`, `.ui-stack`
+- [ ] Import all UI CSS in `src/main.js` (before blocks)
+
+### Phase B — OS Card Alignment
+
+- [ ] Upgrade `.os-mini-card` padding → `var(--space-5)` (match legacy)
+- [ ] Add `.os-mini-card:hover` subtle shadow (`var(--shadow-sm)`)
+- [ ] Replace hardcoded `#fff` → `var(--ui-surface)` in daily-todos
+- [ ] Replace hardcoded `#ef4444` → `var(--ui-danger)` in daily-todos
+- [ ] Replace hardcoded `#f59e0b` → `var(--color-warning)` in daily-reflection
+- [ ] Replace `999px` → `var(--radius-full)` in 5+ block CSS files
+- [ ] Normalize progress bar heights to 6px where inconsistent
+
+### Phase C — Balatro Easter Egg
+
+- [ ] Create `src/ui/balatro.css` — CRT swirl background (CSS animated gradients + scanlines + vignette)
+- [ ] Create `src/ui/balatro.js`:
+  - Key buffer listener: typing "balatro" triggers activation
+  - Creates overlay with swirl background
+  - Spawns animated playing cards (CSS 3D flip + float)
+  - Plays Balatro-style ambient audio via Web Audio API (optional)
+  - Escape / click anywhere to dismiss
+  - Non-invasive: no DOM changes until triggered
+- [ ] Wire listener in `src/os/shell.js` (single line: `import + init`)
+- [ ] Test: easter egg doesn't interfere with normal text input (only activates on exact match)
+
+### Phase D — Documentation
+
+- [ ] Create `docs/ui-guidelines.md`:
+  - How to build a block
+  - Which card/typography classes to use
+  - Spacing rules
+  - Mode accent usage
+  - Accessibility basics (focus states)
+  - Layout hosts documented
+  - "No fragmentation" rules
+- [ ] Update `docs/design-principles.md`:
+  - Add "Unified Card Language" section
+  - One card language, one spacing scale, one typography scale
+- [ ] Update `docs/demo.md` with visual system verification steps
+
+### Phase E — Verify
+
+- [ ] `npm test` — all 274 tests green
+- [ ] `npm run build` — clean
+- [ ] No regressions on Today/Inbox/Dashboard
+- [ ] Easter egg activates on "balatro", dismisses on Escape
+- [ ] Card hover shadow visible on all OS blocks
+- [ ] Mode accent works in all 3 modes
+
+---
+
+### Acceptance Criteria
+
+- [ ] OS cards have same padding rhythm as legacy (--space-5)
+- [ ] OS cards show subtle hover shadow (calm, premium feel)
+- [ ] No hardcoded hex colors in modified blocks
+- [ ] `999px` replaced with `var(--radius-full)` everywhere touched
+- [ ] `.ui-card`, `.ui-stat`, `.ui-label` classes exist and documented
+- [ ] Balatro easter egg works (non-intrusive, visually pleasing)
+- [ ] Tests green, build clean
+- [ ] `docs/ui-guidelines.md` exists
+- [ ] `docs/design-principles.md` has "Unified Card Language" section
+
+---
+
+### Risks + Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Padding increase breaks layout | Cards overflow on mobile | Test at 320px viewport |
+| Easter egg key listener conflicts with text inputs | Can't type "balatro" in inputs | Only listen when no input/textarea is focused |
+| Shadow on hover too heavy | Breaks calm feel | Use `--shadow-sm` (lightest), not `--shadow-md` |
+| Too many new CSS files | Import order issues | Import tokens first, then card/typography/layout |
+| Block-specific CSS overrides | Specificity wars | New classes are additive, don't override block classes |
+
+---
+
+### After (To be filled)
+
+| Metric | Value |
+|--------|-------|
+| Tests | TBD |
+| Build | TBD |
+| New files | TBD |
+| Modified files | TBD |
+
+---
+
+## Stable OS Sidebar + Settings Width + Accent Prominence Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Plan → Approve → Implement → Test → Verify
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files) |
+| Build | **Clean** |
+
+---
+
+### Analysis
+
+**Current state from screenshot + code audit:**
+
+1. **Navigation is horizontal tab bar** — 6 buttons (Dashboard, Vandaag, Inbox, Planning, Reflectie, Archief) + settings gear. Works but feels ephemeral — no stable sidebar presence.
+2. **Settings page width** — `.settings-row` uses `display: flex; justify-content: space-between` which is fine, but the parent `.settings-block.card` inherits compact padding. On wide screens the content padding is generous (64px each side at 1440px+) which effectively narrows the settings. The settings section also has no `max-width` constraint of its own — it just stretches to fill, which is the right behavior.
+3. **Mode accent bar** — Currently a 2px line under the nav bar (`os-nav::after`) and a 3px top border on cards. The screenshot shows these are subtle. The mode hero banner exists but is small. The accent should be bolder.
+4. **Settings mode pills** — Use generic `--color-accent` for the active state instead of the mode's own color. A School pill should be purple when active, Personal should be emerald, BPV should be blue.
+
+**Design approach (Rams/Ive/Jobs/Eno):**
+- Sidebar replaces horizontal tabs on desktop (≥768px), stays as bottom-bar on mobile
+- Sidebar is minimal: icon + label, thin width (~200px), always visible
+- Dashboard gets a home icon (⌂) — obvious home path (Jobs)
+- Mode accent bar thickened from 2px → 4px on nav
+- Mode card top border thickened from 3px → 4px
+- Settings gets wider content area with `max-width: 640px` centered
+- Settings mode pills use their OWN mode color (not generic accent)
+- Non-dashboard tabs get subtle "Dashboard" breadcrumb link in section title area
+
+---
+
+### Stap A — Sidebar Navigation (Desktop ≥768px)
+
+**Replace horizontal tab bar with vertical sidebar on desktop:**
+
+- [ ] `src/os/shell.js` — Restructure HTML: wrap shell in `os-shell__sidebar` + `os-shell__main` layout
+  - Sidebar contains: logo/title, nav items, divider, system items (Sync placeholder, Export placeholder, Settings)
+  - Nav items: Dashboard (⌂), Vandaag, Inbox (with badge), Projecten, Planning
+  - Divider
+  - System: Instellingen
+  - Main area: header (date + mode pill) + content
+- [ ] `src/blocks/styles.css` — New `.os-sidebar` styles:
+  - Fixed left, 200px width, full height, `var(--color-surface)` background
+  - Border-right: 1px solid `var(--color-border)`
+  - Nav items: vertical flex, icon + label, mode-accent active indicator (4px left bar)
+  - Sidebar mode accent bar: 4px left border on active item using `var(--mode-accent)`
+  - Mobile (< 768px): sidebar hidden, keep horizontal bottom nav or top tabs
+- [ ] `src/blocks/styles.css` — Keep existing `.os-nav` styles for mobile (horizontal scroll tabs)
+- [ ] Sidebar items map to same `setActiveTab(tabId)` logic — no breaking changes
+- [ ] Add "Projecten" as nav item → maps to `planning` tab for now (or its own section)
+- [ ] Settings moves from gear icon to sidebar system section
+
+**Sidebar items (stable, never change on mode switch):**
+1. ⌂ Dashboard
+2. ☀ Vandaag
+3. 📥 Inbox (badge)
+4. 📋 Planning
+5. ── (divider)
+6. ⚙ Instellingen
+
+### Stap B — Dashboard as Home Reference
+
+- [ ] Add subtle "← Dashboard" link in section title area for non-dashboard tabs
+  - Appears as small text link before the section title
+  - Calls `setActiveTab('dashboard')` on click
+  - Styled: `0.75rem`, `var(--color-text-tertiary)`, underline on hover
+  - Only visible when activeTab ≠ 'dashboard'
+- [ ] On mobile: no change (dashboard is first tab, always reachable)
+
+### Stap C — Settings Page Width + Accent Prominence
+
+- [ ] Settings section: add `max-width: 640px` to `.settings-block` in OS context
+  - Remove `width: 100%` rule, use auto centering instead
+- [ ] Settings mode pills: use mode-specific color for active state:
+  - School pill active → `var(--color-purple)` border/text, `var(--color-purple-light)` bg
+  - Personal pill active → `var(--color-emerald)` border/text, `var(--color-emerald-light)` bg
+  - BPV pill active → `var(--color-blue)` border/text, `var(--color-blue-light)` bg
+  - Implementation: add `data-mode-color` / `data-mode-color-light` attributes to pills, use in CSS
+- [ ] Mode card top border: increase from `3px` → `4px` for more prominence
+- [ ] Sidebar active indicator: 4px left accent bar (mode color)
+
+### Stap D — BPV De-emphasis (Without Hiding)
+
+- [ ] BPV is NOT in primary sidebar nav
+- [ ] BPV remains accessible via:
+  - Dashboard widget (existing "BPV" deep link card)
+  - BPV-only blocks when mode=BPV (existing behavior)
+  - When mode=BPV, BPV blocks appear on Vandaag (existing)
+- [ ] No new BPV nav item needed — it's a mode, not a destination
+- [ ] Verify: switching to BPV mode still shows BPV blocks on Dashboard/Vandaag
+
+### Stap E — Documentation
+
+- [ ] Create `docs/nav-architecture.md`:
+  - Stable OS sidebar principle
+  - Dashboard as Home
+  - Mode affects content not navigation
+  - Sidebar items list + rationale
+- [ ] Update `docs/demo.md`:
+  - Sidebar visible on desktop
+  - Mode switch does not change sidebar items
+  - "← Dashboard" link works from each tab
+  - Settings reachable from sidebar
+- [ ] Update `docs/design-principles.md`:
+  - Add "Stable Navigation" principle
+
+### Stap F — Verify
+
+- [ ] `npm test` — all 274 tests green
+- [ ] `npm run build` — clean
+- [ ] No regressions in tab switching
+- [ ] Badge counts still update on sidebar inbox item
+- [ ] Settings page is wider and better centered
+- [ ] Mode accent colors prominent (4px bars, mode-colored pills)
+- [ ] Dashboard reachable from every tab
+
+---
+
+### Acceptance Criteria
+
+- [ ] Desktop: sidebar visible with 6 items (Dashboard, Vandaag, Inbox, Planning, divider, Instellingen)
+- [ ] Mobile: horizontal tabs preserved (no sidebar)
+- [ ] Sidebar items are STABLE — mode switch does NOT change them
+- [ ] Active item has 4px mode-colored left accent bar
+- [ ] "← Dashboard" breadcrumb on non-dashboard tabs
+- [ ] Settings page wider with centered content
+- [ ] Settings mode pills use their own mode color when active
+- [ ] Card top border is 4px (was 3px)
+- [ ] All tests green, build clean
+- [ ] No hardcoded hex colors
+- [ ] BPV accessible via dashboard widget + mode blocks (not sidebar item)
+
+---
+
+### Risks + Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Sidebar pushes content too narrow on tablet | Cards overflow | Use collapsible sidebar at 768-1023px (icons only) |
+| Mobile layout breaks | UX regression | Keep existing horizontal tabs for <768px |
+| Settings gear button removal | Can't find settings | Settings is last sidebar item (always visible) |
+| Tab logic breaks | Major regression | Same `setActiveTab()` function, just different click source |
+
+---
+
+### After (To be filled)
+
+| Metric | Value |
+|--------|-------|
+| Tests | TBD |
+| Build | TBD |
+| New files | TBD |
+| Modified files | TBD |
+
+---
+
 ## Milestone 3: Cloudflare Deployment + Sync (Future)
 
 - [ ] Deploy to Cloudflare Pages (static hosting, free tier)

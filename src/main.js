@@ -1,5 +1,10 @@
 import './styles/reset.css';
 import './styles/variables.css';
+import './ui/tokens.css';
+import './ui/card.css';
+import './ui/typography.css';
+import './ui/layout.css';
+import './ui/balatro.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/pages.css';
@@ -19,6 +24,7 @@ import { registerDefaultBlocks } from './blocks/registerBlocks.js';
 import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
 import { createOSShell } from './os/shell.js';
+import { initBalatro } from './ui/balatro.js';
 
 export const SCHEMA_VERSION = 6;
 
@@ -73,6 +79,7 @@ async function init() {
   await migratePersonalTasks();
   await checkExportReminder();
   await initServiceWorker();
+  initBalatro();
 
   const enableNewOS = getFeatureFlag('enableNewOS');
   if (enableNewOS) {

@@ -45,3 +45,27 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** The Dashboard tab had zero School-specific blocks registered for `dashboard-cards`. Users on School mode saw only the Inbox widget, making the Dashboard feel broken/empty.
 
 **Prevention:** Every host slot must have meaningful content for ALL modes. If mode-specific blocks don't exist, register a cross-mode synopsis block (like the main-dashboard widget grid) that shows mode-aware data. Check the block host analysis table before shipping.
+
+## 8. IndexedDB unique indexes prevent multi-key storage (2026-02-19)
+
+**Issue:** `dailyPlans` store had `date` as a UNIQUE index (v1). This prevented storing multiple entries per date (one per mode), because IndexedDB unique indexes reject duplicate values.
+
+**Prevention:** When a store needs composite natural keys (e.g. date+mode), use a composite string id (`${date}__${mode}`) as the keyPath, and make all secondary indexes non-unique. Plan for multi-tenant keys from day 1. Changing a unique index to non-unique requires a DB version bump + cursor migration.
+
+## 9. Always audit existing test files when changing public API (2026-02-19)
+
+**Issue:** Two test files (`tests/stores/daily.test.js` and `tests/stores/daily-outcomes.test.js`) used the old `getDailyEntry(date)` and `saveDailyEntry({ date, tasks })` signatures. Changing the store's public API to require `mode` broke 15 existing tests.
+
+**Prevention:** Before changing any exported function's signature, `grep` all test files for the function name. Update all call sites in tests before running the suite. Consider backwards-compatible overloads only when migration cost is high.
+
+## 10. Never hardcode colors or magic numbers in block CSS (2026-02-19)
+
+**Issue:** 16 instances of `999px` border-radius, 4 instances of `#fff`, and several hardcoded hex colors (`#ef4444`, `#f59e0b`, `#d1d5db`) were found across block CSS files. These break dark mode and prevent theme customization.
+
+**Prevention:** Always use CSS variables from `variables.css` or `tokens.css`. Use `var(--radius-full)` not `999px`, `var(--color-accent-text)` not `#fff`, `var(--color-error)` not `#ef4444`. Run `grep -r "999px\|#fff\|#ef4444" src/blocks/` before shipping.
+
+## 11. Navigation must be mode-independent (2026-02-19)
+
+**Issue:** The horizontal tab bar felt unstable because it mixed content-level concepts (Reflectie, Archief) with navigation concepts. Users couldn't tell what changed on mode switch because the nav itself was identical but content was insufficient.
+
+**Prevention:** Navigation structure (sidebar/tabs) must be fixed and mode-independent. Mode only affects *content* inside sections, never the nav items themselves. Use mode accent color on the active indicator to subtly communicate current mode without changing structure. Dashboard is always "home" — reachable from everywhere.

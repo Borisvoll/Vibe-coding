@@ -2,6 +2,7 @@
   margin: 0 0 var(--space-3);
   font-size: 0.9375rem;
   font-weight: 600;
+  transition: color 200ms var(--ease);
 }
 
 .daily-outcomes__list {
@@ -16,25 +17,22 @@
   gap: var(--space-2);
 }
 
-.daily-outcomes__checkbox {
-  width: 16px;
-  height: 16px;
+.daily-outcomes__num {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6875rem;
+  font-weight: 700;
   flex-shrink: 0;
-  accent-color: var(--color-accent);
+  opacity: 0.85;
+  transition: color 200ms var(--ease);
 }
 
 .daily-outcomes__input {
   flex: 1;
   font-size: 0.875rem;
   padding: var(--space-2);
-}
-
-.daily-outcomes__item:has(.daily-outcomes__checkbox:checked) .daily-outcomes__input {
-  text-decoration: line-through;
-  color: var(--color-text-tertiary);
-}
-
-.daily-outcomes__save {
-  align-self: flex-end;
-  margin-top: var(--space-1);
 }

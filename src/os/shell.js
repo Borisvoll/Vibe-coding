@@ -1,6 +1,7 @@
 import { getSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
-import { formatDateShort, getToday } from '../utils.js';
+import { formatDateShort, getToday, getISOWeek } from '../utils.js';
+import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief'];
 
@@ -291,6 +292,36 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   if (modeManager.isFirstVisit?.()) {
     setTimeout(() => showModePicker(), 400);
   }
+
+  // ── Friday prompt: gentle nudge to send weekly review ───────
+  (async () => {
+    try {
+      if (!isFriday()) return;
+      const week = getISOWeek(getToday());
+      const sent = await isReviewSent(week);
+      if (sent) return;
+      // Show a non-intrusive banner after a short delay
+      setTimeout(() => {
+        const banner = document.createElement('div');
+        banner.className = 'os-friday-prompt';
+        banner.innerHTML = `
+          <span class="os-friday-prompt__text">Het is vrijdag — tijd voor je weekoverzicht?</span>
+          <button type="button" class="os-friday-prompt__btn" data-action="scroll-review">Bekijk</button>
+          <button type="button" class="os-friday-prompt__close" aria-label="Sluiten">&times;</button>
+        `;
+        banner.querySelector('[data-action="scroll-review"]')?.addEventListener('click', () => {
+          setActiveTab('today');
+          banner.remove();
+          setTimeout(() => {
+            const review = app.querySelector('.weekly-review');
+            review?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        });
+        banner.querySelector('.os-friday-prompt__close')?.addEventListener('click', () => banner.remove());
+        app.querySelector('.os-shell__content')?.prepend(banner);
+      }, 2000);
+    } catch { /* non-critical */ }
+  })();
 
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();

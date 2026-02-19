@@ -50,6 +50,9 @@ export function createShell(container) {
           <span id="header-title">Dashboard</span>
         </div>
         <div class="app-header-actions">
+          <button class="os-switch-btn" id="legacy-os-btn" title="Schakel naar BORIS OS" aria-label="Naar BORIS OS">
+            ✦ BORIS OS
+          </button>
           <button class="sidebar-toggle hamburger-btn" title="Opties" aria-label="Opties">
             ${icon('settings')}
           </button>
@@ -172,7 +175,14 @@ export function createShell(container) {
     window.location.reload();
   });
 
-  // Switch to BORIS OS
+  // Switch to BORIS OS — header button
+  container.querySelector('#legacy-os-btn')?.addEventListener('click', () => {
+    setFeatureFlag('enableNewOS', true);
+    window.location.hash = '';
+    window.location.reload();
+  });
+
+  // Switch to BORIS OS — hamburger duplicate (kept for discoverability)
   hamburgerMenu.querySelector('[data-action="switch-os"]')?.addEventListener('click', () => {
     setFeatureFlag('enableNewOS', true);
     window.location.hash = '';

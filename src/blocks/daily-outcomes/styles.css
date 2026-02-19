@@ -1,6 +1,6 @@
 .daily-outcomes__title {
   margin: 0 0 var(--space-3);
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   transition: color 200ms var(--ease);
 }
@@ -20,11 +20,11 @@
 .daily-outcomes__num {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 700;
   flex-shrink: 0;
   opacity: 0.85;
@@ -33,6 +33,6 @@
 
 .daily-outcomes__input {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   padding: var(--space-2);
 }

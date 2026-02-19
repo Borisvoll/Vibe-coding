@@ -7,12 +7,12 @@
 
 .daily-reflection__title {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
 .daily-reflection__counter {
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-tertiary);
 }
 
@@ -22,6 +22,6 @@
 
 .daily-reflection__input {
   width: 100%;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   resize: vertical;
 }

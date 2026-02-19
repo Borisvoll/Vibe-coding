@@ -161,4 +161,125 @@ Manual walkthrough to verify the Inbox screen and processing flow.
 - [ ] Nav badge updates correctly
 - [ ] Empty state displays correctly
 - [ ] Dark mode looks correct
-- [ ] All 101 tests pass (`npm test`)
+- [ ] All 139 tests pass (`npm test`)
+
+---
+
+---
+
+# BPV Tracker — Demo Script
+
+Manual walkthrough for the BPV quick-log and weekly overview blocks.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. Switch to **BPV** mode (click the mode pill → choose BPV 🏢)
+
+---
+
+## 13. Quick Log — Log Today's Hours
+
+1. On the **Vandaag** tab, find the **Snel loggen** card (appears before the weekly overview)
+2. Verify the date shown is today
+3. The day-type buttons show: Gewerkt · Ziek · Afwezig · Vrij/Feestdag
+4. "Gewerkt" should be active by default (blue ring)
+5. Enter: **Start** = `08:00`, **Einde** = `16:45`, **Pauze** = `45`
+6. The "Netto:" display should update to **8u** (525 min − 45 min = 480 min)
+7. Enter a note: `CNC draaiwerk, krukas gefreesd`
+8. Click **Opslaan**
+
+**Expected:** Status shows "Opgeslagen ✓". The weekly overview progress bar updates.
+
+---
+
+## 14. Quick Log — Non-work Day
+
+1. In the **Snel loggen** card, click **Ziek**
+2. The time fields should hide (not relevant for sick days)
+3. Click **Opslaan**
+
+**Expected:** Entry saved without time data; net hours = 0u.
+
+---
+
+## 15. Quick Log — Upsert (Edit Same Day)
+
+1. Click **Gewerkt** again and change End to `17:30`, Break to `30`
+2. Netto should update to **9u** (570 − 30 = 540 min)
+3. Click **Opslaan**
+
+**Expected:** The existing entry for today is updated (same ID). No duplicate created.
+
+---
+
+## 16. Weekly Overview — Progress Bar
+
+1. Find the **Weekoverzicht BPV** card just below the quick-log
+2. The week label shows the current ISO week (e.g. `2026-W08`)
+3. The progress bar fills proportionally to logged hours (≥80% = green, 50–79% = amber, <50% = red)
+4. The label shows e.g. `8u / 40u (20%)`
+
+**Expected:** Bar updates immediately after saving in the quick-log card.
+
+---
+
+## 17. Weekly Overview — Day Grid
+
+1. Look at the 5-day grid (ma di wo do vr)
+2. Days with hours logged show the day type icon (✓ for work, 🤒 for sick)
+3. Days with logbook entries show 📝 indicator
+4. Empty days are faded
+
+**Expected:** Today's entry is reflected in the correct day column.
+
+---
+
+## 18. Weekly Overview — Week Navigation
+
+1. Click **‹** (previous week) — the label changes to the prior week
+2. Click **›** twice to go to next week — should show an empty week (all 5 days faded)
+3. Navigate back to current week
+
+**Expected:** Navigation works in both directions without errors.
+
+---
+
+## 19. Export — CSV
+
+1. Click the **CSV** button in the weekly overview card header
+2. Your browser downloads `bpv-uren.csv`
+3. Open the file — it should contain:
+   - Header row: `datum,week,type,start,einde,pauze_min,netto_min,netto_uren,notitie,omschrijving,tags`
+   - One row per logged day, sorted by date
+
+**Expected:** Valid CSV, opens correctly in Excel/Numbers/LibreOffice.
+
+---
+
+## 20. Export — JSON
+
+1. Click the **JSON** button
+2. Browser downloads `bpv-uren.json`
+3. Open the file — it should be a valid JSON array with objects containing `date`, `type`, `netHours`, `tags`, etc.
+
+**Expected:** `JSON.parse(fileContents)` succeeds; array is sorted by `date`.
+
+---
+
+## BPV Verification Checklist
+
+- [ ] Mode pill shows BPV mode is active (blue dot)
+- [ ] Snel loggen card appears on Vandaag tab in BPV mode
+- [ ] Time fields hide when switching to Ziek/Afwezig/Vrij
+- [ ] Net hours calculate correctly (end − start − break)
+- [ ] Upsert: saving twice for the same date keeps one record
+- [ ] Weekoverzicht card appears below quick-log
+- [ ] Progress bar reflects saved hours
+- [ ] Day grid shows correct icons per day
+- [ ] Week navigation works (‹ ›)
+- [ ] CSV export downloads and is valid
+- [ ] JSON export downloads and parses without errors
+- [ ] Dark mode looks correct in both new blocks
+- [ ] All 139 tests pass (`npm test`)

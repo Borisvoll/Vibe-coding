@@ -5,9 +5,9 @@ import { getSetting, setSetting } from '../db.js';
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
 
 const MODE_OPTIONS = [
-  { key: 'BPV',      label: 'BPV',         emoji: '🏢', color: 'var(--color-blue)' },
   { key: 'School',   label: 'School',      emoji: '📚', color: 'var(--color-purple)' },
   { key: 'Personal', label: 'Persoonlijk', emoji: '🌱', color: 'var(--color-emerald)' },
+  { key: 'BPV',      label: 'BPV',         emoji: '🏢', color: 'var(--color-blue)' },
 ];
 
 function getPresets() {

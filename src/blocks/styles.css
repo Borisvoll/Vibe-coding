@@ -72,8 +72,8 @@
 .os-mode-btn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 12px 5px 9px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-surface);
@@ -178,7 +178,7 @@
 }
 
 .mode-picker__eyebrow {
-  margin: 0 0 2px;
+  margin: 0 0 var(--space-1);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -328,15 +328,15 @@
   justify-content: center;
   min-width: 16px;
   height: 16px;
-  padding: 0 4px;
-  border-radius: 999px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
   background: var(--color-accent);
   color: var(--color-accent-text);
   font-size: 0.625rem;
   font-weight: 700;
   line-height: 1;
   vertical-align: middle;
-  margin-left: 2px;
+  margin-left: var(--space-1);
 }
 
 /* ── Content area ──────────────────────────────────────────── */
@@ -370,6 +370,13 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* Block entrance for all host children (covers non-card blocks too) */
+.os-host-stack > *,
+.os-host-grid > * {
+  animation: block-enter var(--duration-slow) var(--ease-out) both;
+  animation-delay: var(--stagger, 0ms);
 }
 
 .os-host-empty {
@@ -409,15 +416,23 @@
   padding: var(--space-4);
   font-size: 0.9375rem;
   color: var(--color-text);
+  animation: block-enter var(--duration-slow) var(--ease-out) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
+/* Block entrance — used by os-mini-card and host children after mode switch */
+@keyframes block-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Settings row label ────────────────────────────────────── */
 .settings-exp {
-  font-size: 11px;
+  font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-text-tertiary);
-  margin-left: 6px;
+  margin-left: var(--space-2);
 }
 
 /* ── Legacy school blocks ──────────────────────────────────── */
@@ -441,7 +456,7 @@
 .school-block__field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .school-block__field > span {
@@ -466,8 +481,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 8px 16px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border: 1.5px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-bg);
@@ -526,7 +541,7 @@
 }
 
 .os-friday-prompt__btn {
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   border: none;
   border-radius: var(--radius-sm);
   background: var(--color-accent);

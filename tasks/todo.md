@@ -759,6 +759,128 @@
 
 ---
 
+## Mode Switch Fix + BPV De-emphasis + Animation Polish Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Diagnose → Plan → Fix → Test → Verify
+
+### Diagnosis
+
+**Reported bug:** Mode switch picker is clickable but OS content doesn't change visibly.
+
+**Root cause analysis (read-only audit of full event flow):**
+1. ✅ `modeManager.setMode()` correctly validates, persists to localStorage, emits `mode:changed`
+2. ✅ `eventBus.on('mode:changed')` in shell.js fires `triggerModeWash` + `updateModeBtn` + `renderHosts`
+3. ✅ `renderHosts()` correctly unmounts all, filters by mode, remounts eligible blocks
+4. ✅ Block contract is correct — mode-specific blocks have `modes: ['BPV']` etc.
+
+**Why it FEELS broken (UX root cause):**
+- `.os-mini-card` blocks have NO entrance animation (unlike `.card` which has `card-in`)
+- 7 shared blocks (daily-outcomes, inbox, projects, tasks, schedule, reflection, weekly-review) dominate the Today view — only 2-4 mode-specific blocks change per switch
+- No stagger effect on block mount → change feels like a flicker, not a transition
+- BPV is default → first-time users see BPV without choosing, feels stuck
+- Mode-specific blocks may be below fold on mobile
+
+**Conclusion:** Logic works. Visual feedback is insufficient. Fix = add block entrance animation + stagger + BPV de-emphasis.
+
+---
+
+### STAP 1 — Block Entrance Animation + Mode Switch Polish
+
+- [x] Add `card-in` animation to `.os-mini-card` (matches `.card` pattern)
+- [x] Add CSS `--stagger` variable for sequential block mount delay
+- [x] Add stagger assignment in `renderHosts()` (20ms per block)
+- [x] Ensure mode-specific blocks have clear visual entry on mode switch
+- [x] Add mode accent border-top to content area during mode switch
+
+### STAP 2 — BPV De-emphasis
+
+- [x] Reorder `MODE_META` in shell.js: School → Personal → BPV
+- [x] Reorder mode picker cards: School first, Personal second, BPV third
+- [x] Add `preferred_default_mode` setting (used on first visit only)
+- [x] Respect persisted mode from localStorage (existing behavior, verify)
+- [x] Update settings panel MODE_OPTIONS order
+
+### STAP 3 — CSS Polish (QoL items from previous audit)
+
+- [x] Global `:focus-visible` outline in `base.css`
+- [x] Inbox item hover state
+- [x] Task input `:focus` styling
+- [x] Normalize spacing in `blocks/styles.css` (px → vars where trivial)
+- [x] Mode picker card focus ring
+
+### STAP 4 — Animation Review (Eno-inspired)
+
+- [x] Verify mode-wash 600ms pulse works on all transitions
+- [x] Add block fade-in animation after mode switch
+- [x] Verify all new blocks use consistent easing hierarchy
+- [x] Check tab transition animation
+- [x] Verify reduced-motion media query covers new animations
+
+### STAP 5 — Mobile Sidebar Icons
+
+- [x] Verify legacy sidebar nav icons render on mobile
+- [x] Check OS nav horizontal scroll on small screens
+- [x] Verify safe-area-inset support on mode picker
+- [x] Fix any icon visibility issues
+
+### STAP 6 — Tests
+
+- [x] Add `tests/core/mode-switching.test.js` — eventBus + modeManager + blockRegistry integration
+- [x] Test: mode change emits event with correct payload
+- [x] Test: blockRegistry filter by mode returns correct blocks
+- [x] Test: shared blocks (modes=[]) appear in all modes
+- [x] Test: preferred_default_mode setting respected
+- [x] All existing 219 tests still green
+
+### STAP 7 — Verify + Document
+
+- [x] `npm test` — all tests green
+- [x] `npm run build` — clean
+- [x] Update `docs/demo.md` with mode switch verification steps
+- [x] Update `tasks/lessons.md`
+
+---
+
+### Acceptance Criteria
+
+- [x] Mode switch visually changes Today content (blocks animate in/out)
+- [x] Mode button label updates on switch
+- [x] Mode-wash animation triggers on switch
+- [x] BPV not default for new users (School/Personal first in picker)
+- [x] Block entrance animation on every mount (staggered)
+- [x] Focus-visible on all interactive elements
+- [x] All 234 tests green (was 219)
+- [x] Build clean
+
+---
+
+### After (2026-02-19)
+
+| Metric | Value |
+|--------|-------|
+| Tests | **234 passed**, 0 failed (18 files, +15 new mode-switching tests) |
+| Build | **Clean** (80.93 kB CSS, 155.04 kB JS) |
+| Changes | 11 files modified, 1 new test file |
+
+### Review Notes — Mode Switch + BPV De-emphasis + Animation Polish
+
+**What changed:**
+1. **Block entrance animation** — `.os-mini-card` and all OS host children now have `block-enter` keyframe (300ms fade+slide-up). Stagger delay (30ms per block) assigned in `renderHosts()` for sequential cascade.
+2. **BPV de-emphasis** — MODE_META reordered School → Personal → BPV. Default mode changed from BPV to School. Legacy shell + settings panel updated to match.
+3. **CSS polish** — Global `:focus-visible` ring added. Inbox item hover state. Task input focus ring. 8+ hardcoded px values normalized to CSS variables.
+4. **Mobile icons fixed** — Removed double `<span class="nav-icon">` wrapping in legacy shell. Added opacity transitions for mobile sidebar icons.
+5. **Tests** — 15 new mode-switching integration tests covering: event emission, localStorage persistence, first-visit detection, block filtering by mode, sort order, unsubscribe cleanup.
+
+**Eno-inspired design consistency:**
+- Mode wash: 600ms ease-out, 8% opacity pulse (unchanged, verified)
+- Block entrance: 300ms ease-out, 6px translateY (matches card-in pattern)
+- Stagger: 30ms per block (subtle cascade, not jarring)
+- All animations respect `prefers-reduced-motion: reduce`
+- Consistent easing hierarchy: `--ease`, `--ease-out`, `--ease-spring`
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

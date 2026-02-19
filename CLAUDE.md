@@ -74,11 +74,25 @@ Soft-delete pattern: deletions go to `deleted` store for undo. All `os_*` stores
 
 Tab-based navigation: Dashboard / Vandaag / Inbox / Planning / Reflectie / Archief. Manages host slot rendering, mode switching, and block mounting.
 
+### Settings & Mode Management
+
+Mode switching works in both legacy and BORIS OS paths:
+- **BORIS OS** (`src/os/shell.js`): Uses `modeManager` instance + eventBus for reactive updates
+- **Legacy** (`src/components/shell.js`): Uses localStorage fallback (`boris_mode` key) with direct DOM updates
+- **Settings Panel** (`src/blocks/settings-panel.js`): Dual-path support via fallback mode manager
+
+Mode pills appear in:
+1. Settings page (Instellingen section) — all three paths
+2. Legacy hamburger menu (top-right) — before theme switcher
+3. BORIS OS mode picker dialog (header button)
+
+All three keep themselves in sync via `mode:changed` event (OS) or localStorage (legacy).
+
 ### Key Events
 
 | Event | Purpose |
 |-------|---------|
-| `mode:changed` | Mode switched (BPV/School/Personal) |
+| `mode:changed` | Mode switched (BPV/School/Personal) — BORIS OS only |
 | `tasks:changed` | Task CRUD operation |
 | `inbox:changed` | Inbox item modified |
 | `inbox:open` | Switch to inbox tab |
@@ -86,15 +100,23 @@ Tab-based navigation: Dashboard / Vandaag / Inbox / Planning / Reflectie / Archi
 
 ## Testing
 
-Tests use Vitest + `fake-indexeddb`. Setup in `tests/setup.js` resets the DB before each test. Tests are store-level (no browser needed).
+Tests use Vitest + `fake-indexeddb`. Setup in `tests/setup.js` resets the DB before each test (219 tests covering store adapters, migrations, validation). Tests are store-level (no browser needed).
 
 ```bash
+# Run all tests once
+npm test
+
 # Run a single test file
 npx vitest run tests/stores/tasks.test.js
 
 # Run tests matching a pattern
 npx vitest run -t "should add a task"
+
+# Watch mode (re-run on file changes)
+npm run test:watch
 ```
+
+**Important:** Always run `npm test` before committing to ensure no regressions. Tests must pass in any PR.
 
 ## Deployment
 
@@ -112,6 +134,42 @@ Inspired by Dieter Rams, Jony Ive, Steve Jobs, Brian Eno. Key rules:
 - Ambient mode transitions between contexts
 - Dutch-language UI throughout
 
+## Common Patterns & Gotchas
+
+**Click handlers on new buttons:** Use direct click listeners, not event delegation on parent containers, for maximum reliability. Example:
+```javascript
+container.querySelectorAll('.my-button').forEach(btn => {
+  btn.addEventListener('click', () => { /* handler */ });
+});
+```
+
+**XSS prevention:** Always use `escapeHTML()` from `src/utils.js` when rendering user content:
+```javascript
+host.innerHTML = `<p>${escapeHTML(userText)}</p>`; // ✓ Safe
+host.innerHTML = `<p>${userText}</p>`;             // ✗ Unsafe
+```
+
+**Pointer events with overlays:** Fixed position overlays can block clicks on elements below. Use `pointer-events: none` as default, only enable when needed:
+```css
+.overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;  /* Allow clicks through */
+}
+.overlay.active {
+  pointer-events: auto;  /* Intercept clicks when visible */
+}
+```
+
+**Mode persistence:** Use `localStorage.getItem('boris_mode')` in legacy path, `modeManager.getMode()` in OS path. Both store the same key.
+
 ## Documentation
 
 Detailed docs in `docs/`: `architecture.md` (system design), `design-principles.md` (UI rules), `storage.md` (IndexedDB schemas), `current-state.md` (feature inventory), `future.md` (roadmap).
+
+## Debugging Tips
+
+- **Test failures:** Run `npm test` before each commit. Check `tests/setup.js` for DB reset logic.
+- **Mode not changing:** Verify `localStorage` isn't throwing errors (private browsing). Check that `setMode()` is called before re-rendering.
+- **Styles not applying:** Block styles are imported in `src/blocks/registerBlocks.js` (both OS and legacy paths). Component styles in `src/styles/base.css`.
+- **EventBus not firing:** Check that handlers are subscribed *before* events are emitted. Unsubscribe on cleanup to avoid memory leaks.

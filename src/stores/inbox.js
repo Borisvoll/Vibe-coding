@@ -1,5 +1,6 @@
 import { getAll, getByKey, put, remove } from '../db.js';
 import { addTask } from './tasks.js';
+import { validateInboxItem } from './validate.js';
 
 const STORE = 'os_inbox';
 
@@ -11,10 +12,11 @@ export async function getInboxItems() {
 }
 
 export async function addInboxItem(text, mode = null) {
+  validateInboxItem({ text, mode });
   const isLink = /^https?:\/\//.test(text.trim());
   const item = {
     id: crypto.randomUUID(),
-    text,
+    text: text.trim(),
     type: isLink ? 'link' : 'thought',
     mode,
     url: isLink ? text.trim() : null,

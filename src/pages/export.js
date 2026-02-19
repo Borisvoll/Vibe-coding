@@ -1,4 +1,4 @@
-import { exportAllData, importAll, clearAllData, getAllHoursSorted } from '../db.js';
+import { exportAllData, importAll, clearAllData, getAllHoursSorted, setSetting } from '../db.js';
 import { encryptData, decryptData } from '../crypto.js';
 import { icon } from '../icons.js';
 import { emit } from '../state.js';
@@ -97,6 +97,7 @@ export function createPage(container) {
         const jsonStr = JSON.stringify(serialized);
         const encrypted = await encryptData(jsonStr, pw);
         downloadJSON(encrypted, 'bpv-backup.bpv.json');
+        await setSetting('last_export_date', new Date().toISOString());
         showToast('Versleutelde export gedownload', { type: 'success' });
       } catch (err) {
         showToast('Export mislukt: ' + err.message, { type: 'error' });
@@ -109,6 +110,7 @@ export function createPage(container) {
         const data = await exportAllData();
         const serialized = await serializeForExport(data);
         downloadJSON(serialized, 'bpv-backup.json');
+        await setSetting('last_export_date', new Date().toISOString());
         showToast('Export gedownload', { type: 'success' });
       } catch (err) {
         showToast('Export mislukt: ' + err.message, { type: 'error' });

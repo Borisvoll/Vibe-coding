@@ -1,48 +1,65 @@
-import { getDailyEntry, saveDailyEntry } from '../../stores/daily.js';
+import { getDailyEntry, saveNotes } from '../../stores/daily.js';
 import { getToday, escapeHTML } from '../../utils.js';
+
+const NOTES_MAX = 500;
 
 export function renderDailyReflection(container, context) {
   const mountId = crypto.randomUUID();
-  const { eventBus } = context;
+  const { eventBus, modeManager } = context;
   const today = getToday();
 
   container.insertAdjacentHTML('beforeend', `
     <article class="daily-reflection os-mini-card" data-mount-id="${mountId}">
-      <h3 class="daily-reflection__title">Reflectie</h3>
+      <div class="daily-reflection__header">
+        <h3 class="daily-reflection__title">Notitie</h3>
+        <span class="daily-reflection__counter">0/${NOTES_MAX}</span>
+      </div>
       <textarea class="form-textarea daily-reflection__input" rows="2"
-        placeholder="Hoe ging het vandaag? Wat neem je mee?"></textarea>
-      <button type="button" class="btn btn-ghost btn-sm daily-reflection__save">Opslaan</button>
+        maxlength="${NOTES_MAX}"
+        placeholder="Korte notitie — wat neem je mee van vandaag?"></textarea>
     </article>
   `);
 
   const el = container.querySelector(`[data-mount-id="${mountId}"]`);
   const textarea = el.querySelector('.daily-reflection__input');
-  const saveBtn = el.querySelector('.daily-reflection__save');
+  const counter = el.querySelector('.daily-reflection__counter');
 
-  async function render() {
-    const entry = await getDailyEntry(today);
-    textarea.value = entry?.evaluation || '';
+  let debounceTimer = null;
+
+  function updateCounter() {
+    const len = textarea.value.length;
+    counter.textContent = `${len}/${NOTES_MAX}`;
+    counter.classList.toggle('daily-reflection__counter--near', len > NOTES_MAX * 0.85);
   }
 
-  saveBtn.addEventListener('click', async () => {
-    const text = textarea.value.trim();
-    const entry = await getDailyEntry(today);
-    const tasks = entry?.tasks || [];
-    if (tasks.length === 0 && !text) return;
-    await saveDailyEntry({
-      date: today,
-      tasks: tasks.length > 0 ? tasks : [{ text: 'Geen taken', done: false }],
-      evaluation: text || null,
-    });
-    eventBus.emit('daily:changed');
+  async function render() {
+    const mode = modeManager.getMode();
+    const entry = await getDailyEntry(mode, today);
+    textarea.value = entry?.notes || '';
+    updateCounter();
+  }
+
+  textarea.addEventListener('input', () => {
+    updateCounter();
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      const mode = modeManager.getMode();
+      await saveNotes(mode, today, textarea.value);
+      eventBus.emit('daily:changed', { mode, date: today });
+    }, 500);
   });
 
-  const unsubDaily = eventBus.on('daily:changed', () => render());
+  const unsubMode = eventBus.on('mode:changed', () => render());
+  const unsubDaily = eventBus.on('daily:changed', ({ mode } = {}) => {
+    if (!mode || mode === modeManager.getMode()) render();
+  });
 
   render();
 
   return {
     unmount() {
+      clearTimeout(debounceTimer);
+      unsubMode?.();
       unsubDaily?.();
       el?.remove();
     },

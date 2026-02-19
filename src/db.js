@@ -1,5 +1,5 @@
 export const DB_NAME = 'bpv-tracker';
-export const DB_VERSION = 6;
+export const DB_VERSION = 7;
 
 let dbInstance = null;
 
@@ -182,6 +182,45 @@ export function initDB() {
         osProjects.createIndex('mode', 'mode', { unique: false });
         osProjects.createIndex('status', 'status', { unique: false });
         osProjects.createIndex('updated_at', 'updated_at', { unique: false });
+      }
+
+      if (oldVersion < 7) {
+        // Make dailyPlans mode-aware:
+        // 1. Replace unique date index with non-unique
+        // 2. Add mode index
+        // 3. Migrate existing entries: assign mode='School', composite id, new fields
+        const dpStore = event.target.transaction.objectStore('dailyPlans');
+        dpStore.deleteIndex('date');
+        dpStore.createIndex('date', 'date', { unique: false });
+        dpStore.createIndex('mode', 'mode', { unique: false });
+        dpStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        dpStore.openCursor().onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (!cursor) return;
+          const old = cursor.value;
+          if (!old.mode) {
+            const now = old.updatedAt || new Date().toISOString();
+            const migrated = {
+              id: `${old.date}__School`,
+              date: old.date,
+              mode: 'School',
+              outcomes: ['', '', ''],
+              todos: (old.tasks || []).map((t) => ({
+                id: crypto.randomUUID(),
+                text: t.text,
+                done: Boolean(t.done),
+                createdAt: now,
+                doneAt: t.done ? now : null,
+              })),
+              notes: old.evaluation || '',
+              updatedAt: now,
+            };
+            cursor.delete();
+            dpStore.add(migrated);
+          }
+          cursor.continue();
+        };
       }
     };
 

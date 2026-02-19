@@ -118,6 +118,11 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  pointer-events: none;
+}
+
+.mode-picker--visible {
+  pointer-events: auto;
 }
 
 @media (min-width: 480px) {

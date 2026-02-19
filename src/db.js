@@ -413,3 +413,11 @@ export async function exportAllData() {
   }
   return data;
 }
+
+/** Reset DB instance — for testing only. */
+export function _resetDB() {
+  if (dbInstance) {
+    dbInstance.close();
+    dbInstance = null;
+  }
+}

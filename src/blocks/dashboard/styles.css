@@ -1,0 +1,263 @@
+/* ═══════════════════════════════════════════════════════════════
+   Dashboard Widgets — Colorful but Clean (Rams + Ive + color)
+   ═══════════════════════════════════════════════════════════════ */
+
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .dash-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ── Widget card ──────────────────────────────────────────── */
+.dash-widget {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease),
+              transform 120ms var(--ease);
+  animation: block-enter var(--duration-slow) var(--ease-out) both;
+  animation-delay: var(--stagger, 0ms);
+}
+
+.dash-widget:hover {
+  border-color: var(--widget-accent, var(--color-accent));
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--widget-accent, var(--color-accent)) 12%, transparent);
+}
+
+.dash-widget:active {
+  transform: scale(0.985);
+}
+
+.dash-widget--capture {
+  cursor: default;
+}
+.dash-widget--capture:hover {
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+.dash-widget--capture:active {
+  transform: none;
+}
+
+/* ── Icon circle ──────────────────────────────────────────── */
+.dash-widget__icon {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  border-radius: var(--radius-md);
+  background: var(--widget-accent-light, var(--color-accent-light));
+  color: var(--widget-accent, var(--color-accent));
+  transition: background var(--duration-fast) var(--ease);
+}
+
+/* ── Body ─────────────────────────────────────────────────── */
+.dash-widget__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-widget__title {
+  margin: 0 0 var(--space-1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.dash-widget__content {
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.dash-widget__loading {
+  color: var(--color-text-tertiary);
+  font-size: 0.8125rem;
+}
+
+/* ── Stats + metrics ──────────────────────────────────────── */
+.dash-widget__stat {
+  margin: 0 0 var(--space-1);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-widget__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.dash-widget__metric {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  padding: 2px var(--space-2);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-sm);
+}
+
+.dash-widget__metric--inbox {
+  background: var(--color-amber-light);
+  color: var(--color-amber);
+}
+
+.dash-widget__metric--warn {
+  background: var(--color-error-light);
+  color: var(--color-error);
+}
+
+.dash-widget__hint {
+  margin: 0;
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+}
+
+.dash-widget__empty {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* ── Progress bar ─────────────────────────────────────────── */
+.dash-widget__bar {
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  overflow: hidden;
+  margin-bottom: var(--space-1);
+}
+
+.dash-widget__bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 400ms var(--ease);
+}
+
+/* ── Project list ─────────────────────────────────────────── */
+.dash-widget__project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-widget__project {
+  font-size: 0.75rem;
+  color: var(--color-text);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-widget__risk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-error-light);
+  color: var(--color-error);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+.dash-widget__mode-chip {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  padding: 1px var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  vertical-align: middle;
+}
+
+/* ── Explore prompt ───────────────────────────────────────── */
+.dash-widget__prompt {
+  margin: 0;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+/* ── Quick capture ────────────────────────────────────────── */
+.dash-capture__form {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.dash-capture__input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-family: inherit;
+  transition: border-color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+
+.dash-capture__input:focus {
+  outline: none;
+  border-color: var(--color-emerald);
+  box-shadow: 0 0 0 3px var(--color-emerald-light);
+}
+
+.dash-capture__btn {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-emerald);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.dash-capture__btn:hover {
+  opacity: 0.9;
+}
+
+.dash-capture__confirm {
+  margin: var(--space-1) 0 0;
+  font-size: 0.75rem;
+  color: var(--color-success);
+  font-weight: 500;
+}

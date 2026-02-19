@@ -881,6 +881,115 @@
 
 ---
 
+## Mode Switch Visibility + Main Dashboard Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Diagnose → Plan → Implement → Verify
+
+### Diagnosis
+
+**Reported bug:** Mode switching appears broken — picker is clickable but content doesn't visibly change.
+
+**Root cause (3-round investigation):**
+1. Event flow is architecturally correct (modeManager → eventBus → renderHosts → block mount/unmount)
+2. The REAL problem: shared blocks dominate Today view (7 shared vs 2-4 mode-specific), Dashboard tab nearly empty (School has 0 dashboard-cards blocks), no mode indicator in content area (only tiny header pill)
+
+### Fix A — Mode Context in Section Titles
+- [x] Add `updateSectionTitles(mode)` in `src/os/shell.js`
+- [x] Section titles show mode badge: "Vandaag — School 📚" / "Dashboard — BPV 🏢" etc.
+- [x] Badge uses `--badge-color` CSS variable matching mode accent
+- [x] Called on init + `mode:changed` event
+
+### Fix B — Main Dashboard (6 Colorful Widgets)
+
+#### Data Layer (`src/os/dashboardData.js`)
+- [x] `getTodaySnapshot(mode)` — outcomes + task counts + inbox count
+- [x] `getWeekFocus(weekStr)` — habits + reflection days + completed tasks
+- [x] `getProjectsPulse()` — active projects cross-mode + at-risk count
+- [x] `getBPVPulse(weekStr)` — hours + target + last logbook date
+
+#### Dashboard Block (`src/blocks/dashboard/`)
+- [x] `index.js` — register block (hosts: `dashboard-cards`, modes: `[]`, order: 1)
+- [x] `view.js` — render 6 widgets: Vandaag (amber), Deze week (purple), Projecten (cyan), BPV (blue), Verken (rose), Snel vastleggen (emerald)
+- [x] `styles.css` — responsive grid (1-col mobile, 2-col at 600px), widget cards, accent colors via CSS vars
+- [x] Register in `src/blocks/registerBlocks.js`
+
+#### Widget Features
+- [x] Skeleton → async fill pattern (instant render, data fills in)
+- [x] Deep link navigation (widget click → tab switch / scroll / hash)
+- [x] Quick capture form (one-time setup, not recreated on refresh)
+- [x] Explore curiosity prompts (8 rotating prompts)
+- [x] Event subscriptions: mode:changed, tasks:changed, inbox:changed, projects:changed, bpv:changed
+- [x] Proper unmount cleanup
+
+### Fix C — Mode-Aware CSS
+- [x] `data-mode` attribute on shell root for CSS-based mode theming
+- [x] Mode accent variables: `--mode-accent` / `--mode-accent-light`
+- [x] Nav accent line (2px mode-colored bar at bottom)
+- [x] Active tab uses mode accent color
+- [x] Content crossfade on mode switch (120ms fade-out → remount → 300ms fade-in)
+- [x] Mode wash boosted from 8% → 14% opacity
+
+### Testing
+- [x] Create `tests/os/dashboardData.test.js` — 10 tests covering all 4 data functions
+- [x] All 244 tests green (was 234)
+
+### Bug Fixes
+- [x] Fix `setupCaptureWidget` called inside `loadData()` — was recreating form on every event refresh, potentially losing user input. Moved to one-time setup after DOM mount.
+
+### Documentation
+- [x] Update `docs/demo.md` — 10 dashboard verification steps + checklist
+- [x] Update `docs/design-principles.md` — 8 dashboard widget rules
+- [x] Add lessons 5-7 to `tasks/lessons.md` (visual feedback, section titles, empty hosts)
+- [x] Record sprint in `tasks/todo.md`
+
+---
+
+### Acceptance Criteria
+
+- [x] Mode switching produces VISIBLE change (section titles + widget content update)
+- [x] Dashboard tab shows 6 widgets in responsive grid
+- [x] Widgets show real data from existing stores
+- [x] No new DB schema
+- [x] Click any widget → navigates to relevant section
+- [x] Light + dark mode compatible
+- [x] All 244 tests green, build clean
+- [x] No regressions on Today/Inbox/Projects
+
+---
+
+### After (2026-02-19)
+
+| Metric | Value |
+|--------|-------|
+| Tests | **244 passed**, 0 failed (19 files, +10 new dashboard tests) |
+| Build | **Clean** |
+| Changes | 7 files created, 4 files modified |
+
+### Review Notes — Mode Switch Visibility + Main Dashboard
+
+**What was built:**
+- Full diagnostic of mode switching UX revealed the core problem was insufficient visual feedback, not broken logic.
+- Three-layer fix: (1) mode badges in section titles, (2) 6-widget colorful dashboard, (3) mode-aware CSS accents on nav/tabs/content.
+- Dashboard data layer aggregates from 6 existing stores — no new schema.
+- Skeleton-then-fill pattern keeps dashboard responsive during async loads.
+- Quick capture widget initialized once to preserve user input during event-driven refreshes.
+
+**Files created:**
+- `src/os/dashboardData.js` — pure async data aggregation
+- `src/blocks/dashboard/index.js` — block registration
+- `src/blocks/dashboard/view.js` — 6 widgets + deep links + event wiring
+- `src/blocks/dashboard/styles.css` — responsive grid + widget styles
+- `tests/os/dashboardData.test.js` — 10 tests
+
+**Files modified:**
+- `src/os/shell.js` — `setShellMode`, `updateSectionTitles`, content crossfade
+- `src/blocks/styles.css` — mode-aware accents, nav accent line, crossfade, section badges
+- `src/blocks/registerBlocks.js` — dashboard block registration
+- `tasks/lessons.md` — lessons 5-7
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

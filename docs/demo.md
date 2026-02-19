@@ -611,3 +611,63 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 - [ ] Responsive: 2-col desktop, 1-col mobile
 - [ ] Dark mode fully supported
 - [ ] All 244 tests pass (`npm test`)
+
+---
+
+## Daily Page — Mode-Aware Verification
+
+### Daily Todos — Mode Isolation
+
+1. Switch to **School** mode (mode picker in header)
+2. Go to **Vandaag** tab
+3. Find the **Taken 📚** card
+4. Add a todo: type `Wiskunde opgave 3` and press Enter
+5. Verify it appears in the list with an unchecked circle (purple accent)
+6. Check the box — verify item shows strikethrough and counter updates (e.g. `1/1`)
+
+**Expected:** Todo saved, done state persists on page reload.
+
+---
+
+### Daily Todos — Mode Isolation Check
+
+1. Still on **Vandaag** tab with School todo visible
+2. Switch to **Persoonlijk** mode
+3. **Expected:** Taken card is now empty (Personal has its own todo list)
+4. Add a todo: `Sporten`
+5. Switch back to **School** mode
+6. **Expected:** `Wiskunde opgave 3` is back — School list was preserved
+
+---
+
+### Top 3 Outcomes — Mode-Aware
+
+1. In **School** mode, find the **Top 3 vandaag 📚** card
+2. Type `Wiskunde hfst 4 afronden` in slot 1 — tab or click away (auto-saves)
+3. Switch to **Persoonlijk** mode
+4. **Expected:** Slot 1 is empty (Personal has its own outcomes)
+5. Type `30 min mediteren` in slot 1 for Personal
+6. Switch back to School — `Wiskunde hfst 4 afronden` is still there
+
+---
+
+### Notes — Mode-Aware
+
+1. In **School** mode, find the **Notitie** card
+2. Type a short note — auto-saves after 500ms
+3. Verify character counter shows e.g. `24/500`
+4. Switch to **Persoonlijk** — note field is empty (separate per mode)
+5. At 425+ characters: counter turns amber (approaching limit)
+
+---
+
+### Acceptance Checklist
+
+- [ ] School todos are invisible in Personal mode and vice versa
+- [ ] BPV todos are invisible in School/Personal
+- [ ] Outcomes persist per mode+date independently
+- [ ] Notes auto-save (no save button needed)
+- [ ] Notes capped at 500 characters (counter shows, textarea enforces)
+- [ ] Todo check/uncheck works, counter updates
+- [ ] Delete button appears on hover, removes todo
+- [ ] All 274 tests pass (`npm test`)

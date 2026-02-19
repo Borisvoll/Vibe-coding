@@ -2,9 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { initDB, DB_NAME, DB_VERSION, getStoreNames, getAll, put } from '../src/db.js';
 
 describe('Schema migration', () => {
-  it('initializes at version 6', async () => {
+  it('initializes at version 7', async () => {
     await initDB();
-    expect(DB_VERSION).toBe(6);
+    expect(DB_VERSION).toBe(7);
   });
 
   it('creates all 29 expected stores', async () => {
@@ -70,17 +70,36 @@ describe('Schema migration', () => {
     expect(all.find((i) => i.id === 'idx-test')).toBeDefined();
   });
 
-  it('dailyPlans store has unique date index', async () => {
+  it('dailyPlans store supports mode-aware entries (v7)', async () => {
     await initDB();
 
+    // v7: date index is non-unique, mode index added
     await put('dailyPlans', {
-      id: 'dp-1',
+      id: '2026-02-19__School',
       date: '2026-02-19',
-      tasks: [],
+      mode: 'School',
+      outcomes: ['Goal 1', '', ''],
+      todos: [],
+      notes: '',
+      updatedAt: new Date().toISOString(),
+    });
+
+    await put('dailyPlans', {
+      id: '2026-02-19__Personal',
+      date: '2026-02-19',
+      mode: 'Personal',
+      outcomes: ['Personal goal', '', ''],
+      todos: [],
+      notes: '',
       updatedAt: new Date().toISOString(),
     });
 
     const all = await getAll('dailyPlans');
-    expect(all.find((d) => d.id === 'dp-1')).toBeDefined();
+    const schoolEntry = all.find((d) => d.id === '2026-02-19__School');
+    const personalEntry = all.find((d) => d.id === '2026-02-19__Personal');
+    expect(schoolEntry).toBeDefined();
+    expect(personalEntry).toBeDefined();
+    expect(schoolEntry.outcomes[0]).toBe('Goal 1');
+    expect(personalEntry.outcomes[0]).toBe('Personal goal');
   });
 });

@@ -1,81 +1,80 @@
-import { getDailyEntry, saveDailyEntry } from '../../stores/daily.js';
+import { getDailyEntry, saveOutcomes } from '../../stores/daily.js';
 import { getToday, escapeHTML } from '../../utils.js';
+
+const MODE_ACCENT = {
+  School:   { color: 'var(--color-purple)',  light: 'var(--color-purple-light)',  emoji: '📚' },
+  Personal: { color: 'var(--color-emerald)', light: 'var(--color-emerald-light)', emoji: '🌱' },
+  BPV:      { color: 'var(--color-blue)',    light: 'var(--color-blue-light)',    emoji: '🏢' },
+};
 
 export function renderDailyOutcomes(container, context) {
   const mountId = crypto.randomUUID();
-  const { eventBus } = context;
+  const { eventBus, modeManager } = context;
   const today = getToday();
 
   container.insertAdjacentHTML('beforeend', `
     <article class="daily-outcomes os-mini-card" data-mount-id="${mountId}">
-      <h3 class="daily-outcomes__title">Top 3 vandaag</h3>
+      <h3 class="daily-outcomes__title"></h3>
       <div class="daily-outcomes__list"></div>
     </article>
   `);
 
   const el = container.querySelector(`[data-mount-id="${mountId}"]`);
+  const titleEl = el.querySelector('.daily-outcomes__title');
   const listEl = el.querySelector('.daily-outcomes__list');
 
+  let debounceTimer = null;
+
   async function render() {
-    const entry = await getDailyEntry(today);
-    const tasks = entry?.tasks || [];
+    const mode = modeManager.getMode();
+    const meta = MODE_ACCENT[mode] || MODE_ACCENT.School;
+    const entry = await getDailyEntry(mode, today);
+    const outcomes = entry?.outcomes || ['', '', ''];
 
-    const slots = [0, 1, 2].map((i) => {
-      const task = tasks[i];
-      return `
-        <label class="daily-outcomes__item">
-          <input type="checkbox" class="daily-outcomes__checkbox"
-            data-idx="${i}" ${task?.done ? 'checked' : ''} ${!task ? 'disabled' : ''} />
-          <input type="text" class="form-input daily-outcomes__input"
-            data-idx="${i}" value="${escapeHTML(task?.text || '')}"
-            placeholder="${i === 0 ? 'Belangrijkste uitkomst...' : i === 1 ? 'Tweede prioriteit...' : 'Derde (optioneel)...'}" />
-        </label>
-      `;
-    });
+    // Update header with mode accent
+    titleEl.textContent = `Top 3 vandaag ${meta.emoji}`;
+    titleEl.style.color = meta.color;
 
-    listEl.innerHTML = `
-      ${slots.join('')}
-      <button type="button" class="btn btn-ghost btn-sm daily-outcomes__save">Opslaan</button>
-    `;
+    const placeholders = [
+      'Belangrijkste uitkomst...',
+      'Tweede prioriteit...',
+      'Derde (optioneel)...',
+    ];
 
-    listEl.querySelector('.daily-outcomes__save').addEventListener('click', async () => {
-      const inputs = listEl.querySelectorAll('.daily-outcomes__input');
-      const checks = listEl.querySelectorAll('.daily-outcomes__checkbox');
-      const newTasks = [];
-      inputs.forEach((input, i) => {
-        const text = input.value.trim();
-        if (text) {
-          newTasks.push({ text, done: checks[i].checked });
-        }
-      });
-      if (newTasks.length === 0) return;
-      await saveDailyEntry({ date: today, tasks: newTasks, evaluation: entry?.evaluation });
-      eventBus.emit('daily:changed');
-    });
+    listEl.innerHTML = outcomes.map((val, i) => `
+      <label class="daily-outcomes__item">
+        <span class="daily-outcomes__num" style="color:${meta.color}">${i + 1}</span>
+        <input type="text" class="form-input daily-outcomes__input"
+          data-idx="${i}" value="${escapeHTML(val)}"
+          placeholder="${placeholders[i]}" />
+      </label>
+    `).join('');
 
-    listEl.querySelectorAll('.daily-outcomes__checkbox').forEach((cb) => {
-      cb.addEventListener('change', async () => {
-        const idx = parseInt(cb.dataset.idx, 10);
-        const currentEntry = await getDailyEntry(today);
-        if (!currentEntry?.tasks[idx]) return;
-        currentEntry.tasks[idx].done = cb.checked;
-        await saveDailyEntry({
-          date: today,
-          tasks: currentEntry.tasks,
-          evaluation: currentEntry.evaluation,
-        });
-        eventBus.emit('daily:changed');
+    // Auto-save on blur
+    listEl.querySelectorAll('.daily-outcomes__input').forEach((input) => {
+      input.addEventListener('blur', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+          const currentMode = modeManager.getMode();
+          const inputs = listEl.querySelectorAll('.daily-outcomes__input');
+          const newOutcomes = Array.from(inputs).map((inp) => inp.value.trim());
+          await saveOutcomes(currentMode, today, newOutcomes);
+          eventBus.emit('daily:changed', { mode: currentMode, date: today });
+        }, 300);
       });
     });
   }
 
   const unsubMode = eventBus.on('mode:changed', () => render());
-  const unsubDaily = eventBus.on('daily:changed', () => render());
+  const unsubDaily = eventBus.on('daily:changed', ({ mode } = {}) => {
+    if (!mode || mode === modeManager.getMode()) render();
+  });
 
   render();
 
   return {
     unmount() {
+      clearTimeout(debounceTimer);
       unsubMode?.();
       unsubDaily?.();
       el?.remove();

@@ -9,6 +9,7 @@ import './school-dashboard/styles.css';
 import './personal-dashboard/styles.css';
 import './weekly-review/styles.css';
 import './daily-outcomes/styles.css';
+import './daily-todos/styles.css';
 import './daily-reflection/styles.css';
 import './schedule-placeholder/styles.css';
 import './projects/styles.css';
@@ -34,6 +35,7 @@ import { registerBPVLogSummaryBlock } from './bpv-log-summary/index.js';
 import { registerBPVQuickLogBlock } from './bpv-quick-log/index.js';
 import { registerBPVWeeklyOverviewBlock } from './bpv-weekly-overview/index.js';
 import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
+import { registerDailyTodosBlock } from './daily-todos/index.js';
 import { registerDailyReflectionBlock } from './daily-reflection/index.js';
 import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
 import { registerProjectsBlock } from './projects/index.js';
@@ -43,6 +45,7 @@ import { registerDashboardBlock } from './dashboard/index.js';
 export function registerDefaultBlocks(registry) {
   // Today page MVP blocks
   registerDailyOutcomesBlock(registry);
+  registerDailyTodosBlock(registry);
   registerInboxBlock(registry);
   registerProjectsBlock(registry);
   registerTasksBlock(registry);

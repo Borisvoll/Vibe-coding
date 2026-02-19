@@ -1003,6 +1003,207 @@
 
 ---
 
+## Daily Page Sprint — Mode-Aware Daily Entries (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Plan → Approve → Implement → Test → Verify
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **244 passed**, 0 failed (19 files) |
+| Build | **Clean** |
+| DB version | 6 |
+
+---
+
+### Storage Decision: OPTIE 1 Extended ✅
+
+**Chosen:** Extend existing `dailyPlans` store via DB bump to v7 (no new store).
+
+**Argument:**
+- `dailyPlans` (v1) has `date` as a UNIQUE index → prevents multiple modes per date
+- IndexedDB cannot change an index constraint without deleting + recreating it → requires schema bump regardless
+- Creating a new store (`os_daily_entries`) would orphan `dailyPlans` and force a full rewrite of both existing blocks; extending is lower impact
+- Migration path is clean: copy existing entries with `mode: 'School'`, update id to composite `${date}__School`
+- OPTIE 2 only wins if the existing store shape is incompatible — it is compatible with minor extension
+
+**v7 migration:**
+1. Delete `date` unique index from `dailyPlans`
+2. Recreate `date` as non-unique index
+3. Add `mode` index (non-unique)
+4. For all existing entries: add `mode: 'School'`, update `id → ${entry.date}__School`, map `tasks → todos`, `evaluation → notes`, add `outcomes: ['','','']`
+
+---
+
+### New Data Shape
+
+```js
+// dailyPlans store entry (after v7)
+{
+  id:        '2026-02-19__School',     // composite: date__mode
+  date:      '2026-02-19',
+  mode:      'School',                 // 'School' | 'Personal' | 'BPV'
+  outcomes:  ['Wiskunde afronden', '', ''],  // top 3 goal strings (always length 3)
+  todos:     [                         // proper checklist with IDs
+    { id: 'uuid', text: 'Opgave 3', done: false, createdAt: '…', doneAt: null }
+  ],
+  notes:     '',                       // short reflection, max 500 chars
+  updatedAt: '2026-02-19T10:00:00Z',
+}
+```
+
+**Backward compat:** existing entries migrated; old `tasks[]` → `todos`, old `evaluation` → `notes`.
+
+---
+
+### Blocks List + Host Placement
+
+| Block | Action | Host | Modes | Order | Accent |
+|-------|--------|------|-------|-------|--------|
+| `daily-outcomes` | **UPDATE** — mode-aware, `outcomes[]`, auto-save on blur | `today-sections` | all | 5 | per-mode |
+| `daily-todos` | **NEW** — quick todo list per day+mode | `today-sections` | all | 6 | per-mode |
+| `daily-reflection` | **UPDATE** — mode-aware, `notes` field, 500 char limit | `today-sections` | all | 50 | neutral |
+
+Mode accent colors (existing CSS vars):
+- School → `--color-purple` / `--color-purple-light`
+- Personal → `--color-emerald` / `--color-emerald-light`
+- BPV → `--color-blue` / `--color-blue-light`
+
+---
+
+### Phase 0 — DB Migration (v6 → v7)
+
+- [ ] `src/db.js` — bump `DB_VERSION` to 7
+- [ ] Add `if (oldVersion < 7)` block in `onupgradeneeded`:
+  - Delete `date` unique index from `dailyPlans`
+  - Recreate `date` as non-unique index
+  - Add `mode` index (non-unique)
+- [ ] Migration of existing data runs in `onsuccess` (after upgrade) via transaction on `dailyPlans`
+  - For each existing entry: assign `mode = 'School'`, rekey `id = ${date}__School`, map fields
+
+### Phase 1 — Store Adapter (`src/stores/daily.js`)
+
+- [ ] `getDailyEntry(mode, date)` → load by composite id `${date}__mode`
+- [ ] `saveDailyEntry({ mode, date, outcomes, todos, notes })` → upsert with composite id
+- [ ] `saveOutcomes(mode, date, outcomes[3])` → partial update, preserve todos/notes
+- [ ] `addTodo(mode, date, text)` → append `{ id: uuid, text, done: false, createdAt, doneAt: null }`
+- [ ] `toggleTodo(mode, date, todoId)` → flip done, set doneAt
+- [ ] `deleteTodo(mode, date, todoId)` → remove by id
+- [ ] `saveNotes(mode, date, notes)` → partial update, enforce max 500 chars
+- [ ] Remove old `toggleDailyTask(date, taskIndex)` (replaced by toggleTodo)
+- [ ] Update `getAllDailyEntries()` → returns all entries (multi-mode)
+- [ ] Update `validate.js` → `validateDailyEntry` accepts new shape
+- [ ] Emit `daily:changed` with `{ mode, date }` payload from all write functions
+
+### Phase 2 — Update `daily-outcomes` Block
+
+- [ ] Pass `modeManager` via context, get `currentMode = modeManager.getMode()`
+- [ ] Call `getDailyEntry(currentMode, today)` — mode-aware
+- [ ] Render `outcomes[0..2]` as 3 auto-saving text inputs (blur → `saveOutcomes`)
+- [ ] Remove manual save button (auto-save pattern)
+- [ ] Show mode accent color on block header (CSS var via `data-mode` attribute on article)
+- [ ] On `mode:changed`: reload entry for new mode (same date)
+- [ ] On `daily:changed { mode, date }`: reload only if matches current mode+date
+- [ ] Proper unmount cleanup (unsubscribe both handlers)
+
+### Phase 3 — New `daily-todos` Block
+
+- [ ] Create `src/blocks/daily-todos/index.js` — register (host: today-sections, modes: [], order: 6)
+- [ ] Create `src/blocks/daily-todos/view.js`:
+  - Mode-aware header: "Taken — School 📚" with mode accent
+  - Input row: text field + add button
+  - Todo list: checkbox + text + delete button per item
+  - Done counter: "2/5 gedaan" (auto, based on todos array)
+  - `addTodo` on enter/button, `toggleTodo` on checkbox, `deleteTodo` on button
+  - On `mode:changed`: reload for new mode
+  - On `daily:changed { mode }`: reload if matching mode
+- [ ] Create `src/blocks/daily-todos/styles.css` — minimal, uses existing vars
+- [ ] Import styles in `src/blocks/registerBlocks.js`
+- [ ] Register block in `src/blocks/registerBlocks.js`
+
+### Phase 4 — Update `daily-reflection` Block
+
+- [ ] Pass `modeManager` via context
+- [ ] Call `getDailyEntry(currentMode, today)` — mode-aware
+- [ ] Load/save `notes` field (not `evaluation`)
+- [ ] Enforce max 500 chars: counter display + textarea `maxlength`
+- [ ] Auto-save on blur (remove manual save button)
+- [ ] On `mode:changed`: reload entry for new mode
+- [ ] Proper unmount cleanup
+
+### Phase 5 — Aggregators (`src/os/dailyAggregator.js`)
+
+- [ ] `getDailySummary(mode, date)` → `{ outcomesSet: number, todosTotal, todosDone, notes }`
+- [ ] `getWeeklySummary(mode, weekStr)` → `{ totalOutcomesSet, totalTodosDone, totalTodosTotal, daysWithEntries }`
+  - weekStr format: `'2026-W08'` (ISO week)
+  - Iterate Mon–Sun dates, collect daily entries, sum counts
+- [ ] `getMonthlySummary(mode, monthStr)` → `{ totalTodosDone, topOutcome: string|null }`
+  - monthStr format: `'2026-02'`
+  - topOutcome = most frequently appearing non-empty outcome string
+- [ ] All functions return stable shape even when no entries exist (zero-filled)
+- [ ] Pure functions, no side effects, no eventBus dependency
+
+### Phase 6 — Tests
+
+- [ ] **Rewrite** `tests/stores/daily.test.js`:
+  - DB v7 indexes exist (date non-unique, mode index)
+  - `getDailyEntry(mode, date)` returns null when missing
+  - `saveDailyEntry` creates composite id correctly
+  - `saveOutcomes` persists all 3 slots
+  - `addTodo` generates uuid, correct shape
+  - `toggleTodo` flips done, sets doneAt
+  - `deleteTodo` removes by id, leaves others
+  - `saveNotes` truncates at 500 chars
+  - School and Personal entries for same date are independent
+  - Migration: old entry shape reads back via new functions
+- [ ] **Create** `tests/os/dailyAggregator.test.js`:
+  - `getDailySummary` returns zeros for empty entry
+  - `getDailySummary` counts outcomes and todos correctly
+  - `getWeeklySummary` sums across 7 days
+  - `getWeeklySummary` for empty week returns zeros
+  - `getMonthlySummary` finds top outcome
+  - `getMonthlySummary` for empty month returns null topOutcome
+- [ ] Run full suite — all tests green (target: 260+)
+- [ ] Run `npm run build` — clean
+
+### Phase 7 — Documentation
+
+- [ ] `docs/architecture.md` — add "Daily Entries" entity section:
+  - Store: `dailyPlans` (v7), key: `${date}__${mode}`
+  - Source-of-truth statement: daily entries feed week/month summaries
+- [ ] `docs/demo.md` — add daily page verification steps:
+  - Switch mode → daily todos/outcomes change instantly
+  - Add todo in School, switch Personal → empty, switch back → still there
+- [ ] `tasks/lessons.md` — add lesson if any corrections needed during impl
+
+---
+
+### Acceptance Criteria
+
+- [ ] In each mode there is a separate todo list and outcomes per day
+- [ ] Mode switch makes content visibly different (not just header)
+- [ ] Data persists independently per mode/date (School todos don't appear in Personal)
+- [ ] `getDailySummary`, `getWeeklySummary`, `getMonthlySummary` return stable shapes
+- [ ] All tests green (234+ existing + new daily + aggregator tests)
+- [ ] Build clean
+- [ ] No regressions on existing blocks
+
+---
+
+### After (2026-02-19)
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files, +30 net new tests) |
+| Build | **Clean** |
+| DB version | **7** (dailyPlans: non-unique date, mode index added) |
+| New files | `src/blocks/daily-todos/` (index/view/styles), `src/os/dailyAggregator.js`, `tests/stores/daily.test.js` (rewritten), `tests/os/dailyAggregator.test.js` |
+| Modified files | `src/db.js`, `src/stores/daily.js`, `daily-outcomes/view+styles`, `daily-reflection/view+styles`, `registerBlocks.js`, `dashboardData.js`, `schema.test.js`, `daily-outcomes.test.js` |
+
+---
+
 ## Milestone 3: Cloudflare Deployment + Sync (Future)
 
 - [ ] Deploy to Cloudflare Pages (static hosting, free tier)

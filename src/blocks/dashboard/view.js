@@ -181,6 +181,9 @@ export function renderDashboard(container, context) {
     });
   });
 
+  // Setup capture widget once (not inside loadData — avoids recreating form on every refresh)
+  setupCaptureWidget(wrapper, context);
+
   // Fill widgets with data
   async function loadData() {
     const mode = context.modeManager?.getMode() || 'School';
@@ -196,7 +199,6 @@ export function renderDashboard(container, context) {
     fillProjectsWidget(wrapper, projects);
     fillBPVWidget(wrapper, bpv);
     fillExploreWidget(wrapper);
-    setupCaptureWidget(wrapper, context);
   }
 
   loadData();

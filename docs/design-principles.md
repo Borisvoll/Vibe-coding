@@ -34,6 +34,19 @@
 | Textareas | Auto-save with 600ms debounce. No explicit save buttons for journals. |
 | Progress bars | Color-coded (green ≥80%, amber ≥50%, red <50%) + always include text percentage. |
 
+## Dashboard Widget Rules
+
+The Main Dashboard is a cross-mode synopsis — colorful but clean, following Rams ("less but better") with strategic use of color.
+
+1. **One accent per widget** — Each widget has a single `--widget-accent` color set via inline style. The accent colors icon circles, hover borders, and shadow tints.
+2. **Skeleton → Fill pattern** — Render widget skeletons (with "Laden..." placeholder) immediately. Fill with async data. Never show a blank dashboard.
+3. **Cross-mode by default** — Dashboard widgets show data from ALL modes (e.g. Projects shows all active projects with mode chips). Mode-specific filtering only where it adds clarity (e.g. task counts).
+4. **Deep link every widget** — Every widget click navigates to the relevant detailed view (tab switch, scroll-to-block, or hash route).
+5. **Capture widget is special** — The "Snel vastleggen" widget has `cursor: default` and no hover/active states. Its form is initialized once (not inside `loadData`) to preserve user input during event-driven refreshes.
+6. **Color accents from variables.css only** — Use existing `--color-amber`, `--color-purple`, `--color-cyan`, `--color-blue`, `--color-rose`, `--color-emerald` (each with `-light` variant). Never introduce new colors.
+7. **Responsive grid** — 1 column on mobile, 2 columns at `min-width: 600px`. Use `gap: var(--space-3)`.
+8. **Event-driven refresh** — Widgets refresh on `mode:changed`, `tasks:changed`, `inbox:changed`, `projects:changed`, `bpv:changed`. All subscriptions cleaned up on `unmount()`.
+
 ## Block Design Rules
 
 1. Each block is self-contained (own index.js, view.js, store.js, styles.css).

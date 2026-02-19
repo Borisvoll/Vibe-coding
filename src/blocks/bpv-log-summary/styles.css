@@ -1,6 +1,6 @@
 .bpv-log__title {
   margin: 0 0 var(--space-2);
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
@@ -21,7 +21,7 @@
 }
 
 .bpv-log__row-label {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   font-weight: 500;
   min-width: 90px;
   flex-shrink: 0;
@@ -29,13 +29,13 @@
 
 .bpv-log__row-value {
   flex: 1;
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   min-width: 0;
 }
 
 .bpv-log__detail {
   color: var(--color-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 .bpv-log__empty-val {

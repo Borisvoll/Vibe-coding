@@ -7,13 +7,13 @@
 
 .daily-todos__title {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   transition: color 200ms var(--ease);
 }
 
 .daily-todos__count {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   transition: color 200ms var(--ease);
 }
@@ -26,7 +26,7 @@
 
 .daily-todos__input {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
 }
 
 .daily-todos__add-btn {
@@ -65,11 +65,11 @@
 .daily-todos__check {
   width: 20px;
   height: 20px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: 2px solid var(--todo-color, var(--color-accent));
   background: transparent;
   color: var(--todo-color, var(--color-accent));
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 700;
   flex-shrink: 0;
   cursor: pointer;
@@ -86,7 +86,7 @@
 
 .daily-todos__text {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   line-height: 1.4;
   transition: opacity 150ms var(--ease);
 }

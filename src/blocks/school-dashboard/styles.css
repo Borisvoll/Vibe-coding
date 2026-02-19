@@ -8,14 +8,14 @@
 
 .school-dash__loading {
   padding: var(--space-4);
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   color: var(--color-text-secondary);
 }
 
 /* Sections */
 .school-dash__section {
   padding: var(--space-3) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .school-dash__section:last-child {
@@ -24,16 +24,16 @@
 
 .school-dash__section-label {
   margin: 0 0 var(--space-2);
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-tertiary, var(--color-text-secondary));
 }
 
 .school-dash__empty {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-secondary);
 }
 
@@ -51,7 +51,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   border: none;
   background: none;
   color: var(--color-text-secondary);
@@ -66,7 +66,7 @@
 }
 
 .school-dash__next-text {
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 500;
   color: var(--color-text);
   line-height: 1.4;
@@ -87,11 +87,11 @@
   grid-template-columns: 16px 1fr auto auto;
   align-items: center;
   gap: var(--space-2);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
 }
 
 .school-dash__dl-icon {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   text-align: center;
 }
 
@@ -104,12 +104,12 @@
 
 .school-dash__dl-date {
   color: var(--color-text-secondary);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   white-space: nowrap;
 }
 
 .school-dash__dl-urgency {
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   padding: 1px 6px;
   border-radius: var(--radius-full);
@@ -154,7 +154,7 @@
 }
 
 .school-dash__bpv-label {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-secondary);
   white-space: nowrap;
 }
@@ -169,11 +169,11 @@
 .school-dash__chip {
   display: inline-flex;
   align-items: center;
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   background: var(--color-purple-light);
   color: var(--color-purple);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   font-weight: 500;
   border: 1px solid color-mix(in srgb, var(--color-purple) 20%, transparent);
 }

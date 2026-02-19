@@ -111,9 +111,10 @@
 
 .balatro-card:nth-child(1) { animation-delay: 200ms; }
 .balatro-card:nth-child(2) { animation-delay: 350ms; }
-.balatro-card:nth-child(3) { animation-delay: 500ms; }
-.balatro-card:nth-child(4) { animation-delay: 650ms; }
-.balatro-card:nth-child(5) { animation-delay: 800ms; }
+.balatro-card:nth-child(3) { animation-delay: 400ms; }
+.balatro-card:nth-child(4) { animation-delay: 550ms; }
+.balatro-card:nth-child(5) { animation-delay: 700ms; }
+.balatro-card:nth-child(6) { animation-delay: 850ms; }
 
 @keyframes balatro-card-enter {
   0% {
@@ -145,6 +146,81 @@
 
 .balatro-card--black {
   color: #1a1a2e;
+}
+
+/* ── Joker Card ──────────────────────────────────────────────────── */
+.balatro-card--joker {
+  background: linear-gradient(
+    135deg,
+    #1a4a3a 0%,
+    #0d3028 40%,
+    #1a4a3a 60%,
+    #0d3028 100%
+  );
+  border-color: rgba(100, 220, 160, 0.3);
+  box-shadow:
+    0 4px 24px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(100, 220, 160, 0.15),
+    0 0 30px rgba(100, 220, 160, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  justify-content: flex-start;
+  padding-top: 12%;
+  overflow: hidden;
+}
+
+.balatro-card--joker::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 8px,
+      rgba(100, 220, 160, 0.04) 8px,
+      rgba(100, 220, 160, 0.04) 16px
+    );
+  pointer-events: none;
+}
+
+.balatro-card--joker:hover {
+  box-shadow:
+    0 8px 40px rgba(0, 0, 0, 0.6),
+    0 0 30px rgba(100, 220, 160, 0.25),
+    0 0 60px rgba(120, 80, 200, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Pixel-art jester sprite */
+.balatro-joker__pixels {
+  position: relative;
+  width: 65%;
+  aspect-ratio: 13 / 15;
+  display: grid;
+  grid-template-columns: repeat(13, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+}
+
+.jp {
+  display: block;
+  grid-column: calc(var(--jx) + 1);
+  grid-row: calc(var(--jy) + 1);
+  border-radius: 1px;
+}
+
+/* JOKER label */
+.balatro-joker__label {
+  position: absolute;
+  bottom: 6%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: clamp(0.5rem, 1.2vw, 0.75rem);
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: #ffd700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* Card inner content */

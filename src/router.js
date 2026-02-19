@@ -13,6 +13,20 @@ const extraRoutes = {
 export function createRouter() {
   mainEl = document.getElementById('main-content');
   window.addEventListener('hashchange', handleRoute);
+
+  // Re-render current page when mode changes (localStorage)
+  const MODE_KEY = 'boris_mode';
+  let lastMode = localStorage.getItem(MODE_KEY);
+  setInterval(() => {
+    try {
+      const currentMode = localStorage.getItem(MODE_KEY);
+      if (currentMode !== lastMode) {
+        lastMode = currentMode;
+        handleRoute(); // Re-render current page with new mode
+      }
+    } catch { /* ignore */ }
+  }, 200);
+
   handleRoute();
 }
 

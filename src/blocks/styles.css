@@ -457,15 +457,17 @@
 /* ── Settings mode cards (in-settings picker) ──────────────── */
 .settings-mode-group {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--space-3);
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .settings-mode-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
   border: 1.5px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-bg);
@@ -473,9 +475,11 @@
   font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-text);
+  white-space: nowrap;
   transition: border-color 180ms var(--ease),
               background 180ms var(--ease),
-              box-shadow 180ms var(--ease);
+              box-shadow 180ms var(--ease),
+              transform 120ms var(--ease);
 }
 
 .settings-mode-pill:hover {

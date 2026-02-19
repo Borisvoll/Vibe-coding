@@ -97,14 +97,15 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
     });
   }
 
-  container.querySelector('[data-setting="mode"]')?.addEventListener('click', (e) => {
-    const pill = e.target.closest('.settings-mode-pill');
-    if (!pill) return;
-    const mode = pill.dataset.mode;
-    if (!mode || !modeManager) return;
-    updateModePills(mode);
-    modeManager.setMode(mode);
-    onChange?.({ key: 'mode', value: mode });
+  // Direct click handler on each pill for maximum reliability
+  container.querySelectorAll('.settings-mode-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const mode = pill.dataset.mode;
+      if (!mode || !modeManager) return;
+      updateModePills(mode);
+      modeManager.setMode(mode);
+      onChange?.({ key: 'mode', value: mode });
+    });
   });
 
   // Keep pills in sync when mode changes from elsewhere (e.g. header picker)

@@ -5,14 +5,8 @@ import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief'];
 
+// Mode order: School & Personal first, BPV secondary (Rams: match user's primary context)
 const MODE_META = {
-  BPV: {
-    label: 'BPV',
-    description: 'Beroepspraktijkvorming',
-    color: 'var(--color-blue)',
-    colorLight: 'var(--color-blue-light)',
-    emoji: '🏢',
-  },
   School: {
     label: 'School',
     description: 'Opleiding & studie',
@@ -26,6 +20,13 @@ const MODE_META = {
     color: 'var(--color-emerald)',
     colorLight: 'var(--color-emerald-light)',
     emoji: '🌱',
+  },
+  BPV: {
+    label: 'BPV',
+    description: 'Beroepspraktijkvorming',
+    color: 'var(--color-blue)',
+    colorLight: 'var(--color-blue-light)',
+    emoji: '🏢',
   },
 };
 
@@ -163,6 +164,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
     const sorted = [...eligibleBlocks].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
+    // Track stagger per host for sequential entrance animation
+    const hostStagger = {};
     sorted.forEach((block) => {
       const hosts = Array.isArray(block.hosts) ? block.hosts : [];
       hosts.forEach((hostName) => {
@@ -171,6 +174,14 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         try {
           const instance = block.mount(hostEl, context) || null;
           mountedBlocks.push({ blockId: block.id, hostName, instance });
+
+          // Assign stagger delay for block entrance animation
+          if (!hostStagger[hostName]) hostStagger[hostName] = 0;
+          const lastChild = hostEl.lastElementChild;
+          if (lastChild) {
+            lastChild.style.setProperty('--stagger', `${hostStagger[hostName]}ms`);
+          }
+          hostStagger[hostName] += 30;
         } catch (err) {
           console.error(`Block "${block.id}" failed to mount:`, err);
         }

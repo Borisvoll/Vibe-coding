@@ -161,7 +161,7 @@ Manual walkthrough to verify the Inbox screen and processing flow.
 - [ ] Nav badge updates correctly
 - [ ] Empty state displays correctly
 - [ ] Dark mode looks correct
-- [ ] All 152 tests pass (`npm test`)
+- [ ] All 234 tests pass (`npm test`)
 
 ---
 
@@ -282,7 +282,99 @@ Manual walkthrough for the BPV quick-log and weekly overview blocks.
 - [ ] CSV export downloads and is valid
 - [ ] JSON export downloads and parses without errors
 - [ ] Dark mode looks correct in both new blocks
-- [ ] All 152 tests pass (`npm test`)
+- [ ] All 234 tests pass (`npm test`)
+
+---
+
+---
+
+# Mode Switching — Demo Script
+
+Manual walkthrough to verify mode switching works visibly in BORIS OS.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. BORIS OS is active (default)
+
+---
+
+## M1. Mode Picker Opens
+
+1. Click the **mode pill** in the header (shows current mode name + colored dot)
+2. A modal picker appears with three mode cards: **School**, **Persoonlijk**, **BPV**
+3. The currently active mode has a colored checkmark
+
+**Expected:** Modal opens with spring animation (slides up on mobile, centered on desktop). Backdrop blurs.
+
+---
+
+## M2. Switch to School Mode
+
+1. Click **School** 📚 in the mode picker
+2. Observe:
+   - Mode pill updates to "School" with purple dot
+   - Purple ambient wash pulses across the screen (600ms, subtle 8% opacity)
+   - Today blocks re-render with staggered entrance animation
+   - **School Dashboard** card appears (Volgende actie + deadlines)
+   - **School Today** block appears
+   - BPV-only blocks (Snel loggen, Weekoverzicht) disappear
+
+**Expected:** Clear visible change — school-specific blocks animate in, BPV blocks gone.
+
+---
+
+## M3. Switch to Personal Mode
+
+1. Click the mode pill again → click **Persoonlijk** 🌱
+2. Observe:
+   - Mode pill updates to "Persoonlijk" with emerald dot
+   - Emerald wash pulses
+   - **Personal Dashboard** card appears (wellbeing + habits)
+   - **Personal Today** block appears
+   - School-specific blocks disappear
+
+**Expected:** Content area clearly changes. Blocks have entrance animation.
+
+---
+
+## M4. Switch to BPV Mode
+
+1. Click mode pill → click **BPV** 🏢
+2. Observe:
+   - Mode pill updates to "BPV" with blue dot
+   - Blue wash pulses
+   - **Snel loggen** and **Weekoverzicht** cards appear
+   - Personal/School blocks disappear
+
+**Expected:** BPV-specific blocks visible, others gone.
+
+---
+
+## M5. New User Default
+
+1. Clear localStorage (`localStorage.clear()` in DevTools console)
+2. Refresh the page
+3. The mode picker should auto-open after 400ms
+4. Default mode is **School** (not BPV)
+
+**Expected:** School mode is active by default. Mode picker shows School first in the list.
+
+---
+
+## Mode Switching Verification Checklist
+
+- [ ] Mode pill label + dot update on switch
+- [ ] Ambient wash animation plays on each switch
+- [ ] School blocks appear only in School mode
+- [ ] Personal blocks appear only in Personal mode
+- [ ] BPV blocks appear only in BPV mode
+- [ ] Shared blocks (tasks, inbox, projects) appear in all modes
+- [ ] Block entrance animation visible (staggered fade-in)
+- [ ] Default mode is School for new users
+- [ ] Persisted mode survives page reload
+- [ ] All 234 tests pass (`npm test`)
 
 ---
 
@@ -375,4 +467,4 @@ Manual walkthrough for the School mode dashboard block.
 - [ ] Max 5 deadlines shown
 - [ ] BPV week progress bar shows correct percentage
 - [ ] School projects appear as purple chips
-- [ ] All 152 tests pass (`npm test`)
+- [ ] All 234 tests pass (`npm test`)

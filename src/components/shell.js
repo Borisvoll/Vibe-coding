@@ -23,7 +23,7 @@ export function createShell(container) {
       <div class="app-nav-main">
         ${sidebarMainItems.map(m => `
           <a href="#${m.route}" class="nav-link" data-route="${m.route}">
-            <span class="nav-icon">${icon(m.icon)}</span>
+            ${icon(m.icon)}
             ${m.label}
           </a>
         `).join('')}
@@ -33,7 +33,7 @@ export function createShell(container) {
       <div class="app-nav-secondary">
         ${sidebarSecondaryItems.map(m => `
           <a href="#${m.route}" class="nav-link" data-route="${m.route}">
-            <span class="nav-icon">${icon(m.icon)}</span>
+            ${icon(m.icon)}
             ${m.label}
           </a>
         `).join('')}
@@ -55,10 +55,6 @@ export function createShell(container) {
           <div class="hamburger-menu" id="hamburger-menu">
             <div class="hamburger-menu-label">Modus</div>
             <div class="settings-mode-group" id="hamburger-mode-picker">
-              <button type="button" class="settings-mode-pill" data-mode="BPV">
-                <span class="settings-mode-pill__dot" style="background:var(--color-blue)"></span>
-                🏢 BPV
-              </button>
               <button type="button" class="settings-mode-pill" data-mode="School">
                 <span class="settings-mode-pill__dot" style="background:var(--color-purple)"></span>
                 📚 School
@@ -66,6 +62,10 @@ export function createShell(container) {
               <button type="button" class="settings-mode-pill" data-mode="Personal">
                 <span class="settings-mode-pill__dot" style="background:var(--color-emerald)"></span>
                 🌱 Persoonlijk
+              </button>
+              <button type="button" class="settings-mode-pill" data-mode="BPV">
+                <span class="settings-mode-pill__dot" style="background:var(--color-blue)"></span>
+                🏢 BPV
               </button>
             </div>
             <div class="hamburger-menu-divider"></div>
@@ -104,7 +104,7 @@ export function createShell(container) {
       <nav class="bottom-nav" aria-label="Navigatie">
         ${bottomNavItems.map(m => `
           <a href="#${m.route}" class="nav-link" data-route="${m.route}">
-            <span class="nav-icon">${icon(m.icon)}</span>
+            ${icon(m.icon)}
             <span>${m.label}</span>
           </a>
         `).join('')}
@@ -233,8 +233,8 @@ export function createShell(container) {
     // Mode
     try {
       const savedMode = localStorage.getItem(MODE_KEY);
-      updateModePills(MODES.includes(savedMode) ? savedMode : 'BPV');
-    } catch { updateModePills('BPV'); }
+      updateModePills(MODES.includes(savedMode) ? savedMode : 'School');
+    } catch { updateModePills('School'); }
 
     const theme = await getSetting('theme') || 'system';
     setActiveTheme(theme);

@@ -4,9 +4,10 @@ export function registerSchoolTodayBlock(registry) {
   registry.register({
     id: 'school-today',
     title: 'School Vandaag',
-    hosts: ['vandaag-widgets'],
+    hosts: ['today-sections', 'vandaag-widgets'],
     modes: ['School'],
     enabled: true,
+    order: 40,
     mount(container) {
       return renderSchoolToday(container);
     },

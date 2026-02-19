@@ -1,0 +1,44 @@
+.bpv-log__title {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.bpv-log__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bpv-log__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  flex-wrap: wrap;
+}
+
+.bpv-log__row-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.bpv-log__row-value {
+  flex: 1;
+  font-size: 0.8125rem;
+  min-width: 0;
+}
+
+.bpv-log__detail {
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+}
+
+.bpv-log__empty-val {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}

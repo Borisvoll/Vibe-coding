@@ -100,7 +100,7 @@ All three keep themselves in sync via `mode:changed` event (OS) or localStorage 
 
 ## Testing
 
-Tests use Vitest + `fake-indexeddb`. Setup in `tests/setup.js` resets the DB before each test (219 tests covering store adapters, migrations, validation). Tests are store-level (no browser needed).
+Tests use Vitest + `fake-indexeddb`. Setup in `tests/setup.js` resets the DB before each test (234 tests covering store adapters, migrations, validation, mode switching). Tests are store-level (no browser needed).
 
 ```bash
 # Run all tests once
@@ -161,7 +161,7 @@ host.innerHTML = `<p>${userText}</p>`;             // ✗ Unsafe
 }
 ```
 
-**Mode persistence:** Use `localStorage.getItem('boris_mode')` in legacy path, `modeManager.getMode()` in OS path. Both store the same key.
+**Mode persistence:** Use `localStorage.getItem('boris_mode')` in legacy path, `modeManager.getMode()` in OS path. Both store the same key. Default mode is `School` (not BPV) for new users.
 
 ## Documentation
 

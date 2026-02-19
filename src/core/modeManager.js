@@ -18,9 +18,9 @@ function isFirstVisit() {
   }
 }
 
-export function createModeManager(eventBus, initialMode = 'BPV') {
+export function createModeManager(eventBus, initialMode = 'School') {
   const persisted = getPersistedMode();
-  let currentMode = persisted || (MODES.includes(initialMode) ? initialMode : 'BPV');
+  let currentMode = persisted || (MODES.includes(initialMode) ? initialMode : 'School');
 
   function setMode(mode) {
     if (!MODES.includes(mode) || currentMode === mode) return;

@@ -51,11 +51,55 @@ function particles(count) {
   return html;
 }
 
+/**
+ * Build the Joker card HTML — pixel-art jester rendered in pure CSS.
+ * @returns {string}
+ */
+function jokerCard() {
+  // 13×15 pixel grid for the jester sprite
+  // 0 = transparent, 1 = hat yellow, 2 = hat red, 3 = skin, 4 = body purple,
+  // 5 = bells gold, 6 = eyes, 7 = smile red, 8 = collar white
+  const grid = [
+    [0,0,5,0,1,1,1,1,1,0,5,0,0],
+    [0,0,2,0,1,1,1,1,1,0,2,0,0],
+    [0,0,2,1,1,2,1,2,1,1,2,0,0],
+    [0,0,0,2,1,1,1,1,1,2,0,0,0],
+    [0,0,0,0,3,3,3,3,3,0,0,0,0],
+    [0,0,0,3,3,6,3,6,3,3,0,0,0],
+    [0,0,0,3,3,3,3,3,3,3,0,0,0],
+    [0,0,0,3,3,7,7,7,3,3,0,0,0],
+    [0,0,0,0,3,3,3,3,3,0,0,0,0],
+    [0,0,8,8,0,8,8,8,0,8,8,0,0],
+    [0,0,0,4,4,4,4,4,4,4,0,0,0],
+    [0,0,0,4,4,4,4,4,4,4,0,0,0],
+    [0,0,0,4,4,4,4,4,4,4,0,0,0],
+    [0,0,0,0,4,4,0,4,4,0,0,0,0],
+    [0,0,0,0,4,4,0,4,4,0,0,0,0],
+  ];
+  const colors = {
+    1: '#ffd700', 2: '#e63946', 3: '#f4c890', 4: '#7b2d8b',
+    5: '#ffd700', 6: '#1a1a2e', 7: '#e63946', 8: '#e8e4d8',
+  };
+  const pixels = grid.flatMap((row, y) =>
+    row.map((v, x) => v ? `<i class="jp" style="--jx:${x};--jy:${y};background:${colors[v]}"></i>` : '')
+  ).join('');
+
+  return `
+    <div class="balatro-card balatro-card--joker">
+      <div class="balatro-joker__pixels">${pixels}</div>
+      <span class="balatro-joker__label">JOKER</span>
+    </div>
+  `;
+}
+
 /** Show the Balatro overlay. */
 function show() {
   if (overlay) return;
 
   const hand = dealHand();
+  // Insert Joker in the center (position 2)
+  const left = hand.slice(0, 2);
+  const right = hand.slice(2);
   const el = document.createElement('div');
   el.className = 'balatro-overlay';
   el.innerHTML = `
@@ -64,7 +108,15 @@ function show() {
     <div class="balatro-vignette"></div>
     ${particles(20)}
     <div class="balatro-cards">
-      ${hand.map(c => `
+      ${left.map(c => `
+        <div class="balatro-card balatro-card--${c.red ? 'red' : 'black'}">
+          <span class="balatro-card__rank">${c.rank}</span>
+          <span class="balatro-card__suit">${c.suit}</span>
+          <span class="balatro-card__rank-bottom">${c.rank}</span>
+        </div>
+      `).join('')}
+      ${jokerCard()}
+      ${right.map(c => `
         <div class="balatro-card balatro-card--${c.red ? 'red' : 'black'}">
           <span class="balatro-card__rank">${c.rank}</span>
           <span class="balatro-card__suit">${c.suit}</span>

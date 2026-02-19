@@ -2,6 +2,7 @@ import { getSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { formatDateShort, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
+import { startTutorial } from '../core/tutorial.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief'];
 
@@ -408,6 +409,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   if (modeManager.isFirstVisit?.()) {
     setTimeout(() => showModePicker(), 400);
   }
+
+  // Start tutorial for new users (after mode picker)
+  const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
+  setTimeout(() => startTutorial(), tutorialDelay);
 
   // ── Friday prompt: gentle nudge to send weekly review ───────
   (async () => {

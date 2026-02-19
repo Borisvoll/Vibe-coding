@@ -46,8 +46,6 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
 
   container.innerHTML = `
     <section class="settings-block card">
-      <h3>Instellingen</h3>
-
       <div class="settings-row">
         <div>
           <div class="settings-label">Modus</div>
@@ -149,14 +147,17 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
   `;
 
   // ── Mode switcher ──────────────────────────────────────────
+  const modeGroup = container.querySelector('[data-setting="mode"]');
+
   function updateModePills(mode) {
-    container.querySelectorAll('.settings-mode-pill').forEach((p) => {
+    if (!modeGroup) return;
+    modeGroup.querySelectorAll('.settings-mode-pill').forEach((p) => {
       p.classList.toggle('settings-mode-pill--active', p.dataset.mode === mode);
     });
   }
 
-  // Direct click handler on each pill for maximum reliability
-  container.querySelectorAll('.settings-mode-pill').forEach((pill) => {
+  // Direct click handler on each mode pill
+  modeGroup?.querySelectorAll('.settings-mode-pill').forEach((pill) => {
     pill.addEventListener('click', () => {
       const mode = pill.dataset.mode;
       if (!mode) return;

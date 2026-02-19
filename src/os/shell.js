@@ -51,6 +51,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
             <span class="os-shell__date">${todayLabel}</span>
           </div>
           <div class="os-shell__header-actions">
+            <button id="legacy-switch-btn" type="button" class="os-interface-toggle" title="Schakel naar Legacy interface">
+              Legacy
+            </button>
             <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
               <span class="os-mode-btn__dot"></span>
               <span class="os-mode-btn__label"></span>
@@ -358,6 +361,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
     tabButton.addEventListener('click', () => {
       setActiveTab(tabButton.getAttribute('data-os-tab'));
+    });
+  });
+
+  // Legacy switch button — switch back to legacy interface
+  app.querySelector('#legacy-switch-btn')?.addEventListener('click', () => {
+    import('../core/featureFlags.js').then(({ setFeatureFlag }) => {
+      setFeatureFlag('enableNewOS', false);
+      window.location.hash = '';
+      window.location.reload();
     });
   });
 

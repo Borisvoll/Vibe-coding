@@ -47,9 +47,28 @@ export const modules = [
 let updateBanner = null;
 let swControllerChangeBound = false;
 
+async function applyUserSettings() {
+  const theme = await getSetting('theme');
+  if (theme && theme !== 'system') {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+
+  const accentId = await getSetting('accentColor');
+  if (accentId) {
+    const color = ACCENT_COLORS.find((c) => c.id === accentId);
+    if (color) applyAccentColor(color.hex);
+  }
+
+  const compact = await getSetting('compact');
+  if (compact) {
+    document.documentElement.setAttribute('data-compact', 'true');
+  }
+}
+
 async function init() {
   applyDesignTokens();
   await initDB();
+  await applyUserSettings();
   await initServiceWorker();
 
   const enableNewOS = getFeatureFlag('enableNewOS');
@@ -66,22 +85,6 @@ async function init() {
 }
 
 async function initLegacy() {
-  const theme = await getSetting('theme');
-  if (theme && theme !== 'system') {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
-
-  const accentId = await getSetting('accentColor');
-  if (accentId) {
-    const color = ACCENT_COLORS.find((c) => c.id === accentId);
-    if (color) applyAccentColor(color.hex);
-  }
-
-  const compact = await getSetting('compact');
-  if (compact) {
-    document.documentElement.setAttribute('data-compact', 'true');
-  }
-
   let deviceId = await getSetting('device_id');
   if (!deviceId) {
     deviceId = crypto.randomUUID();

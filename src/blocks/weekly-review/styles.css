@@ -22,22 +22,22 @@
 
 .wr__title {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
 }
 
 .wr__subtitle {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
 .wr__sent-badge {
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-success);
   background: var(--color-success-light);
-  padding: 2px 8px;
+  padding: var(--space-0) var(--space-2);
   border-radius: var(--radius-full);
   white-space: nowrap;
 }
@@ -57,14 +57,14 @@
 }
 
 .wr__stat-value {
-  font-size: 1.375rem;
+  font-size: var(--font-2xl);
   font-weight: 700;
   color: var(--color-text);
   line-height: 1.2;
 }
 
 .wr__stat-label {
-  font-size: 0.625rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -80,7 +80,7 @@
 .wr__label {
   display: block;
   margin: 0 0 var(--space-2);
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -94,11 +94,11 @@
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
 }
 
 .wr__list-item {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text);
   line-height: 1.4;
   display: flex;
@@ -109,17 +109,17 @@
 .wr__check {
   color: var(--color-success);
   flex-shrink: 0;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 .wr__spark {
   color: var(--color-amber);
   flex-shrink: 0;
-  font-size: 0.625rem;
+  font-size: var(--font-xs);
 }
 
 .wr__muted {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
@@ -143,7 +143,7 @@
 .wr__bar-fill--red { background: var(--color-error); }
 
 .wr__bar-text {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 
@@ -157,12 +157,12 @@
 .wr__habit-chip {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 3px 10px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   background: var(--color-emerald-light);
   color: var(--color-emerald);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -177,14 +177,14 @@
 
 .wr__entry-date {
   display: block;
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
   margin-bottom: 2px;
 }
 
 .wr__entry-text {
   margin: 0;
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text);
   line-height: 1.5;
 }
@@ -203,11 +203,11 @@
 
 .wr__chip {
   display: inline-flex;
-  padding: 3px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   background: var(--color-purple-light);
   color: var(--color-purple);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 500;
 }
 
@@ -220,7 +220,7 @@
 
 .wr__prompt-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-emerald);
   margin-bottom: var(--space-2);
@@ -228,7 +228,7 @@
 
 .wr__prompt-text {
   margin: 0 0 var(--space-2);
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   color: var(--color-text);
   font-style: italic;
   line-height: 1.5;
@@ -236,7 +236,7 @@
 
 .wr__prompt-note {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
@@ -255,7 +255,7 @@
   border-radius: var(--radius-md);
   background: var(--color-accent);
   color: var(--color-accent-text);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: opacity 180ms var(--ease), transform 120ms var(--ease);
@@ -275,7 +275,7 @@
 }
 
 .wr__status {
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   color: var(--color-text-secondary);
 }
 

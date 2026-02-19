@@ -11,11 +11,11 @@
 .ui-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .ui-section + .ui-section {
-  margin-top: var(--space-6);
+  margin-top: var(--space-8);
 }
 
 /* Section title bar — label + optional action */
@@ -27,7 +27,7 @@
 }
 
 .ui-section__title {
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--ui-text);
 }

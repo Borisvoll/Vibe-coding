@@ -3,7 +3,19 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "SF Mono", SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
 
+  /* Font-size scale */
+  --font-xs: 0.6875rem;   /* 11px — captions, section labels */
+  --font-sm: 0.75rem;     /* 12px — meta, badges, secondary */
+  --font-base: 0.8125rem; /* 13px — standard body, buttons */
+  --font-md: 0.875rem;    /* 14px — primary body, list items */
+  --font-lg: 0.9375rem;   /* 15px — block titles, cards */
+  --font-xl: 1.125rem;    /* 18px — section headings */
+  --font-2xl: 1.375rem;   /* 22px — large stats */
+  --font-3xl: 1.75rem;    /* 28px — page titles */
+  --font-stat: 2rem;      /* 32px — mega metric numbers */
+
   /* Spacing scale (4px base) */
+  --space-0: 0.125rem;
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;

@@ -207,6 +207,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   }
 
+  let focusTrapCleanup = null;
+
   function showModePicker() {
     const picker = app.querySelector('#mode-picker');
     if (!picker) return;
@@ -216,13 +218,36 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       const active = picker.querySelector('.mode-card--active') || picker.querySelector('.mode-card');
       active?.focus();
     }, 50);
+
+    // Focus trap: keep Tab cycling within the picker
+    const cards = picker.querySelectorAll('.mode-card');
+    if (cards.length > 0) {
+      const first = cards[0];
+      const last = cards[cards.length - 1];
+      function trapFocus(e) {
+        if (e.key !== 'Tab') return;
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+      picker.addEventListener('keydown', trapFocus);
+      focusTrapCleanup = () => picker.removeEventListener('keydown', trapFocus);
+    }
   }
 
   function hideModePicker() {
     const picker = app.querySelector('#mode-picker');
     if (!picker) return;
+    focusTrapCleanup?.();
+    focusTrapCleanup = null;
     picker.classList.remove('mode-picker--visible');
     picker.addEventListener('transitionend', () => { picker.hidden = true; }, { once: true });
+    // Return focus to trigger button
+    app.querySelector('#mode-btn')?.focus();
   }
 
   // Mode picker — card clicks

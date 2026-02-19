@@ -64,7 +64,7 @@ export async function renderSettingsBlock(container, { modeManager, onChange } =
           <div class="settings-desc">Kleur voor knoppen en accenten</div>
         </div>
         <div class="accent-picker" data-setting="accent">
-          ${accents.map((c) => `<button class="accent-dot ${c.id === accentId ? 'active' : ''}" data-color="${c.id}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.label}"></button>`).join('')}
+          ${accents.map((c) => `<button class="accent-dot ${c.id === accentId ? 'active' : ''}" data-color="${c.id}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.label}" aria-label="${c.label}"></button>`).join('')}
         </div>
       </div>
 

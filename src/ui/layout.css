@@ -27,7 +27,7 @@
 }
 
 .ui-section__title {
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: var(--ui-text);
 }

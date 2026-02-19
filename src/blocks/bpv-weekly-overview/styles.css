@@ -19,7 +19,7 @@
 }
 
 .bpv-wo__week-label {
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   font-weight: 600;
   color: var(--color-text);
   min-width: 80px;
@@ -28,7 +28,7 @@
 
 .bpv-wo__nav-btn {
   padding: 0 var(--space-2);
-  font-size: 1.125rem;
+  font-size: var(--font-xl);
   line-height: 1;
 }
 
@@ -41,7 +41,7 @@
 .bpv-wo__progress-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .bpv-wo__progress-bar {
@@ -58,13 +58,13 @@
 }
 
 .bpv-wo__progress-label {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-secondary);
 }
 
 .bpv-wo__pct {
   color: var(--color-text-tertiary, var(--color-text-secondary));
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 /* Days grid */
@@ -78,34 +78,34 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-0);
   padding: var(--space-2) var(--space-1);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
   background: var(--color-bg);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   min-width: 0;
 }
 
 .bpv-wo__day-name {
   font-weight: 600;
   color: var(--color-text-secondary);
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   text-transform: uppercase;
 }
 
 .bpv-wo__day-icon {
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   line-height: 1;
 }
 
 .bpv-wo__day-time {
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-secondary);
 }
 
 .bpv-wo__lb-dot {
-  font-size: 0.625rem;
+  font-size: var(--font-xs);
 }
 
 /* Day states */
@@ -136,7 +136,7 @@
 
 .bpv-wo__highlights-label {
   margin: 0 0 var(--space-1);
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -152,13 +152,13 @@
 }
 
 .bpv-wo__highlights-list li {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-secondary);
   line-height: 1.4;
 }
 
 .bpv-wo__loading {
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   color: var(--color-text-tertiary, var(--color-text-secondary));
   text-align: center;
   padding: var(--space-4);

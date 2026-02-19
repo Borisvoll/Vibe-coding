@@ -7,13 +7,13 @@
 
 .projects-block__title {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
   flex: 1;
 }
 
 .projects-block__add {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
 }
 
 /* New project form */
@@ -35,7 +35,7 @@
 
 .projects-block__new-form textarea {
   min-height: 54px;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
 }
 
 /* Project list */
@@ -48,7 +48,7 @@
 .projects-block__empty {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
+  font-size: var(--font-md);
 }
 
 /* Individual project item */
@@ -80,12 +80,12 @@
 
 .projects-block__status {
   flex-shrink: 0;
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
 }
 
 .projects-block__name {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -93,14 +93,14 @@
 }
 
 .projects-block__chevron {
-  font-size: 0.625rem;
+  font-size: var(--font-xs);
   color: var(--color-text-tertiary);
   flex-shrink: 0;
 }
 
 .projects-block__next-preview {
   padding: 0 var(--space-3) var(--space-2);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-secondary);
   background: var(--color-surface);
   white-space: nowrap;
@@ -125,18 +125,18 @@
 
 .projects-block__goal {
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   color: var(--color-text-secondary);
   font-style: italic;
 }
 
 .projects-block__section-label {
   margin: 0 0 var(--space-2);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .projects-block__section-label small {
@@ -160,20 +160,20 @@
 
 .projects-block__action-text {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   color: var(--color-accent);
   font-weight: 500;
 }
 
 .projects-block__action-empty {
   margin: 0 0 var(--space-2);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-tertiary);
   font-style: italic;
 }
 
 .projects-block__next-action-form input {
-  font-size: 0.875rem;
+  font-size: var(--font-md);
 }
 
 /* Detail action buttons */

@@ -1585,6 +1585,163 @@ Mode accent colors (existing CSS vars):
 
 ---
 
+## UI Streamlining & Visual Refinement Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Goal: Calmer, more coherent, more elegant UI. No feature changes.
+> Inspired by: Brian Eno (rhythm, calm), Dieter Rams (less noise), Jony Ive (precision), Steve Jobs (strong defaults)
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files) |
+| Build | **Clean** |
+
+---
+
+### Audit Summary
+
+**Spacing:** 10 spacing tokens exist (--space-1 to --space-16) but 30+ hardcoded pixel values (1px–6px gaps, 5px padding) scattered across 15+ block CSS files. No micro-spacing token below 4px.
+
+**Typography:** Zero font-size CSS tokens. 14+ unique hardcoded sizes (0.5625rem–2.5rem). Block titles (0.9375rem/600) and section labels (0.6875rem/600/uppercase) are already consistent — but everything else is ad-hoc.
+
+**Cards:** 25+ distinct card/container patterns. Three main families that don't share a visual base:
+- `.card` (legacy, radius-lg, space-5 padding)
+- `.os-mini-card` (OS, ui-card-radius, 4px colored top border)
+- `.dash-widget` (dashboard, radius-lg, space-4 padding, icon-centric)
+- Plus near-duplicates: `.bpv-log__row`, `.inbox-block__item`, `.tasks-block__item`
+
+**Dashboard vs Today:** Visually disconnected. Dashboard uses icon circles + metric badges + clickable cards. Today uses form-heavy cards with mode top-borders. Title sizes differ (0.75rem uppercase vs 0.95rem normal). Empty state patterns differ across blocks.
+
+**Sidebar:** Mostly clean. Section labels at 0.625rem (10px) are too small to read comfortably. Active state uses mode-aware accent — good.
+
+**Accent:** Mode-aware accents well-defined per mode. Dashboard widgets use custom `--widget-accent` per card. Some inconsistency in focus ring patterns (8+ variants across files).
+
+---
+
+### A) Typography Scale Tokens
+
+> Add font-size tokens. Replace most common hardcoded sizes.
+
+- [ ] A1. Add font-size tokens to `src/styles/variables.css`:
+  `--font-xs` (0.6875rem), `--font-sm` (0.75rem), `--font-base` (0.8125rem),
+  `--font-md` (0.875rem), `--font-lg` (0.9375rem), `--font-xl` (1.125rem),
+  `--font-2xl` (1.375rem), `--font-3xl` (1.75rem), `--font-stat` (2rem)
+- [ ] A2. Apply `--font-lg` to all block title classes (tasks, inbox, daily-todos, daily-outcomes, projects, bpv-log)
+- [ ] A3. Apply `--font-xs` to section label classes (school-dash, personal-dash, sidebar, dash-widget title)
+- [ ] A4. Apply `--font-base` to form inputs and button text
+- [ ] A5. Apply `--font-sm` to badge/meta text
+- [ ] A6. Apply `--font-stat` to `.ui-stat`, `--font-2xl` to `.ui-stat--sm`
+
+**Files:** `variables.css`, `base.css`, `components.css`, `ui/typography.css`, `blocks/*/styles.css`
+
+### B) Card Language Unification
+
+> Reduce 25+ patterns to consistent visual language.
+
+- [ ] B1. Standardize `.os-mini-card` and `.dash-widget`: same border-radius (`radius-lg`), border (1px), bg (surface), hover shadow
+- [ ] B2. Change `.os-mini-card` accent from 4px top border to 3px left border — calmer, Rams-inspired
+- [ ] B3. Unify list items: `.tasks-block__item`, `.inbox-block__item`, `.bpv-log__row` use identical padding (`--space-2`), radius (`--radius-md`), hover bg
+- [ ] B4. Replace `50%` border-radius with `var(--radius-full)` on circular elements (~8 files)
+
+**Files:** `blocks/styles.css`, `dashboard/styles.css`, `tasks/styles.css`, `inbox/styles.css`, `bpv-log-summary/styles.css`
+
+### C) Spacing & Rhythm Cleanup
+
+> Replace hardcoded micro-spacing with tokens.
+
+- [ ] C1. Add `--space-0: 0.125rem` (2px) token for micro-spacing
+- [ ] C2. Replace hardcoded 2px/3px gaps with `var(--space-0)` or `var(--space-1)`
+- [ ] C3. Replace hardcoded 5px/6px padding with nearest token (`--space-1` or `--space-2`)
+- [ ] C4. Card internal spacing uses `var(--space-*)` tokens (dashboard, school-dash, personal-dash)
+
+**Files:** `variables.css`, `dashboard/styles.css`, `weekly-review/styles.css`, `personal-dashboard/styles.css`, `school-dashboard/styles.css`, `inbox-screen/styles.css`
+
+### D) Accent Discipline
+
+> One accent per mode. Accent only for small touches.
+
+- [ ] D1. Audit accent backgrounds — only badges, icon circles, small indicators
+- [ ] D2. Dashboard widget icon circles use `var(--mode-accent-light)` bg + `var(--mode-accent)` color
+- [ ] D3. Standardize focus ring to `0 0 0 3px var(--color-accent-light)` everywhere
+
+**Files:** `dashboard/styles.css`, `components.css`, `tasks/styles.css`, `inbox-screen/styles.css`
+
+### E) Content Density Reduction
+
+> Reduce visual noise without removing features.
+
+- [ ] E1. Remove redundant 1px section dividers in `.school-dash` and `.personal-dash` — use spacing instead
+- [ ] E2. Soften remaining dividers: `--color-border` → `--color-border-light`
+- [ ] E3. Standardize uppercase label letter-spacing to `0.06em` (currently 0.03–0.08em)
+
+**Files:** `school-dashboard/styles.css`, `personal-dashboard/styles.css`, `blocks/styles.css`
+
+### F) Dashboard & Today Harmonization
+
+> Make them feel like parts of the same system.
+
+- [ ] F1. Align Today block titles: `--font-xs`, 600 weight, uppercase, 0.06em tracking
+- [ ] F2. Give Today blocks subtle 3px mode-accent left border (matching card language from B2)
+- [ ] F3. Standardize empty state: one pattern everywhere (`--font-base`, text-tertiary, centered)
+
+**Files:** `blocks/styles.css`, `bpv-today/view.js`, `school-today/view.js`, `personal-today/view.js`
+
+### G) Sidebar Elegance
+
+> Calmer, more consistent sidebar.
+
+- [ ] G1. Increase section label from 0.625rem to `var(--font-xs)` (0.6875rem) — more readable
+- [ ] G2. Soften dividers: `--color-border-light` instead of `--color-border`
+- [ ] G3. Reduce active state font-weight from 600 to 500 — subtler emphasis
+- [ ] G4. Consistent icon-to-text gap: `var(--space-2)` (8px) for all nav items
+
+**Files:** `blocks/styles.css`
+
+---
+
+### Implementation Order
+
+1. **A** (Typography tokens) — foundation everything else uses
+2. **C** (Spacing tokens) — second foundation layer
+3. **B** (Card unification) — depends on A+C
+4. **G** (Sidebar) — isolated scope, quick wins
+5. **E** (Density reduction) — depends on B
+6. **D** (Accent discipline) — cleanup pass
+7. **F** (Dashboard/Today harmony) — final polish, depends on A+B
+
+### Verify
+
+- [ ] `npm test` — all 274 tests green
+- [ ] `npm run build` — clean
+- [ ] No behavioral changes
+- [ ] UI feels calmer with stronger hierarchy
+
+---
+
+### Acceptance Criteria
+
+- [ ] Font-size tokens defined and used in 80%+ of component CSS
+- [ ] Card language reduced from 25+ to ~3 clear families (card, list-item, widget)
+- [ ] No hardcoded 2–6px spacing values in modified files
+- [ ] Sidebar feels calm with no heavy separators
+- [ ] Dashboard and Today share visual rhythm (same title pattern, same card accent)
+- [ ] All tests green, build clean
+- [ ] No feature additions, no feature removals
+
+---
+
+### After (To be filled)
+
+| Metric | Value |
+|--------|-------|
+| Tests | TBD |
+| Build | TBD |
+| Changes | TBD |
+
+---
+
 ## Milestone 3: Cloudflare Deployment + Sync (Future)
 
 - [ ] Deploy to Cloudflare Pages (static hosting, free tier)

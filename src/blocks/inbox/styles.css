@@ -7,12 +7,12 @@
 
 .inbox-block__open {
   margin-left: auto;
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
 }
 
 .inbox-block__title {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
@@ -25,7 +25,7 @@
   border-radius: var(--radius-full);
   background: var(--color-accent-light);
   color: var(--color-accent);
-  font-size: 0.75rem;
+  font-size: var(--font-sm);
   font-weight: 600;
   padding: 0 6px;
 }
@@ -37,7 +37,7 @@
 }
 
 .inbox-block__input {
-  font-size: 0.875rem;
+  font-size: var(--font-md);
 }
 
 .inbox-block__mode-tags {
@@ -79,7 +79,7 @@
 }
 
 .inbox-block__item-text {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -94,5 +94,5 @@
 .inbox-block__empty {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
 }

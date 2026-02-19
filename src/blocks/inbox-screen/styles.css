@@ -8,13 +8,13 @@
 
 .inbox-screen__title {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: var(--font-xl);
   font-weight: 600;
 }
 
 .inbox-screen__shortcuts {
   margin-left: auto;
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   color: var(--color-text-tertiary);
 }
 
@@ -25,7 +25,7 @@
   border-radius: var(--radius-sm);
   background: var(--color-surface);
   font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-size: var(--font-xs);
 }
 
 .inbox-screen__capture {
@@ -34,7 +34,7 @@
 
 .inbox-screen__capture-input {
   width: 100%;
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
 }
 
 .inbox-screen__list {
@@ -72,7 +72,7 @@
 
 .inbox-screen__item-text {
   flex: 1;
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -94,7 +94,7 @@
 }
 
 .inbox-screen__empty-hint {
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   color: var(--color-text-tertiary);
 }
 
@@ -109,19 +109,19 @@
 
 .inbox-processing__title {
   margin: 0 0 var(--space-2);
-  font-size: 0.9375rem;
+  font-size: var(--font-lg);
   font-weight: 600;
 }
 
 .inbox-processing__text {
   margin: 0 0 var(--space-2);
-  font-size: 0.875rem;
+  font-size: var(--font-md);
   color: var(--color-text);
 }
 
 .inbox-processing__url {
   margin: 0 0 var(--space-3);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
 }
 
 .inbox-processing__url a {
@@ -142,7 +142,7 @@
 
 .inbox-processing__option h4 {
   margin: 0 0 var(--space-2);
-  font-size: 0.8125rem;
+  font-size: var(--font-base);
   font-weight: 500;
   color: var(--color-text-secondary);
 }
@@ -154,7 +154,7 @@
   border-radius: var(--radius-sm);
   background: var(--color-surface-hover);
   font-family: var(--font-mono);
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
 }
 
 .inbox-processing__option--row {
@@ -188,7 +188,7 @@
   border-radius: var(--radius-full);
   background: var(--color-accent);
   color: var(--color-accent-text);
-  font-size: 0.6875rem;
+  font-size: var(--font-xs);
   font-weight: 600;
   padding: 0 4px;
   margin-left: var(--space-1);

@@ -245,14 +245,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
   function hideModePicker() {
     const picker = app.querySelector('#mode-picker');
-    if (!picker) return;
+    if (!picker || picker.hidden) return;
     focusTrapCleanup?.();
     focusTrapCleanup = null;
     picker.classList.remove('mode-picker--visible');
-    picker.addEventListener('transitionend', () => { picker.hidden = true; }, { once: true });
-    // Fallback: ensure picker hides even if transitionend doesn't fire
-    setTimeout(() => { picker.hidden = true; }, 500);
-    // Return focus to trigger button
+    // pointer-events: none kicks in immediately via CSS (no --visible = no clicks)
+    // Set hidden after exit animation for DOM cleanup
+    const setHidden = () => { picker.hidden = true; };
+    picker.addEventListener('transitionend', setHidden, { once: true });
+    setTimeout(setHidden, 500);
     app.querySelector('#mode-btn')?.focus();
   }
 

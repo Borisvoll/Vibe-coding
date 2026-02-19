@@ -18,12 +18,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
       - run: npm ci
       - run: npm run build
+
+      # SPA fix: GitHub Pages serves 404.html when a path isn't found.
+      # Copying index.html → 404.html makes direct URLs (e.g. bookmarks) work.
+      - run: cp dist/index.html dist/404.html
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

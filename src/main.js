@@ -146,7 +146,7 @@ function initNewOSShell() {
   if (!app) return;
 
   const eventBus = createEventBus();
-  const modeManager = createModeManager(eventBus, 'BPV');
+  const modeManager = createModeManager(eventBus, 'School');
   const blockRegistry = createBlockRegistry();
   registerDefaultBlocks(blockRegistry);
 

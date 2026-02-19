@@ -25,6 +25,12 @@
   font-size: 0.875rem;
 }
 
+.tasks-block__input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
 .tasks-block__list {
   display: flex;
   flex-direction: column;

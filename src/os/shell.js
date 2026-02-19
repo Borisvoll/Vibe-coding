@@ -168,8 +168,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       hosts.forEach((hostName) => {
         const hostEl = app.querySelector(`[data-os-host="${hostName}"]`);
         if (!hostEl || typeof block.mount !== 'function') return;
-        const instance = block.mount(hostEl, context) || null;
-        mountedBlocks.push({ blockId: block.id, hostName, instance });
+        try {
+          const instance = block.mount(hostEl, context) || null;
+          mountedBlocks.push({ blockId: block.id, hostName, instance });
+        } catch (err) {
+          console.error(`Block "${block.id}" failed to mount:`, err);
+        }
       });
     });
 
@@ -241,12 +245,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
   function hideModePicker() {
     const picker = app.querySelector('#mode-picker');
-    if (!picker) return;
+    if (!picker || picker.hidden) return;
     focusTrapCleanup?.();
     focusTrapCleanup = null;
     picker.classList.remove('mode-picker--visible');
-    picker.addEventListener('transitionend', () => { picker.hidden = true; }, { once: true });
-    // Return focus to trigger button
+    // pointer-events: none kicks in immediately via CSS (no --visible = no clicks)
+    // Set hidden after exit animation for DOM cleanup
+    const setHidden = () => { picker.hidden = true; };
+    picker.addEventListener('transitionend', setHidden, { once: true });
+    setTimeout(setHidden, 500);
     app.querySelector('#mode-btn')?.focus();
   }
 
@@ -304,6 +311,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // ── Settings with mode-switch callback ──────────────────────
   renderSettingsBlock(app.querySelector('#new-os-settings-block'), {
     modeManager,
+    eventBus,
     onChange: async ({ key }) => {
       // Settings that require live re-rendering
     },

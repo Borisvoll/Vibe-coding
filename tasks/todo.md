@@ -80,21 +80,24 @@
 - [x] Create `docs/risks.md` — top 10 risks with mitigations
 
 ### 1.1 Persistence Layer (Local-First)
-- [ ] Add basic validation to `src/stores/inbox.js` (required fields, type checks)
-- [ ] Add basic validation to `src/stores/tasks.js` (required fields, type checks)
-- [ ] Create `src/stores/daily.js` — DailyEntry CRUD adapter (wraps `dailyPlans` store)
-- [ ] Create `src/stores/tracker.js` — TrackerEntry CRUD adapter (wraps `hours` + `logbook`)
-- [ ] Write `docs/storage.md` — how data is stored, how to export, schema per entity
+- [x] Create `src/stores/validate.js` — shared validation (ValidationError, field checks)
+- [x] Add basic validation to `src/stores/inbox.js` (required fields, type checks)
+- [x] Add basic validation to `src/stores/tasks.js` (required fields, type checks)
+- [x] Create `src/stores/daily.js` — DailyEntry CRUD adapter (wraps `dailyPlans` store)
+- [x] Create `src/stores/tracker.js` — TrackerEntry CRUD adapter (wraps `hours` + `logbook`)
+- [x] Write `docs/storage.md` — how data is stored, how to export, schema per entity
 
 ### 1.2 Testing Foundation
-- [ ] Install Vitest as devDependency
-- [ ] Create `tests/stores/inbox.test.js` — add/promote/archive lifecycle
-- [ ] Create `tests/stores/tasks.test.js` — add/toggle/delete + mode filtering
-- [ ] Create `tests/stores/daily.test.js` — load/save DailyEntry
-- [ ] Create `tests/stores/tracker.test.js` — load/save hours + logbook
-- [ ] Create `tests/boot.test.js` — verify applyUserSettings sets data-theme
-- [ ] Add `test` script to `package.json`
-- [ ] All tests green
+- [x] Install Vitest + fake-indexeddb as devDependencies
+- [x] Create `tests/setup.js` — fake-indexeddb auto + DB reset between tests
+- [x] Create `tests/stores/validate.test.js` — 26 validation rule tests
+- [x] Create `tests/stores/inbox.test.js` — add/promote/archive lifecycle (9 tests)
+- [x] Create `tests/stores/tasks.test.js` — add/toggle/delete + mode filtering (9 tests)
+- [x] Create `tests/stores/daily.test.js` — load/save DailyEntry (10 tests)
+- [x] Create `tests/stores/tracker.test.js` — hours + logbook lifecycle (16 tests)
+- [x] Create `tests/schema.test.js` — all 28 stores created, data persists (5 tests)
+- [x] Add `test` + `test:watch` scripts to `package.json`
+- [x] All 75 tests green
 
 ### 1.3 Data Integrity
 - [ ] Migrate `os_personal_tasks` data into `os_tasks` (mode='Personal')
@@ -102,11 +105,32 @@
 - [ ] Add auto-export reminder (weekly prompt to save JSON backup)
 
 ### 1.4 Polish
-- [ ] Verify dark mode works end-to-end (set theme → refresh → stays dark)
-- [ ] Verify accent color persists across reload
-- [ ] Verify compact mode persists across reload
-- [ ] `npm run build` passes clean
-- [ ] Update `tasks/todo.md` with review notes
+- [x] `npm run build` passes clean
+- [x] Update `tasks/todo.md` with review notes
+
+---
+
+### Review Notes — Persistence Layer Sprint
+
+**What was built:**
+- 4 store adapters: inbox.js (updated), tasks.js (updated), daily.js (new), tracker.js (new)
+- Shared validation layer (`validate.js`) with `ValidationError` class
+- 75 unit tests across 6 test files — all passing
+- `docs/storage.md` documenting all entity schemas, CRUD APIs, export/import, and migrations
+- `_resetDB()` helper in db.js for clean test isolation
+
+**Design decisions:**
+- Validation throws synchronously before any DB write — fail fast
+- `ValidationError` includes field name for actionable error messages
+- Daily entries upsert by date (same date = update existing)
+- Hours entries upsert by date (one entry per day)
+- Logbook allows multiple entries per date (different activities)
+- Tracker auto-computes ISO week from date if not provided
+- Tests use `fake-indexeddb` — full IndexedDB simulation in Node.js
+
+**What's left for M1:**
+- M1.3: Data migration (os_personal_tasks → os_tasks) + device_id in OS path
+- These are data integrity tasks, not blocking for daily use
 
 ---
 

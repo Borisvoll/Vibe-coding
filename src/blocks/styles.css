@@ -28,7 +28,7 @@
 
 @keyframes mode-wash {
   0%   { opacity: 0; background: var(--wash-color); }
-  20%  { opacity: 0.08; }
+  25%  { opacity: 0.14; }
   100% { opacity: 0; }
 }
 
@@ -279,8 +279,23 @@
   color: #fff;
 }
 
+/* ── Mode-aware accent (set via data-mode on shell root) ──── */
+#new-os-shell[data-mode="School"] {
+  --mode-accent: var(--color-purple);
+  --mode-accent-light: var(--color-purple-light);
+}
+#new-os-shell[data-mode="Personal"] {
+  --mode-accent: var(--color-emerald);
+  --mode-accent-light: var(--color-emerald-light);
+}
+#new-os-shell[data-mode="BPV"] {
+  --mode-accent: var(--color-blue);
+  --mode-accent-light: var(--color-blue-light);
+}
+
 /* ── Navigation ────────────────────────────────────────────── */
 .os-nav {
+  position: relative;
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
   overflow-x: auto;
@@ -288,6 +303,18 @@
   scrollbar-width: none;
 }
 .os-nav::-webkit-scrollbar { display: none; }
+
+/* Mode accent line under nav — persistent visual mode indicator */
+.os-nav::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--mode-accent, var(--color-accent));
+  transition: background 300ms var(--ease);
+}
 
 .os-nav__inner {
   display: flex;
@@ -317,8 +344,8 @@
 }
 
 .os-nav__button[aria-pressed="true"] {
-  background: var(--color-accent-light);
-  color: var(--color-accent);
+  background: var(--mode-accent-light, var(--color-accent-light));
+  color: var(--mode-accent, var(--color-accent));
   font-weight: 600;
 }
 
@@ -348,6 +375,13 @@
   display: grid;
   gap: var(--space-4);
   flex: 1;
+  transition: opacity 300ms var(--ease);
+}
+
+/* Content crossfade during mode switch */
+.os-content--switching {
+  opacity: 0;
+  transition: opacity 120ms var(--ease);
 }
 
 .os-section[hidden] {

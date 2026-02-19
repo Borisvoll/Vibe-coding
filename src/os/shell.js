@@ -222,6 +222,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   }
 
+  // Set data-mode on shell root for mode-aware CSS accents
+  function setShellMode(mode) {
+    const shell = app.querySelector('#new-os-shell');
+    if (shell) shell.setAttribute('data-mode', mode);
+  }
+
   let focusTrapCleanup = null;
 
   function showModePicker() {
@@ -295,10 +301,26 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   });
 
+  let modeTransitionTimer = null;
+
   const unsubscribeMode = eventBus.on('mode:changed', ({ mode }) => {
+    setShellMode(mode);
     triggerModeWash(mode);
     updateModeBtn();
-    renderHosts();
+
+    // Content crossfade: brief fade-out, remount blocks, fade-in
+    const content = app.querySelector('.os-shell__content');
+    if (content) {
+      if (modeTransitionTimer) clearTimeout(modeTransitionTimer);
+      content.classList.add('os-content--switching');
+      modeTransitionTimer = setTimeout(() => {
+        modeTransitionTimer = null;
+        renderHosts();
+        content.classList.remove('os-content--switching');
+      }, 120);
+    } else {
+      renderHosts();
+    }
   });
 
   // Listen for inbox:open event (from quick-action or Ctrl+I)
@@ -328,6 +350,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     },
   });
 
+  setShellMode(modeManager.getMode());
   updateModeBtn();
   renderHosts();
   setActiveTab(activeTab);

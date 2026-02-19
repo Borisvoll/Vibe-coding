@@ -1204,6 +1204,227 @@ Mode accent colors (existing CSS vars):
 
 ---
 
+## Visual System Alignment + Balatro Easter Egg Sprint (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Goal: Make OS blocks match legacy BPV premium card feel + future-proof design foundation + Balatro easter egg
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **274 passed**, 0 failed (20 files) |
+| Build | **Clean** |
+
+---
+
+### Audit Summary
+
+**Gap between Legacy BPV and BORIS OS:**
+
+| Aspect | Legacy BPV | OS Blocks | Fix |
+|--------|-----------|-----------|-----|
+| Card padding | `var(--space-5)` (20px) | `var(--space-4)` (16px) | Increase to --space-5 |
+| Hover shadow | `var(--shadow-md)` on all cards | None on `.os-mini-card` | Add subtle hover shadow |
+| Stat typography | 2rem/800 numbers, 0.8125rem/600 labels | No shared pattern | Create `.ui-stat-*` classes |
+| Left border accent | `.card-color-left` (3-4px) | Top-only border (3px) | Keep top (OS identity) but add shared accent utility |
+| Progress bars | 8px consistent height | 5px/6px mixed | Normalize to 6px |
+| Hardcoded hex | None in pages | `#fff`, `#ef4444`, `#f59e0b` in blocks | Replace with vars |
+| `999px` radius | Via `var(--radius-full)` | Hardcoded `999px` in 15+ places | Replace with var |
+| Card fragmentation | Single `.card` class | `.os-mini-card`, `.dash-widget`, `.school-dash`, `.personal-dash` etc. | Unify base via shared properties |
+
+---
+
+### Proposed Semantic Token List (~20 tokens in src/ui/tokens.css)
+
+```
+/* Surface */
+--ui-surface:       var(--color-surface)
+--ui-surface-hover: var(--color-surface-hover)
+--ui-bg:            var(--color-bg)
+
+/* Borders */
+--ui-border:        var(--color-border)
+--ui-border-light:  var(--color-border-light)
+
+/* Text */
+--ui-text:          var(--color-text)
+--ui-text-muted:    var(--color-text-secondary)
+--ui-text-faint:    var(--color-text-tertiary)
+
+/* Card */
+--ui-card-padding:  var(--space-5)
+--ui-card-radius:   var(--radius-lg)
+--ui-card-shadow:   var(--shadow-sm)
+--ui-card-shadow-hover: var(--shadow-md)
+
+/* Accent (inherits from mode system) */
+--ui-accent:        var(--mode-accent, var(--color-accent))
+--ui-accent-light:  var(--mode-accent-light, var(--color-accent-light))
+
+/* Danger */
+--ui-danger:        var(--color-error)
+
+/* Sizing */
+--ui-icon-sm:       20px
+--ui-icon-md:       40px
+--ui-progress-h:    6px
+```
+
+### Card Class API (src/ui/card.css)
+
+```
+.ui-card                — Base card (surface, border, radius, padding, hover shadow)
+.ui-card--accent        — Mode-colored top border (3px)
+.ui-card--clickable     — Pointer cursor, hover border-color change
+.ui-card--flush         — No padding (for blocks managing own internal layout)
+.ui-card__title         — 0.9375rem, 600 weight, bottom margin
+.ui-card__subtitle      — 0.75rem, secondary color, uppercase, letter-spacing
+.ui-card__body          — flex column, gap --space-3
+```
+
+### Typography Classes (src/ui/typography.css)
+
+```
+.ui-stat                — 2rem, 800 weight, -0.03em tracking, line-height 1
+.ui-stat--sm            — 1.25rem, 700 weight
+.ui-label               — 0.8125rem, 600 weight, uppercase, 0.04em tracking
+.ui-meta                — 0.75rem, secondary color
+.ui-caption             — 0.6875rem, tertiary color
+```
+
+### Layout Classes (src/ui/layout.css)
+
+```
+.ui-section             — margin-bottom: --space-8
+.ui-section__title      — inherits os-section__title pattern
+.ui-row                 — flex row, gap --space-4, wrap
+.ui-hero-row            — grid: repeat(auto-fit, minmax(160px, 1fr)), gap --space-4
+.ui-stack               — flex column, gap --space-4
+```
+
+### File Touch List
+
+**CREATE:**
+- `src/ui/tokens.css` — semantic token aliases
+- `src/ui/card.css` — unified card classes
+- `src/ui/typography.css` — stat/label/meta classes
+- `src/ui/layout.css` — section/row/hero layout
+- `src/ui/balatro.js` — easter egg controller (keyboard listener + overlay)
+- `src/ui/balatro.css` — swirl background + CRT effect + card animations
+- `docs/ui-guidelines.md` — how to build a new block using the system
+
+**MODIFY:**
+- `src/blocks/styles.css` — upgrade `.os-mini-card` (padding, hover, shadow)
+- `src/blocks/daily-todos/styles.css` — replace `#fff`, `#ef4444`
+- `src/blocks/daily-reflection/styles.css` — replace `#f59e0b`
+- `src/blocks/bpv-quick-log/styles.css` — replace `999px`
+- `src/blocks/bpv-weekly-overview/styles.css` — replace `999px`, normalize bar height
+- `src/blocks/personal-dashboard/styles.css` — replace `999px`
+- `src/blocks/school-dashboard/styles.css` — replace `999px`
+- `src/blocks/weekly-review/styles.css` — replace `999px`
+- `src/main.js` — import `src/ui/tokens.css`
+- `src/os/shell.js` — wire Balatro key listener (non-invasive)
+- `docs/design-principles.md` — add "Unified Card Language" section
+- `docs/demo.md` — add visual verification steps
+- `tasks/todo.md` — this checklist
+
+---
+
+### Phase A — Token Layer + Card System
+
+- [ ] Create `src/ui/tokens.css` with ~20 semantic aliases
+- [ ] Create `src/ui/card.css` with `.ui-card` family
+- [ ] Create `src/ui/typography.css` with `.ui-stat`, `.ui-label`, `.ui-meta`
+- [ ] Create `src/ui/layout.css` with `.ui-section`, `.ui-hero-row`, `.ui-stack`
+- [ ] Import all UI CSS in `src/main.js` (before blocks)
+
+### Phase B — OS Card Alignment
+
+- [ ] Upgrade `.os-mini-card` padding → `var(--space-5)` (match legacy)
+- [ ] Add `.os-mini-card:hover` subtle shadow (`var(--shadow-sm)`)
+- [ ] Replace hardcoded `#fff` → `var(--ui-surface)` in daily-todos
+- [ ] Replace hardcoded `#ef4444` → `var(--ui-danger)` in daily-todos
+- [ ] Replace hardcoded `#f59e0b` → `var(--color-warning)` in daily-reflection
+- [ ] Replace `999px` → `var(--radius-full)` in 5+ block CSS files
+- [ ] Normalize progress bar heights to 6px where inconsistent
+
+### Phase C — Balatro Easter Egg
+
+- [ ] Create `src/ui/balatro.css` — CRT swirl background (CSS animated gradients + scanlines + vignette)
+- [ ] Create `src/ui/balatro.js`:
+  - Key buffer listener: typing "balatro" triggers activation
+  - Creates overlay with swirl background
+  - Spawns animated playing cards (CSS 3D flip + float)
+  - Plays Balatro-style ambient audio via Web Audio API (optional)
+  - Escape / click anywhere to dismiss
+  - Non-invasive: no DOM changes until triggered
+- [ ] Wire listener in `src/os/shell.js` (single line: `import + init`)
+- [ ] Test: easter egg doesn't interfere with normal text input (only activates on exact match)
+
+### Phase D — Documentation
+
+- [ ] Create `docs/ui-guidelines.md`:
+  - How to build a block
+  - Which card/typography classes to use
+  - Spacing rules
+  - Mode accent usage
+  - Accessibility basics (focus states)
+  - Layout hosts documented
+  - "No fragmentation" rules
+- [ ] Update `docs/design-principles.md`:
+  - Add "Unified Card Language" section
+  - One card language, one spacing scale, one typography scale
+- [ ] Update `docs/demo.md` with visual system verification steps
+
+### Phase E — Verify
+
+- [ ] `npm test` — all 274 tests green
+- [ ] `npm run build` — clean
+- [ ] No regressions on Today/Inbox/Dashboard
+- [ ] Easter egg activates on "balatro", dismisses on Escape
+- [ ] Card hover shadow visible on all OS blocks
+- [ ] Mode accent works in all 3 modes
+
+---
+
+### Acceptance Criteria
+
+- [ ] OS cards have same padding rhythm as legacy (--space-5)
+- [ ] OS cards show subtle hover shadow (calm, premium feel)
+- [ ] No hardcoded hex colors in modified blocks
+- [ ] `999px` replaced with `var(--radius-full)` everywhere touched
+- [ ] `.ui-card`, `.ui-stat`, `.ui-label` classes exist and documented
+- [ ] Balatro easter egg works (non-intrusive, visually pleasing)
+- [ ] Tests green, build clean
+- [ ] `docs/ui-guidelines.md` exists
+- [ ] `docs/design-principles.md` has "Unified Card Language" section
+
+---
+
+### Risks + Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Padding increase breaks layout | Cards overflow on mobile | Test at 320px viewport |
+| Easter egg key listener conflicts with text inputs | Can't type "balatro" in inputs | Only listen when no input/textarea is focused |
+| Shadow on hover too heavy | Breaks calm feel | Use `--shadow-sm` (lightest), not `--shadow-md` |
+| Too many new CSS files | Import order issues | Import tokens first, then card/typography/layout |
+| Block-specific CSS overrides | Specificity wars | New classes are additive, don't override block classes |
+
+---
+
+### After (To be filled)
+
+| Metric | Value |
+|--------|-------|
+| Tests | TBD |
+| Build | TBD |
+| New files | TBD |
+| Modified files | TBD |
+
+---
+
 ## Milestone 3: Cloudflare Deployment + Sync (Future)
 
 - [ ] Deploy to Cloudflare Pages (static hosting, free tier)

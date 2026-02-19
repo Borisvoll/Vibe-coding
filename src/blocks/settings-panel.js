@@ -14,7 +14,7 @@ function getPresets() {
   return ACCENT_COLORS.filter((c) => ACCENT_PRESETS.includes(c.id));
 }
 
-export async function renderSettingsBlock(container, { modeManager, onChange } = {}) {
+export async function renderSettingsBlock(container, { modeManager, eventBus, onChange } = {}) {
   const theme = (await getSetting('theme')) || 'system';
   const accentId = (await getSetting('accentColor')) || 'blue';
   const compact = (await getSetting('compact')) || false;
@@ -91,17 +91,25 @@ export async function renderSettingsBlock(container, { modeManager, onChange } =
   `;
 
   // ── Mode switcher ──────────────────────────────────────────
+  function updateModePills(mode) {
+    container.querySelectorAll('.settings-mode-pill').forEach((p) => {
+      p.classList.toggle('settings-mode-pill--active', p.dataset.mode === mode);
+    });
+  }
+
   container.querySelector('[data-setting="mode"]')?.addEventListener('click', (e) => {
     const pill = e.target.closest('.settings-mode-pill');
     if (!pill) return;
     const mode = pill.dataset.mode;
     if (!mode || !modeManager) return;
+    updateModePills(mode);
     modeManager.setMode(mode);
-    // Update active state
-    container.querySelectorAll('.settings-mode-pill').forEach((p) => {
-      p.classList.toggle('settings-mode-pill--active', p.dataset.mode === mode);
-    });
     onChange?.({ key: 'mode', value: mode });
+  });
+
+  // Keep pills in sync when mode changes from elsewhere (e.g. header picker)
+  eventBus?.on('mode:changed', ({ mode }) => {
+    updateModePills(mode);
   });
 
   // ── Theme ──────────────────────────────────────────────────

@@ -69,10 +69,19 @@ Internship (BPV) time tracking, daily logging, competency assessment, and goal m
 | Aspect | Details |
 |--------|---------|
 | **Stores** | `hours`, `logbook`, `photos`, `competencies`, `assignments`, `goals`, `quality` |
+| **Store module** | `src/stores/bpv.js` — unified TrackerEntry CRUD; all blocks write through this |
 | **Pages** | hours, logbook, goals, competencies, quality, assignments |
-| **Blocks** | `bpv-today`, `bpv-mini-card`, `bpv-log-summary` |
+| **Blocks** | `bpv-quick-log` (order 8), `bpv-weekly-overview` (order 14), `bpv-today`, `bpv-mini-card`, `bpv-log-summary` |
 | **Mode** | BPV |
-| **Events emitted** | `hours:changed`, `logbook:changed` |
+| **Events emitted** | `bpv:changed` (new), `hours:changed`, `logbook:changed` |
+
+**`src/stores/bpv.js` exports:**
+- `addHoursEntry(date, opts)` — upsert; recalculates `netMinutes` automatically
+- `getHoursEntry(date)` — fetch single entry
+- `updateHoursEntry(id, changes)` — patch with netMinutes recalc
+- `deleteHoursEntry(id)` — hard delete
+- `getWeeklyOverview(weekStr)` → `{ weekStr, totalMinutes, targetMinutes, percentComplete, days[5], highlights }`
+- `exportEntries(format)` → CSV or JSON string of all entries sorted by date
 
 ### Module 2: Planning & Daily
 

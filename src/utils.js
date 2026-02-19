@@ -165,6 +165,35 @@ export function getToday() {
 }
 
 /**
+ * Get the ISO week string for the week before a given "YYYY-Wnn"
+ */
+export function getPrevWeek(weekStr) {
+  const [year, weekPart] = weekStr.split('-W');
+  const weekNum = parseInt(weekPart, 10);
+  // Move back 7 days from the Monday of the given week
+  const jan4 = new Date(parseInt(year, 10), 0, 4);
+  const mondayOfWeek1 = new Date(jan4);
+  mondayOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const monday = new Date(mondayOfWeek1);
+  monday.setDate(mondayOfWeek1.getDate() + (weekNum - 1) * 7 - 7);
+  return getISOWeek(formatDateISO(monday));
+}
+
+/**
+ * Get the ISO week string for the week after a given "YYYY-Wnn"
+ */
+export function getNextWeek(weekStr) {
+  const [year, weekPart] = weekStr.split('-W');
+  const weekNum = parseInt(weekPart, 10);
+  const jan4 = new Date(parseInt(year, 10), 0, 4);
+  const mondayOfWeek1 = new Date(jan4);
+  mondayOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
+  const monday = new Date(mondayOfWeek1);
+  monday.setDate(mondayOfWeek1.getDate() + (weekNum - 1) * 7 + 7);
+  return getISOWeek(formatDateISO(monday));
+}
+
+/**
  * Debounce a function
  */
 export function debounce(fn, ms = 300) {

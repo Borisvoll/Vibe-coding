@@ -10,7 +10,7 @@ export function renderInbox(container, context) {
       <div class="inbox-block__header">
         <h3 class="inbox-block__title">Inbox</h3>
         <button type="button" class="inbox-block__open btn btn-ghost btn-sm" title="Open inbox (Ctrl+I)">Verwerk</button>
-        <button type="button" class="inbox-block__toggle btn btn-ghost btn-sm" aria-expanded="false">
+        <button type="button" class="inbox-block__toggle btn btn-ghost btn-sm" aria-expanded="false" aria-label="Toon inbox items">
           <span class="inbox-block__count">0</span>
         </button>
       </div>
@@ -95,8 +95,8 @@ export function renderInbox(container, context) {
           ${item.mode ? `<span class="badge badge-default">${escapeHTML(item.mode)}</span>` : ''}
         </div>
         <div class="inbox-block__item-actions">
-          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="promote" title="Promoveer naar taak">&#x2191;</button>
-          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="archive" title="Archiveer">&#x2713;</button>
+          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="promote" title="Promoveer naar taak" aria-label="Promoveer naar taak">&#x2191;</button>
+          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="archive" title="Archiveer" aria-label="Archiveer">&#x2713;</button>
         </div>
       </div>
     `).join('');

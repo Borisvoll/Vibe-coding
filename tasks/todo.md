@@ -287,6 +287,358 @@
 
 ---
 
+## BPV Tracker Module Sprint
+
+### Module Boundary
+- [x] Identify all existing BPV functionality (hours, logbook, blocks, pages)
+- [x] Create `src/stores/bpv.js` — clean TrackerEntry CRUD layer over `hours` + `logbook` stores
+
+### TrackerEntry CRUD (`src/stores/bpv.js`)
+- [x] `addHoursEntry(date, { type, startTime, endTime, breakMinutes, note })` — upsert by date
+- [x] `getHoursEntry(date)` — fetch entry for a specific date
+- [x] `updateHoursEntry(id, changes)` — update with netMinutes recalculation
+- [x] `deleteHoursEntry(id)` — remove entry
+
+### Weekly Overview (`getWeeklyOverview`)
+- [x] Aggregate hours + logbook for a given ISO week string
+- [x] Returns: totalMinutes, targetMinutes (40h), percentComplete, 5 day objects, highlights array
+- [x] `getPrevWeek` / `getNextWeek` helpers added to `src/utils.js`
+
+### Export (`exportEntries`)
+- [x] CSV: date, week, type, start, end, break, net_min, net_hours, note, description, tags
+- [x] JSON: same fields as array of objects, sorted by date
+
+### BPV Views (OS Blocks)
+- [x] `bpv-quick-log` block (order 8): today time entry form with live net calc, day-type switcher, note field — BPV mode, `today-sections` host
+- [x] `bpv-weekly-overview` block (order 14): week navigation, progress bar (red/yellow/green), 5-day grid with logbook indicator, highlights section, CSV + JSON export buttons — BPV mode, `today-sections` host
+
+### Testing
+- [x] Create `tests/stores/bpv.test.js` — 20 tests covering:
+  - TrackerEntry CRUD (add/get/update/delete, upsert, type validation)
+  - getWeeklyOverview (empty week, totals, capped %, day shape, logged flag)
+  - exportEntries (CSV header, row count, JSON parse, sorted dates)
+- [x] All 139 tests green
+
+### Documentation
+- [x] Append BPV Tracker scenario to `docs/demo.md`
+- [x] Update `docs/architecture.md` — Module 1 entry points, TrackerEntry schema
+- [x] Update `tasks/todo.md` with sprint checklist
+
+---
+
+### Review Notes — BPV Tracker Module Sprint
+
+**What was built:**
+- `src/stores/bpv.js`: clean CRUD layer that wraps the legacy `hours` + `logbook` IndexedDB stores. All blocks now write through this module instead of calling `put()` directly.
+- `bpv-quick-log` block: today-focused input with day-type pill switcher (Gewerkt / Ziek / Afwezig / Vrij), start/end time fields, break minutes, live net-hours display, note field. Upserts via `addHoursEntry`, emits `bpv:changed`.
+- `bpv-weekly-overview` block: week navigation (‹ ›), progress bar color-coded (green ≥80%, yellow ≥50%, red <50%), 5-day grid showing type + hours + logbook indicator (📝), highlights from logbook, CSV and JSON export buttons.
+- `getPrevWeek` / `getNextWeek` added to `src/utils.js` for week navigation.
+- 20 new tests (139 total). All green.
+
+**Files created:**
+- `src/stores/bpv.js`
+- `src/blocks/bpv-quick-log/` (index.js, view.js, styles.css)
+- `src/blocks/bpv-weekly-overview/` (index.js, view.js, styles.css)
+- `tests/stores/bpv.test.js`
+
+**Files modified:**
+- `src/utils.js` — `getPrevWeek`, `getNextWeek`
+- `src/blocks/registerBlocks.js` — CSS imports + block registrations
+
+**Design decisions:**
+- `bpv-quick-log` upserts by date (no duplicate entries possible)
+- Export downloads the entire history (not just one week) — useful for supervisor handoff
+- `bpv:changed` event wires the two blocks together: saving in quick-log refreshes weekly overview
+- Week navigation is unrestricted (allows browsing any week, not just BPV period)
+
+---
+
+## School Dashboard Sprint
+
+### School Dashboard Block (`school-dashboard`, order 6, School mode, today-sections)
+- [x] `src/blocks/school-dashboard/store.js` — `getSchoolDashboardData()` aggregates 4 sources
+- [x] **Volgende actie** — first non-done School task (os_tasks, sorted by date → createdAt)
+- [x] **Aankomende deadlines** — milestones + future School tasks within 14 days, sorted by date, max 5
+- [x] **BPV week** — compact progress bar via `getWeeklyOverview(getCurrentWeek())` from bpv store
+- [x] **Schoolprojecten** — active os_projects where mode='School' shown as purple chips
+- [x] Mark-done button on next action (circle icon, toggles via `toggleTask`, emits `tasks:changed`)
+- [x] Urgency badges: red 0–2 days, amber 3–7, grey 8–14
+- [x] Reactives to `mode:changed`, `tasks:changed`, `bpv:changed` events
+- [x] Register in `registerBlocks.js` (CSS import + function call)
+
+### Testing
+- [x] Create `tests/blocks/school-dashboard.test.js` — 13 tests covering:
+  - Empty state (all null/empty)
+  - nextAction: correct task, ignores other modes, priority by date
+  - deadlines: future tasks included, today excluded, beyond-14d excluded, sorted, capped at 5
+  - schoolProjects: only School+active
+  - bpvWeek: structure, reflects logged hours
+- [x] All 152 tests green
+
+### Documentation
+- [x] Append School Dashboard demo scenario to `docs/demo.md` (steps 21–26 + checklist)
+- [x] Update `tasks/todo.md`
+- [x] Rewrite `README.md` with app overview, features, run/deploy guide
+
+---
+
+### Review Notes — School Dashboard Sprint
+
+**What was built:**
+- `school-dashboard` block (order 6): appears first on School mode Today page
+- 4 sections in a single minimal card: next action + deadlines + BPV progress + projects
+- Next action mark-done circle button — one tap, no confirmation needed
+- Deadline urgency badges auto-color by days remaining
+- BPV week progress visible from School mode (cross-module view — helpful for students doing both)
+- Purple chips for active School projects
+- 13 new tests (152 total)
+
+**Design decisions:**
+- Sections separated by thin dividers (no cards-within-card); single `os-mini-card` container
+- No forms or inputs in the dashboard block — it's read-only; editing happens in domain blocks
+- `deadline.date > today` — today's tasks are the "next action", not deadlines
+- BPV progress embedded even in School mode — avoids having to switch mode to check hours
+
+---
+
+## QoL + Personal Dashboard Sprint
+
+### OS Shell Polish
+- [x] Fix `applyDesignTokens()` — remove spacing/radius/motion inline styles that blocked `[data-compact="true"]` (same bug pattern as dark mode fix)
+- [x] Constrain header + nav to `--max-content-width` via inner wrappers (no more full-width stretch on desktop)
+- [x] Nav horizontal scroll with hidden scrollbar (mobile-friendly, no wrapping)
+- [x] Nav buttons redesigned: borderless ghost style, accent-light active state
+- [x] Ambient mode wash — Eno-inspired 600ms color pulse on mode switch (`os-mode-wash`)
+
+### Settings Panel Cleanup
+- [x] Remove legacy "Nieuwe OS inschakelen" toggle (OS is now default)
+- [x] Remove "Focusmodus" toggle (feature removed)
+- [x] Add mode switcher pills in Settings (same `modeManager.setMode()` as header pill)
+- [x] Clean up density row (visual selected state update on click)
+
+### Personal Mode Dashboard (`personal-dashboard`, order 5, Personal mode, today-sections)
+- [x] Create `src/stores/personal.js` — personal dashboard aggregation layer:
+  - `getTodayEntry()` / `saveTodayEntry(fields)` — upsert keyed by date in `os_personal_wellbeing`
+  - `toggleHabit(key)` — toggle water/movement/focus booleans
+  - `getCreativeSparks(limit)` — thought-type inbox items
+  - `getRecentEntries(limit)` — entries with journal/gratitude/reflection content
+  - `getPersonalDashboardData()` — full aggregation
+- [x] Create `src/blocks/personal-dashboard/` (index.js, view.js, store.js, styles.css):
+  - Dankbaarheid (gratitude textarea)
+  - Reflectie (reflection textarea)
+  - Dagboek (freeform journal textarea)
+  - Gewoontes (3 habit pill toggles: Water, Bewegen, Focustijd)
+  - Creatieve vonken (thought-type inbox items as spark list)
+  - Auto-save on input (600ms debounce)
+  - Register in `registerBlocks.js` (CSS import + function call)
+- [x] Create `tests/stores/personal.test.js` — 15 tests covering:
+  - getTodayEntry default shape + persistence
+  - saveTodayEntry upsert + merge
+  - toggleHabit on/off/independent
+  - getCreativeSparks: empty, thought-only, limit
+  - getRecentEntries: empty, with journal content
+  - getPersonalDashboardData: shape, habitsComplete, sparks
+- [x] All 167 tests green
+
+---
+
+### Review Notes — QoL + Personal Dashboard Sprint
+
+**What was fixed:**
+- `applyDesignTokens()` was setting `--space-*`, `--radius-*`, `--duration-*` as inline styles, overriding `[data-compact="true"]` CSS rules (same specificity bug that broke dark mode). Fixed by removing all non-font inline setProperty calls.
+- Header and nav stretched full-width on desktop — wrapped inner content in `__inner` divs with `max-width: var(--max-content-width)`.
+- Legacy settings ("Nieuwe OS inschakelen", "Focusmodus") removed — OS is default, focus mode was unused.
+
+**What was built:**
+- Mode switcher in Settings panel — three colored pills that call `modeManager.setMode()` (same behavior as header pill, just in settings too).
+- Ambient mode wash — a full-screen overlay animates a 600ms color pulse at 8% opacity when mode changes. Subtle and ambient, inspired by Eno's generative philosophy.
+- Personal Dashboard — 5-section card at order 5 on the Today page in Personal mode. Gratitude, reflection, and journal textareas auto-save (600ms debounce). Three habit toggles (water, movement, focus). Creative sparks section pulls thought-type inbox items.
+- 15 new tests (167 total).
+
+**Design decisions:**
+- Auto-save with debounce rather than explicit save button — more journal-like, seamless
+- Habit toggles are pill buttons (not checkboxes) — tappable, fun on mobile
+- Creative sparks show max 5 items from inbox (thought type) — encourages capture-everywhere
+- No calendar or date picker — dashboard is always "today" focused
+- Compact mode now works correctly: `[data-compact="true"]` overrides spacing tokens without inline style conflicts
+
+---
+
+## Weekly Review Email Sprint
+
+### Data Aggregation (`src/stores/weekly-review.js`)
+- [x] `aggregateWeeklyReview(weekStr)` — aggregates from os_tasks, hours/bpv, os_personal_wellbeing, os_inbox, os_projects
+- [x] Completed tasks (done this week, sorted by doneAt)
+- [x] BPV hours (formattedTotal, percentComplete, progress bar data)
+- [x] Gratitude, reflections, journal notes from personal wellbeing entries
+- [x] Habits summary (water/movement/focus completion rates)
+- [x] Active projects + processed inbox count
+- [x] Rotating weekly prompts — emotionally-aware reflection questions
+- [x] `isReviewSent(week)` / `markReviewSent(week)` — prevent duplicate sends
+- [x] `isFriday()` helper for prompt timing
+
+### Netlify Serverless Function (`netlify/functions/send-weekly-review.mjs`)
+- [x] POST endpoint: receives aggregated data, sends HTML email via Resend API
+- [x] Environment variables only (RESEND_API_KEY, RECIPIENT_EMAIL, SITE_URL) — zero personal info in client code
+- [x] Beautiful HTML email: dashboard stats, BPV progress bar, task list, gratitude/reflections, habits, projects, emotional prompt, CTA button
+- [x] Dieter Rams inspired: clean typography, lots of white space, minimal color
+- [x] "Even stilstaan" section with rotating emotionally-aware prompt
+
+### Weekly Review UI Block (`weekly-review`, order 90, all modes, today-sections)
+- [x] `src/blocks/weekly-review/` (index.js, view.js, styles.css)
+- [x] Dashboard preview: stats row (tasks/hours/verwerkt), BPV bar, task list, habits, gratitude, reflections, journal, projects
+- [x] "Even stilstaan" prompt section
+- [x] "Verstuur naar email" button (POST to serverless function)
+- [x] Sent badge when already sent this week
+- [x] Reacts to `tasks:changed`, `bpv:changed` events
+
+### Friday Prompt
+- [x] Shell checks `isFriday()` on load
+- [x] If not yet sent this week, shows gentle banner: "Het is vrijdag — tijd voor je weekoverzicht?"
+- [x] "Bekijk" scrolls to weekly review block, "×" dismisses
+
+### Configuration
+- [x] `netlify.toml` updated: functions directory, redirect rules
+
+### Testing
+- [x] Create `tests/stores/weekly-review.test.js` — 15 tests covering:
+  - aggregateWeeklyReview: empty shape, completed tasks, open tasks, BPV hours, gratitude, reflections, journal, processed inbox, habits
+  - getWeeklyPrompt: returns string, different per week
+  - isReviewSent / markReviewSent: false by default, true after mark, independent weeks
+  - isFriday: returns boolean
+- [x] All 182 tests green
+
+---
+
+### Review Notes — Weekly Review Email Sprint
+
+**Architecture:**
+- Client aggregates all week data from IndexedDB → POST to `/.netlify/functions/send-weekly-review`
+- Serverless function formats HTML email and sends via Resend API (`https://api.resend.com/emails`)
+- Email address stored ONLY in Netlify env var `RECIPIENT_EMAIL` — never in client code
+- Resend API key in `RESEND_API_KEY` env var
+- Site URL in `SITE_URL` env var (for email CTA button)
+
+**Setup instructions:**
+1. Deploy to Netlify (connect repo → auto-builds)
+2. In Netlify dashboard → Site settings → Environment variables, add:
+   - `RESEND_API_KEY` — get from resend.com (free: 100 emails/day)
+   - `RECIPIENT_EMAIL` — borisvoll@hotmail.com
+   - `SITE_URL` — your Netlify URL (e.g. https://boris-os.netlify.app)
+3. Done. Open app on Friday → see prompt → click "Verstuur"
+
+**Emotional wellness design:**
+- 8 rotating weekly prompts that encourage feeling over doing
+- "Even stilstaan" section in both email and preview with warm, non-prescriptive language
+- Gratitude section elevated to encourage daily practice
+- Closing note: "Elke emotie — ook de lastige — is informatie over wat belangrijk voor je is"
+
+---
+
+## Search, Tags & Backup Sprint
+
+### Global Search (`src/stores/search.js`)
+- [x] `globalSearch(query)` — searches across os_tasks, os_inbox, os_projects, hours, logbook, dailyPlans, os_personal_wellbeing
+- [x] Match scoring: position-based relevance (lower index = better match)
+- [x] Results sorted by score then date (newer first)
+- [x] Resilient: individual store failures don't crash search (`safeGetAll` pattern)
+- [x] Minimum query length: 2 characters
+- [x] Create `tests/stores/search.test.js` — 8 tests
+
+### Tagging System (`src/stores/tags.js`)
+- [x] `addTag(storeName, recordId, tag)` — add tag to any taggable record
+- [x] `removeTag(storeName, recordId, tag)` — remove specific tag
+- [x] `getByTag(storeName, tag)` — get all records with tag
+- [x] `getAllTags(storeName?)` — get all unique tags, optional store filter
+- [x] Tag normalization: lowercase, trim, spaces→hyphens, max 50 chars
+- [x] Taggable stores: os_tasks, os_inbox, os_projects, hours, logbook
+- [x] Create `tests/stores/tags.test.js` — 12 tests
+
+### Export/Import Bundle (`src/stores/backup.js`)
+- [x] `exportBundle()` — full JSON bundle with `_meta` (app, version, timestamp, recordCounts)
+- [x] `downloadBundle()` — triggers browser download as JSON file
+- [x] `validateBundle(bundle)` — validates structure, app name, stores presence
+- [x] `importBundle(bundle, { merge })` — imports with safety backup before clearing
+- [x] `restoreFromSafetyBackup()` — rollback from localStorage backup
+- [x] `readBundleFile(file)` — reads File object to parsed JSON
+- [x] Safety backup in localStorage before destructive import
+- [x] Warnings for empty backups, unknown stores
+- [x] Create `tests/stores/backup.test.js` — 17 tests (including 6 roundtrip tests)
+- [x] Roundtrip tests: tasks, inbox, projects, BPV hours, personal wellbeing, JSON serialization
+
+### Testing
+- [x] All 219 tests green
+
+---
+
+### Review Notes — Search, Tags & Backup Sprint
+
+**What was built:**
+- Global search across 7 IndexedDB stores with position-based relevance scoring
+- Simple tagging system with normalization and cross-store queries
+- Full export/import bundle with validation, safety backup, and anti-data-loss checks
+- 37 new tests (219 total) — all passing
+
+**Design decisions:**
+- Search uses `safeGetAll()` wrapper to catch individual store failures gracefully
+- Tags are normalized (lowercase, no spaces, max 50 chars) for consistent querying
+- Export bundle includes `_meta.recordCounts` so user can verify before importing
+- Import creates a localStorage safety backup (max 5MB) before clearing data
+- `validateBundle()` returns `{ valid, errors, warnings, meta }` for progressive feedback
+
+**Trust milestone:**
+- Export/import roundtrip tests verify data integrity for all 5 major entity types
+- Import rejects invalid bundles (wrong app, missing meta, missing stores)
+- Safety backup enables rollback if import fails mid-operation
+
+---
+
+## Quality Pass Sprint
+
+### Refactoring
+- [x] Remove duplicate `escapeHtml` from `personal-dashboard/view.js` — import from `src/utils.js`
+- [x] Add `safeGetAll()` error protection to `search.js` (graceful store failure handling)
+
+### Accessibility
+- [x] Add `aria-label` to accent color dots in settings panel
+- [x] Add `aria-label` to inbox promote/archive icon buttons
+- [x] Add `aria-label` to inbox toggle count button
+- [x] Add `aria-label` to project clear-next-action button
+- [x] Implement focus trap in mode picker modal (Tab cycles within cards)
+- [x] Return focus to mode button when picker closes
+
+### Documentation
+- [x] Update `docs/design-principles.md` — Eno philosophy, store rules, data safety, accessibility rules
+- [x] Update `docs/qa-checklist.md` — comprehensive 10-section QA checklist
+- [x] Create `docs/future.md` — calendar, sync, PWA, AI features (risks, privacy, modular plan)
+- [x] Update `tasks/todo.md` with sprint notes
+
+### Testing
+- [x] All 219 tests green after quality fixes
+
+---
+
+### Review Notes — Quality Pass Sprint
+
+**Issues identified and fixed:**
+1. **Duplicate utility function**: `personal-dashboard/view.js` had its own `escapeHtml()` instead of importing from `utils.js`. Removed duplicate, imported shared function.
+2. **Search resilience**: `search.js` had no error handling for individual store reads. Added `safeGetAll()` wrapper that returns `[]` on failure.
+3. **Missing aria-labels**: Icon-only buttons in settings (accent dots), inbox (promote/archive), and projects (clear action) lacked screen reader labels. All fixed.
+4. **No focus trap in mode picker**: Modal dialog allowed Tab to escape to background elements. Added keyboard focus trap and return-focus-on-close.
+
+**Audit findings (documented, not all fixed — low severity):**
+- Some stores mix UI logic with data logic (backup.js `downloadBundle` creates DOM elements)
+- Block pass-through stores (`inbox/store.js`, `tasks/store.js`) add no value — could be removed
+- Inline styles for dynamic widths on progress bars — acceptable for dynamic values
+- Settings panel could use progressive disclosure (`<details>` for advanced options)
+
+**Documentation updates:**
+- `docs/design-principles.md`: Added Eno philosophy, store design rules, data safety principles, expanded accessibility section
+- `docs/qa-checklist.md`: Rewrote as comprehensive 10-section checklist covering visual, interaction, mode isolation, data ops, accessibility, weekly review, persistence, build, and service worker
+- `docs/future.md`: New file describing 4 future features (calendar, sync, PWA, AI) with risks, privacy approach, and modular implementation plan for each
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

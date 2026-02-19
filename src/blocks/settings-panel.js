@@ -1,6 +1,8 @@
 import { APP_VERSION } from '../version.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { getSetting, setSetting } from '../db.js';
+import { getFeatureFlag, setFeatureFlag } from '../core/featureFlags.js';
+import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } from '../core/tutorial.js';
 
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
 
@@ -44,8 +46,6 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
 
   container.innerHTML = `
     <section class="settings-block card">
-      <h3>Instellingen</h3>
-
       <div class="settings-row">
         <div>
           <div class="settings-label">Modus</div>
@@ -105,6 +105,41 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
       </div>
 
       <div class="settings-row">
+        <div>
+          <div class="settings-label">Interface</div>
+          <div class="settings-desc">Wissel tussen BORIS OS en Legacy</div>
+        </div>
+        <div class="settings-mode-group" data-setting="interface">
+          <button type="button" class="settings-mode-pill ${getFeatureFlag('enableNewOS') ? 'settings-mode-pill--active' : ''}" data-interface="os">
+            ✦ BORIS OS
+          </button>
+          <button type="button" class="settings-mode-pill ${!getFeatureFlag('enableNewOS') ? 'settings-mode-pill--active' : ''}" data-interface="legacy">
+            Legacy
+          </button>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Tutorial</div>
+          <div class="settings-desc">Leer BORIS kennen met korte tips</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <button type="button" class="settings-mode-pill ${isTutorialEnabled() ? 'settings-mode-pill--active' : ''}" data-tutorial="on">Aan</button>
+          <button type="button" class="settings-mode-pill ${!isTutorialEnabled() ? 'settings-mode-pill--active' : ''}" data-tutorial="off">Uit</button>
+          <button type="button" class="settings-mode-pill" data-tutorial="restart" style="margin-left:var(--space-2);font-size:0.75rem">Opnieuw</button>
+        </div>
+      </div>
+      <div class="tutorial-tips-list" id="tutorial-tips-list">
+        ${getTipsList().map((t) => `
+          <div class="tutorial-tip-item">
+            <span class="tutorial-tip-item__title">${t.title}</span>
+            <span class="tutorial-tip-item__text">— ${t.text}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="settings-row">
         <div class="settings-label">Versie</div>
         <div class="settings-desc">v${APP_VERSION}</div>
       </div>
@@ -112,14 +147,17 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
   `;
 
   // ── Mode switcher ──────────────────────────────────────────
+  const modeGroup = container.querySelector('[data-setting="mode"]');
+
   function updateModePills(mode) {
-    container.querySelectorAll('.settings-mode-pill').forEach((p) => {
+    if (!modeGroup) return;
+    modeGroup.querySelectorAll('.settings-mode-pill').forEach((p) => {
       p.classList.toggle('settings-mode-pill--active', p.dataset.mode === mode);
     });
   }
 
-  // Direct click handler on each pill for maximum reliability
-  container.querySelectorAll('.settings-mode-pill').forEach((pill) => {
+  // Direct click handler on each mode pill
+  modeGroup?.querySelectorAll('.settings-mode-pill').forEach((pill) => {
     pill.addEventListener('click', () => {
       const mode = pill.dataset.mode;
       if (!mode) return;
@@ -132,6 +170,48 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
   // Keep pills in sync when mode changes from elsewhere (e.g. header picker)
   eventBus?.on('mode:changed', ({ mode }) => {
     updateModePills(mode);
+  });
+
+  // ── Tutorial toggle ──────────────────────────────────────
+  container.querySelectorAll('[data-tutorial]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.tutorial;
+      if (action === 'on') {
+        setTutorialEnabled(true);
+        container.querySelectorAll('[data-tutorial="on"]').forEach((b) => b.classList.add('settings-mode-pill--active'));
+        container.querySelectorAll('[data-tutorial="off"]').forEach((b) => b.classList.remove('settings-mode-pill--active'));
+      } else if (action === 'off') {
+        setTutorialEnabled(false);
+        container.querySelectorAll('[data-tutorial="off"]').forEach((b) => b.classList.add('settings-mode-pill--active'));
+        container.querySelectorAll('[data-tutorial="on"]').forEach((b) => b.classList.remove('settings-mode-pill--active'));
+      } else if (action === 'restart') {
+        resetTutorial();
+        setTutorialEnabled(true);
+        container.querySelectorAll('[data-tutorial="on"]').forEach((b) => b.classList.add('settings-mode-pill--active'));
+        container.querySelectorAll('[data-tutorial="off"]').forEach((b) => b.classList.remove('settings-mode-pill--active'));
+        // Start tutorial immediately after restart
+        import('../core/tutorial.js').then(({ startTutorial }) => startTutorial());
+      }
+    });
+  });
+
+  // ── Interface toggle ─────────────────────────────────────
+  container.querySelectorAll('[data-setting="interface"] .settings-mode-pill').forEach((pill) => {
+    pill.addEventListener('click', () => {
+      const target = pill.dataset.interface;
+      if (!target) return;
+      const enableOS = target === 'os';
+      setFeatureFlag('enableNewOS', enableOS);
+      // Update pill state immediately for feedback
+      container.querySelectorAll('[data-setting="interface"] .settings-mode-pill').forEach((p) => {
+        p.classList.toggle('settings-mode-pill--active', p.dataset.interface === target);
+      });
+      // Reload to switch interface
+      setTimeout(() => {
+        window.location.hash = '';
+        window.location.reload();
+      }, 200);
+    });
   });
 
   // ── Theme ──────────────────────────────────────────────────

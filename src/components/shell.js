@@ -2,6 +2,7 @@ import { modules } from '../main.js';
 import { icon } from '../icons.js';
 import { getSetting, setSetting } from '../db.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
+import { setFeatureFlag } from '../core/featureFlags.js';
 
 const bottomNavIds = ['dashboard', 'today', 'hours', 'logbook', 'planning'];
 const sidebarMainIds = ['dashboard', 'today', 'planning', 'hours', 'logbook', 'notebook', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
@@ -49,6 +50,9 @@ export function createShell(container) {
           <span id="header-title">Dashboard</span>
         </div>
         <div class="app-header-actions">
+          <button class="os-switch-btn" id="legacy-os-btn" title="Schakel naar BORIS OS" aria-label="Naar BORIS OS">
+            ✦ BORIS OS
+          </button>
           <button class="sidebar-toggle hamburger-btn" title="Opties" aria-label="Opties">
             ${icon('settings')}
           </button>
@@ -97,6 +101,11 @@ export function createShell(container) {
             <a href="#settings" class="hamburger-menu-item" data-action="nav">
               ${icon('settings')} Instellingen
             </a>
+            <div class="hamburger-menu-divider"></div>
+            <button class="hamburger-menu-item" data-action="switch-os" style="color:var(--color-accent);font-weight:600">
+              ✦ BORIS OS
+              <span style="font-size:0.6875rem;font-weight:400;color:var(--color-text-secondary)">Probeer</span>
+            </button>
           </div>
         </div>
       </header>
@@ -163,6 +172,20 @@ export function createShell(container) {
 
   // Refresh page
   hamburgerMenu.querySelector('[data-action="refresh"]')?.addEventListener('click', () => {
+    window.location.reload();
+  });
+
+  // Switch to BORIS OS — header button
+  container.querySelector('#legacy-os-btn')?.addEventListener('click', () => {
+    setFeatureFlag('enableNewOS', true);
+    window.location.hash = '';
+    window.location.reload();
+  });
+
+  // Switch to BORIS OS — hamburger duplicate (kept for discoverability)
+  hamburgerMenu.querySelector('[data-action="switch-os"]')?.addEventListener('click', () => {
+    setFeatureFlag('enableNewOS', true);
+    window.location.hash = '';
     window.location.reload();
   });
 

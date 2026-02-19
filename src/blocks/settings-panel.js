@@ -1,25 +1,44 @@
 import { APP_VERSION } from '../version.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 import { getSetting, setSetting } from '../db.js';
-import { getFeatureFlag, setFeatureFlag } from '../core/featureFlags.js';
 
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
+
+const MODE_OPTIONS = [
+  { key: 'BPV',      label: 'BPV',         emoji: '🏢', color: 'var(--color-blue)' },
+  { key: 'School',   label: 'School',      emoji: '📚', color: 'var(--color-purple)' },
+  { key: 'Personal', label: 'Persoonlijk', emoji: '🌱', color: 'var(--color-emerald)' },
+];
 
 function getPresets() {
   return ACCENT_COLORS.filter((c) => ACCENT_PRESETS.includes(c.id));
 }
 
-export async function renderSettingsBlock(container, { showExperimental = true, onChange } = {}) {
+export async function renderSettingsBlock(container, { modeManager, onChange } = {}) {
   const theme = (await getSetting('theme')) || 'system';
   const accentId = (await getSetting('accentColor')) || 'blue';
   const compact = (await getSetting('compact')) || false;
-  const focusMode = (await getSetting('focusMode')) || false;
-  const enableNewOS = getFeatureFlag('enableNewOS');
   const accents = getPresets();
+  const currentMode = modeManager?.getMode?.() || 'BPV';
 
   container.innerHTML = `
     <section class="settings-block card">
       <h3>Instellingen</h3>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Modus</div>
+          <div class="settings-desc">Wissel je huidige context</div>
+        </div>
+        <div class="settings-mode-group" data-setting="mode">
+          ${MODE_OPTIONS.map((m) => `
+            <button type="button" class="settings-mode-pill ${m.key === currentMode ? 'settings-mode-pill--active' : ''}" data-mode="${m.key}">
+              <span class="settings-mode-pill__dot" style="background:${m.color}"></span>
+              ${m.emoji} ${m.label}
+            </button>
+          `).join('')}
+        </div>
+      </div>
 
       <div class="settings-row">
         <div>
@@ -42,7 +61,7 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
       <div class="settings-row">
         <div>
           <div class="settings-label">Accentkleur</div>
-          <div class="settings-desc">Rustige vooringestelde kleuren</div>
+          <div class="settings-desc">Kleur voor knoppen en accenten</div>
         </div>
         <div class="accent-picker" data-setting="accent">
           ${accents.map((c) => `<button class="accent-dot ${c.id === accentId ? 'active' : ''}" data-color="${c.id}" data-hex="${c.hex}" style="background:${c.hex}" title="${c.label}"></button>`).join('')}
@@ -52,7 +71,7 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
       <div class="settings-row">
         <div>
           <div class="settings-label">Dichtheid</div>
-          <div class="settings-desc">Ruim / Compact</div>
+          <div class="settings-desc">Ruim of compact</div>
         </div>
         <div class="radio-group" data-setting="density">
           <label class="radio-option ${!compact ? 'selected' : ''}">
@@ -64,24 +83,6 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
         </div>
       </div>
 
-      ${showExperimental ? `
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Nieuwe OS inschakelen <span class="settings-exp">experimenteel</span></div>
-          <div class="settings-desc">Opt-in shell. Legacy blijft standaard tot je dit aanzet.</div>
-        </div>
-        <button class="toggle ${enableNewOS ? 'active' : ''}" type="button" data-setting="enable-new-os" aria-label="Schakel nieuwe OS in of uit"></button>
-      </div>
-
-      <div class="settings-row">
-        <div>
-          <div class="settings-label">Focusmodus (Nieuwe OS)</div>
-          <div class="settings-desc">Verberg alles behalve het tabblad Vandaag in de Nieuwe OS.</div>
-        </div>
-        <button class="toggle ${focusMode ? 'active' : ''}" type="button" data-setting="focus-mode" aria-label="Schakel focusmodus in of uit"></button>
-      </div>
-      ` : ''}
-
       <div class="settings-row">
         <div class="settings-label">Versie</div>
         <div class="settings-desc">v${APP_VERSION}</div>
@@ -89,16 +90,36 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
     </section>
   `;
 
+  // ── Mode switcher ──────────────────────────────────────────
+  container.querySelector('[data-setting="mode"]')?.addEventListener('click', (e) => {
+    const pill = e.target.closest('.settings-mode-pill');
+    if (!pill) return;
+    const mode = pill.dataset.mode;
+    if (!mode || !modeManager) return;
+    modeManager.setMode(mode);
+    // Update active state
+    container.querySelectorAll('.settings-mode-pill').forEach((p) => {
+      p.classList.toggle('settings-mode-pill--active', p.dataset.mode === mode);
+    });
+    onChange?.({ key: 'mode', value: mode });
+  });
+
+  // ── Theme ──────────────────────────────────────────────────
   container.querySelectorAll('[data-setting="theme"] .radio-option').forEach((opt) => {
     opt.addEventListener('click', async () => {
       const value = opt.querySelector('input').value;
       await setSetting('theme', value);
       if (value === 'system') document.documentElement.removeAttribute('data-theme');
       else document.documentElement.setAttribute('data-theme', value);
+      // Update selected state visually
+      container.querySelectorAll('[data-setting="theme"] .radio-option').forEach((o) => {
+        o.classList.toggle('selected', o.querySelector('input').value === value);
+      });
       onChange?.({ key: 'theme', value });
     });
   });
 
+  // ── Accent color ───────────────────────────────────────────
   container.querySelector('[data-setting="accent"]')?.addEventListener('click', async (event) => {
     const dot = event.target.closest('.accent-dot');
     if (!dot) return;
@@ -111,6 +132,7 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
     onChange?.({ key: 'accentColor', value: colorId });
   });
 
+  // ── Density ────────────────────────────────────────────────
   container.querySelectorAll('[data-setting="density"] .radio-option').forEach((opt) => {
     opt.addEventListener('click', async () => {
       const value = opt.querySelector('input').value;
@@ -118,21 +140,11 @@ export async function renderSettingsBlock(container, { showExperimental = true, 
       await setSetting('compact', compactMode);
       if (compactMode) document.documentElement.setAttribute('data-compact', 'true');
       else document.documentElement.removeAttribute('data-compact');
+      // Update selected state visually
+      container.querySelectorAll('[data-setting="density"] .radio-option').forEach((o) => {
+        o.classList.toggle('selected', o.querySelector('input').value === value);
+      });
       onChange?.({ key: 'compact', value: compactMode });
     });
-  });
-
-  container.querySelector('[data-setting="enable-new-os"]')?.addEventListener('click', (event) => {
-    const next = !event.currentTarget.classList.contains('active');
-    event.currentTarget.classList.toggle('active', next);
-    setFeatureFlag('enableNewOS', next);
-    onChange?.({ key: 'enableNewOS', value: next });
-  });
-
-  container.querySelector('[data-setting="focus-mode"]')?.addEventListener('click', async (event) => {
-    const next = !event.currentTarget.classList.contains('active');
-    event.currentTarget.classList.toggle('active', next);
-    await setSetting('focusMode', next);
-    onChange?.({ key: 'focusMode', value: next });
   });
 }

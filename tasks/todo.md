@@ -401,6 +401,69 @@
 
 ---
 
+## QoL + Personal Dashboard Sprint
+
+### OS Shell Polish
+- [x] Fix `applyDesignTokens()` — remove spacing/radius/motion inline styles that blocked `[data-compact="true"]` (same bug pattern as dark mode fix)
+- [x] Constrain header + nav to `--max-content-width` via inner wrappers (no more full-width stretch on desktop)
+- [x] Nav horizontal scroll with hidden scrollbar (mobile-friendly, no wrapping)
+- [x] Nav buttons redesigned: borderless ghost style, accent-light active state
+- [x] Ambient mode wash — Eno-inspired 600ms color pulse on mode switch (`os-mode-wash`)
+
+### Settings Panel Cleanup
+- [x] Remove legacy "Nieuwe OS inschakelen" toggle (OS is now default)
+- [x] Remove "Focusmodus" toggle (feature removed)
+- [x] Add mode switcher pills in Settings (same `modeManager.setMode()` as header pill)
+- [x] Clean up density row (visual selected state update on click)
+
+### Personal Mode Dashboard (`personal-dashboard`, order 5, Personal mode, today-sections)
+- [x] Create `src/stores/personal.js` — personal dashboard aggregation layer:
+  - `getTodayEntry()` / `saveTodayEntry(fields)` — upsert keyed by date in `os_personal_wellbeing`
+  - `toggleHabit(key)` — toggle water/movement/focus booleans
+  - `getCreativeSparks(limit)` — thought-type inbox items
+  - `getRecentEntries(limit)` — entries with journal/gratitude/reflection content
+  - `getPersonalDashboardData()` — full aggregation
+- [x] Create `src/blocks/personal-dashboard/` (index.js, view.js, store.js, styles.css):
+  - Dankbaarheid (gratitude textarea)
+  - Reflectie (reflection textarea)
+  - Dagboek (freeform journal textarea)
+  - Gewoontes (3 habit pill toggles: Water, Bewegen, Focustijd)
+  - Creatieve vonken (thought-type inbox items as spark list)
+  - Auto-save on input (600ms debounce)
+  - Register in `registerBlocks.js` (CSS import + function call)
+- [x] Create `tests/stores/personal.test.js` — 15 tests covering:
+  - getTodayEntry default shape + persistence
+  - saveTodayEntry upsert + merge
+  - toggleHabit on/off/independent
+  - getCreativeSparks: empty, thought-only, limit
+  - getRecentEntries: empty, with journal content
+  - getPersonalDashboardData: shape, habitsComplete, sparks
+- [x] All 167 tests green
+
+---
+
+### Review Notes — QoL + Personal Dashboard Sprint
+
+**What was fixed:**
+- `applyDesignTokens()` was setting `--space-*`, `--radius-*`, `--duration-*` as inline styles, overriding `[data-compact="true"]` CSS rules (same specificity bug that broke dark mode). Fixed by removing all non-font inline setProperty calls.
+- Header and nav stretched full-width on desktop — wrapped inner content in `__inner` divs with `max-width: var(--max-content-width)`.
+- Legacy settings ("Nieuwe OS inschakelen", "Focusmodus") removed — OS is default, focus mode was unused.
+
+**What was built:**
+- Mode switcher in Settings panel — three colored pills that call `modeManager.setMode()` (same behavior as header pill, just in settings too).
+- Ambient mode wash — a full-screen overlay animates a 600ms color pulse at 8% opacity when mode changes. Subtle and ambient, inspired by Eno's generative philosophy.
+- Personal Dashboard — 5-section card at order 5 on the Today page in Personal mode. Gratitude, reflection, and journal textareas auto-save (600ms debounce). Three habit toggles (water, movement, focus). Creative sparks section pulls thought-type inbox items.
+- 15 new tests (167 total).
+
+**Design decisions:**
+- Auto-save with debounce rather than explicit save button — more journal-like, seamless
+- Habit toggles are pill buttons (not checkboxes) — tappable, fun on mobile
+- Creative sparks show max 5 items from inbox (thought type) — encourages capture-everywhere
+- No calendar or date picker — dashboard is always "today" focused
+- Compact mode now works correctly: `[data-compact="true"]` overrides spacing tokens without inline style conflicts
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

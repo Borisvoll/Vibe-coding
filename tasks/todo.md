@@ -100,9 +100,10 @@
 - [x] All 75 tests green
 
 ### 1.3 Data Integrity
-- [ ] Migrate `os_personal_tasks` data into `os_tasks` (mode='Personal')
-- [ ] Add `device_id` generation in OS shell path (currently only in legacy)
-- [ ] Add auto-export reminder (weekly prompt to save JSON backup)
+- [x] Migrate `os_personal_tasks` data into `os_tasks` (mode='Personal')
+- [x] Add `device_id` generation in OS shell path (moved to shared `init()`)
+- [x] Add auto-export reminder (weekly toast if > 7 days since last backup)
+- [x] Track `last_export_date` in settings on every export (plain + encrypted)
 
 ### 1.4 Today Page Blocks
 - [x] Create `daily-outcomes` block — Top 3 editable outcomes (order 5)
@@ -122,7 +123,8 @@
 
 ### 1.6 Testing
 - [x] Add `daily-outcomes.test.js` — 7 integration tests for outcomes + reflection
-- [x] All 82 tests green
+- [x] Add `migration.test.js` — 5 tests for data migration + settings
+- [x] All 87 tests green
 
 ### 1.7 Polish
 - [x] `npm run build` passes clean
@@ -137,7 +139,7 @@
 - Each follows gold-standard pattern from `tasks/view.js` (mountId, eventBus cleanup, unmount)
 - Dark mode fixes: all hardcoded hex colors replaced with CSS variables
 - OS shell responsive improvements: desktop gets wider padding and grid columns
-- 82 tests total (7 new) — all passing
+- 87 tests total (12 new) — all passing
 
 **Dark mode root causes fixed:**
 1. `applyUserSettings()` (from previous sprint) ensures theme loads on OS path
@@ -151,9 +153,24 @@
 - Daily Reflection (order 50) at the bottom — end-of-day prompt
 - All blocks share the DailyEntry store via `stores/daily.js`
 
-**What's left for M1:**
-- M1.3: Data migration (os_personal_tasks → os_tasks) + device_id in OS path
-- These are data integrity tasks, not blocking for daily use
+---
+
+### Review Notes — Data Integrity Sprint
+
+**What was built:**
+- One-time migration: `os_personal_tasks` → `os_tasks` with `mode='Personal'`
+- Device ID generation moved from `initLegacy()` to shared `init()` — both OS and legacy paths get it
+- Weekly export reminder toast (shows if `last_export_date` > 7 days ago)
+- `last_export_date` tracking on every export (plain + encrypted) in `export.js`
+- 5 new migration tests — all passing
+
+**Design decisions:**
+- Migration is idempotent: guarded by `migration_personal_tasks_done` setting flag
+- Migration maps old field names (`title` → `text`, `created_at` → `createdAt`)
+- Export reminder doesn't nag new users (skips if no `last_export_date` exists)
+- Reminder shows 2 seconds after init to avoid blocking startup
+
+**Milestone 1 is now complete.** All checklist items done.
 
 ---
 

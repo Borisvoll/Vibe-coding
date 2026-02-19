@@ -745,3 +745,99 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 - [ ] Balatro easter egg triggers on typing "balatro"
 - [ ] Balatro dismisses on click or Escape
 - [ ] All tests pass (`npm test`)
+
+---
+
+---
+
+# Stable OS Sidebar — Demo Script
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser at desktop width (≥768px)
+3. BORIS OS is active (default)
+
+---
+
+## S1. Sidebar Visibility
+
+1. Open the app at ≥768px width
+2. A **vertical sidebar** should appear on the left (200px wide)
+3. Items: Dashboard (home icon), Vandaag (sun), Inbox (inbox), Planning (calendar), divider, Instellingen (gear), Legacy
+
+**Expected:** Sidebar is visible with all 6 items + divider. Mobile header/tabs are hidden.
+
+---
+
+## S2. Sidebar Navigation
+
+1. Click each sidebar item in sequence: Dashboard → Vandaag → Inbox → Planning → Instellingen
+2. The active item gets a **4px mode-colored left accent bar**
+3. The content area switches to match
+
+**Expected:** Same behavior as old tab navigation. Active item is highlighted with mode color.
+
+---
+
+## S3. Mode Switch Does NOT Change Sidebar
+
+1. Open the mode picker (click mode pill at bottom of sidebar)
+2. Switch from School → Personal → BPV
+3. Observe the sidebar
+
+**Expected:** Sidebar items remain identical. Only the accent color changes. No items appear or disappear.
+
+---
+
+## S4. Dashboard Breadcrumb
+
+1. Click Vandaag in the sidebar
+2. A subtle "← Dashboard" link appears above the section title
+3. Click it
+
+**Expected:** Returns to Dashboard tab. The link is hidden on the Dashboard tab itself.
+
+---
+
+## S5. Mobile Fallback
+
+1. Resize the browser to <768px (mobile width)
+2. The sidebar disappears
+3. A horizontal tab bar appears at the top
+
+**Expected:** Full mobile navigation works. Same tabs, same mode pill in the header.
+
+---
+
+## S6. Inbox Badge on Sidebar
+
+1. Add items to inbox
+2. Check the sidebar Inbox item
+
+**Expected:** Badge count appears next to "Inbox" in the sidebar (and in mobile nav).
+
+---
+
+## S7. Settings Width
+
+1. Click Instellingen in the sidebar
+2. The settings content should be centered with max-width 640px
+
+**Expected:** Settings rows are not stretched to full width on wide screens. Mode pills show their own mode color when active (purple for School, emerald for Personal, blue for BPV).
+
+---
+
+## Sidebar Verification Checklist
+
+- [ ] Desktop: sidebar visible with 6 items (Dashboard, Vandaag, Inbox, Planning, divider, Instellingen)
+- [ ] Mobile (<768px): horizontal tabs, no sidebar
+- [ ] Sidebar items are STABLE — mode switch does NOT change them
+- [ ] Active item has 4px mode-colored left accent bar
+- [ ] "← Dashboard" breadcrumb on non-dashboard tabs
+- [ ] Inbox badge updates in sidebar
+- [ ] Settings page centered (max-width 640px)
+- [ ] Settings mode pills use their own mode color
+- [ ] Card top border is 4px (prominent accent)
+- [ ] Mode hero banner has 4px left border
+- [ ] All tests pass (`npm test`)

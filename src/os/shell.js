@@ -4,7 +4,7 @@ import { formatDateShort, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief', 'settings'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'settings'];
 
 // Mode order: School & Personal first, BPV secondary (Rams: match user's primary context)
 const MODE_META = {
@@ -44,33 +44,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       <!-- Ambient wash layer for mode transitions -->
       <div class="os-mode-wash" aria-hidden="true"></div>
 
-      <header class="os-shell__header">
-        <div class="os-shell__header-inner">
-          <div class="os-shell__header-left">
-            <h1 class="os-shell__title">BORIS</h1>
-            <span class="os-shell__date">${todayLabel}</span>
-          </div>
-          <div class="os-shell__header-actions">
-            <button id="legacy-switch-btn" type="button" class="os-interface-toggle" title="Schakel naar Legacy interface">
-              Legacy
-            </button>
-            <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
-              <span class="os-mode-btn__dot"></span>
-              <span class="os-mode-btn__label"></span>
-              <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-            <button id="settings-btn" type="button" class="os-settings-btn" aria-label="Instellingen" title="Instellingen">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
-
       <div id="mode-picker" class="mode-picker" role="dialog" aria-label="Kies een modus" aria-modal="true" hidden>
         <div class="mode-picker__backdrop"></div>
         <div class="mode-picker__panel">
@@ -94,7 +67,78 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         </div>
       </div>
 
-      <nav id="os-nav" class="os-nav" aria-label="BORIS navigatie">
+      <!-- Desktop sidebar (hidden on mobile via CSS) -->
+      <aside class="os-sidebar" aria-label="Navigatie">
+        <div class="os-sidebar__brand">
+          <h1 class="os-sidebar__title">BORIS</h1>
+          <span class="os-sidebar__date">${todayLabel}</span>
+        </div>
+
+        <nav class="os-sidebar__nav">
+          <button class="os-sidebar__item" type="button" data-os-tab="dashboard">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span class="os-sidebar__label">Dashboard</span>
+          </button>
+          <button class="os-sidebar__item" type="button" data-os-tab="today">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            <span class="os-sidebar__label">Vandaag</span>
+          </button>
+          <button class="os-sidebar__item" type="button" data-os-tab="inbox">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+            <span class="os-sidebar__label">Inbox</span>
+            <span class="os-sidebar__badge" id="sidebar-inbox-badge" hidden>0</span>
+          </button>
+          <button class="os-sidebar__item" type="button" data-os-tab="planning">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="os-sidebar__label">Planning</span>
+          </button>
+        </nav>
+
+        <div class="os-sidebar__divider"></div>
+
+        <nav class="os-sidebar__system">
+          <button class="os-sidebar__item" type="button" data-os-tab="settings">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="os-sidebar__label">Instellingen</span>
+          </button>
+          <button id="legacy-switch-btn" type="button" class="os-sidebar__item os-sidebar__item--muted">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            <span class="os-sidebar__label">Legacy</span>
+          </button>
+        </nav>
+
+        <div class="os-sidebar__mode">
+          <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
+            <span class="os-mode-btn__dot"></span>
+            <span class="os-mode-btn__label"></span>
+            <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </aside>
+
+      <!-- Mobile top bar (hidden on desktop via CSS) -->
+      <header class="os-shell__header os-shell__header--mobile">
+        <div class="os-shell__header-inner">
+          <div class="os-shell__header-left">
+            <h1 class="os-shell__title">BORIS</h1>
+            <span class="os-shell__date">${todayLabel}</span>
+          </div>
+          <div class="os-shell__header-actions">
+            <button id="mobile-mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
+              <span class="os-mode-btn__dot"></span>
+              <span class="os-mode-btn__label"></span>
+              <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Mobile horizontal nav (hidden on desktop via CSS) -->
+      <nav id="os-nav" class="os-nav os-nav--mobile" aria-label="BORIS navigatie">
         <div class="os-nav__inner">
           <button class="os-nav__button" type="button" data-os-tab="dashboard">Dashboard</button>
           <button class="os-nav__button" type="button" data-os-tab="today">Vandaag</button>
@@ -102,8 +146,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
             Inbox <span class="os-nav__badge" id="inbox-badge" hidden>0</span>
           </button>
           <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
-          <button class="os-nav__button" type="button" data-os-tab="reflectie">Reflectie</button>
-          <button class="os-nav__button" type="button" data-os-tab="archief">Archief</button>
+          <button class="os-nav__button" type="button" data-os-tab="settings">Instellingen</button>
         </div>
       </nav>
 
@@ -113,26 +156,22 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <div class="os-host-grid" data-os-host="dashboard-cards"></div>
         </section>
         <section class="os-section" data-os-section="today">
+          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <h2 class="os-section__title">Vandaag</h2>
           <div class="os-host-stack" data-os-host="today-sections"></div>
           <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
         </section>
         <section class="os-section" data-os-section="inbox" hidden>
+          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <div class="os-host-stack" data-os-host="inbox-screen"></div>
         </section>
         <section class="os-section" data-os-section="planning" hidden>
+          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <h2 class="os-section__title">Planning</h2>
           <p class="os-host-empty">Planningmodules volgen in een volgende iteratie.</p>
         </section>
-        <section class="os-section" data-os-section="reflectie" hidden>
-          <h2 class="os-section__title">Reflectie</h2>
-          <p class="os-host-empty">Reflectie-overzicht volgt in een volgende iteratie.</p>
-        </section>
-        <section class="os-section" data-os-section="archief" hidden>
-          <h2 class="os-section__title">Archief</h2>
-          <p class="os-host-empty">Archiefweergave volgt in een volgende iteratie.</p>
-        </section>
         <section class="os-section" data-os-section="settings" hidden>
+          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <h2 class="os-section__title">Instellingen</h2>
           <div id="new-os-settings-block"></div>
         </section>
@@ -146,14 +185,16 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       const name = section.getAttribute('data-os-section');
       section.hidden = name !== activeTab;
     });
+    // Update all nav buttons (both sidebar and mobile nav)
     app.querySelectorAll('[data-os-tab]').forEach((button) => {
-      button.setAttribute('aria-pressed', String(button.getAttribute('data-os-tab') === activeTab));
+      const isActive = button.getAttribute('data-os-tab') === activeTab;
+      button.setAttribute('aria-pressed', String(isActive));
+      button.classList.toggle('os-sidebar__item--active', isActive);
     });
-    // Update settings button active state
-    const settingsBtn = app.querySelector('#settings-btn');
-    if (settingsBtn) {
-      settingsBtn.classList.toggle('os-settings-btn--active', activeTab === 'settings');
-    }
+    // Update dashboard breadcrumb visibility
+    app.querySelectorAll('.os-section__home-link').forEach((link) => {
+      link.hidden = activeTab === 'dashboard';
+    });
   }
 
   function ensureHostEmptyStates() {
@@ -226,12 +267,16 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   function updateModeBtn() {
     const mode = modeManager.getMode();
     const meta = MODE_META[mode] || MODE_META.BPV;
-    const btn = app.querySelector('#mode-btn');
-    if (!btn) return;
-    btn.querySelector('.os-mode-btn__dot').style.background = meta.color;
-    btn.querySelector('.os-mode-btn__label').textContent = meta.label;
-    btn.style.setProperty('--mode-color', meta.color);
-    btn.style.setProperty('--mode-color-light', meta.colorLight);
+
+    // Update all mode buttons (sidebar + mobile)
+    app.querySelectorAll('#mode-btn, #mobile-mode-btn').forEach((btn) => {
+      const dot = btn.querySelector('.os-mode-btn__dot');
+      const label = btn.querySelector('.os-mode-btn__label');
+      if (dot) dot.style.background = meta.color;
+      if (label) label.textContent = meta.label;
+      btn.style.setProperty('--mode-color', meta.color);
+      btn.style.setProperty('--mode-color-light', meta.colorLight);
+    });
 
     // Update active card in picker
     app.querySelectorAll('.mode-card').forEach((card) => {
@@ -253,8 +298,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       dashboard: `Dashboard ${badge}`,
       today: `Vandaag ${badge}`,
       planning: `Planning ${badge}`,
-      reflectie: `Reflectie ${badge}`,
-      archief: `Archief ${badge}`,
     };
     Object.entries(titleMap).forEach(([section, html]) => {
       const el = app.querySelector(`[data-os-section="${section}"] .os-section__title`);
@@ -344,8 +387,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   });
 
-  // Mode button pill click
-  app.querySelector('#mode-btn')?.addEventListener('click', () => showModePicker());
+  // Mode button pill click (both sidebar and mobile)
+  app.querySelectorAll('#mode-btn, #mobile-mode-btn').forEach((btn) => {
+    btn.addEventListener('click', () => showModePicker());
+  });
 
   // Backdrop click closes picker
   app.querySelector('.mode-picker__backdrop')?.addEventListener('click', () => hideModePicker());
@@ -373,13 +418,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   });
 
-  // Settings gear button — toggles settings section
-  app.querySelector('#settings-btn')?.addEventListener('click', () => {
-    if (activeTab === 'settings') {
-      setActiveTab('today');
-    } else {
-      setActiveTab('settings');
-    }
+  // "← Dashboard" breadcrumb links
+  app.querySelectorAll('.os-section__home-link').forEach((link) => {
+    link.addEventListener('click', () => setActiveTab('dashboard'));
   });
 
   let modeTransitionTimer = null;

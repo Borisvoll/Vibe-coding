@@ -57,6 +57,15 @@ All OS blocks share a common visual language through the `src/ui/` token layer:
 4. **Mode-aware accents** — `--ui-accent` inherits from `--mode-accent` (set by `data-mode` on the shell root). Blocks get the correct mode color automatically.
 5. **Typography hierarchy** — Use `.ui-stat` (2rem/800) for headline numbers, `.ui-label` (0.8125rem/600/uppercase) for section headers, `.ui-meta` (0.75rem) for secondary info, `.ui-caption` (0.6875rem) for hints.
 
+## Stable Navigation
+
+1. **Mode-independent sidebar** — Navigation items (Dashboard, Vandaag, Inbox, Planning, Instellingen) are fixed. They never appear/disappear based on mode. Mode changes *content*, not *structure* (Rams: stable patterns, no noise).
+2. **Dashboard as Home** — Dashboard is always the first sidebar item and reachable from every tab via a subtle "← Dashboard" breadcrumb (Jobs: obvious home path).
+3. **Active indicator follows mode** — The 4px left accent bar on the active sidebar item uses `--mode-accent`, so it changes color with mode but not position (Ive: calm, premium).
+4. **BPV is a mode, not a destination** — BPV has no sidebar item. BPV content appears via mode-filtered blocks and dashboard deep links.
+
+See `docs/nav-architecture.md` for full implementation details.
+
 ## Block Design Rules
 
 1. Each block is self-contained (own index.js, view.js, store.js, styles.css).

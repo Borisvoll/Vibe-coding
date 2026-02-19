@@ -63,3 +63,9 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** 16 instances of `999px` border-radius, 4 instances of `#fff`, and several hardcoded hex colors (`#ef4444`, `#f59e0b`, `#d1d5db`) were found across block CSS files. These break dark mode and prevent theme customization.
 
 **Prevention:** Always use CSS variables from `variables.css` or `tokens.css`. Use `var(--radius-full)` not `999px`, `var(--color-accent-text)` not `#fff`, `var(--color-error)` not `#ef4444`. Run `grep -r "999px\|#fff\|#ef4444" src/blocks/` before shipping.
+
+## 11. Navigation must be mode-independent (2026-02-19)
+
+**Issue:** The horizontal tab bar felt unstable because it mixed content-level concepts (Reflectie, Archief) with navigation concepts. Users couldn't tell what changed on mode switch because the nav itself was identical but content was insufficient.
+
+**Prevention:** Navigation structure (sidebar/tabs) must be fixed and mode-independent. Mode only affects *content* inside sections, never the nav items themselves. Use mode accent color on the active indicator to subtly communicate current mode without changing structure. Dashboard is always "home" — reachable from everywhere.

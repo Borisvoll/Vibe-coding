@@ -8,6 +8,8 @@
 
 **Jony Ive:** Craftsmanship and coherence, even in parts users rarely notice. Calm, timeless, minimal, human-first.
 
+**Brian Eno:** Ambient presence. Systems that work quietly in the background. Generative structure over rigid control. Mode transitions should feel like changing light, not clicking switches.
+
 ## UI Rules
 
 1. **Content first** — UI defers to content. No decorative elements that don't serve function.
@@ -16,6 +18,8 @@
 4. **Progressive disclosure** — Show essentials first. Advanced options appear on interaction.
 5. **Consistent spacing** — Use the 4px base scale (`--space-1` through `--space-16`).
 6. **One action per card** — Each block/card has a clear primary action.
+7. **Ambient transitions** — Mode changes use subtle color washes (600ms, 8% opacity). No jarring page reloads.
+8. **Trust through correctness** — Data operations (export, import, delete) must be safe and reversible.
 
 ## Component Constraints
 
@@ -27,25 +31,40 @@
 | Text | Max 2 font sizes per block. Body (0.875rem) + heading (0.9375rem). |
 | Colors | Use semantic tokens, never raw hex in components. |
 | Icons | 16-20px. Functional only, not decorative. |
+| Textareas | Auto-save with 600ms debounce. No explicit save buttons for journals. |
+| Progress bars | Color-coded (green ≥80%, amber ≥50%, red <50%) + always include text percentage. |
 
 ## Block Design Rules
 
 1. Each block is self-contained (own index.js, view.js, store.js, styles.css).
 2. Blocks must implement `mount()` returning `{ unmount() }`.
-3. Blocks use `escapeHTML()` for all user-generated content.
+3. Blocks use `escapeHTML()` from `src/utils.js` for all user-generated content — never define local copies.
 4. Blocks read data through their own store module, never import `db.js` directly.
 5. Cross-block communication uses `eventBus`, never direct references.
 6. Blocks declare `order` for deterministic rendering on hosts.
+7. Error handling: wrap async data operations in try-catch, fail silently for non-critical reads, show user message for writes.
 
-## Accessibility Basics
+## Store Design Rules
+
+1. All stores import from `src/db.js` (never open IndexedDB directly).
+2. Stores are pure data logic — no DOM manipulation, no `document.createElement`.
+3. Use `ValidationError` from `src/stores/validate.js` for input validation.
+4. Return `null` for "not found" reads. Throw for invalid writes.
+5. Multi-step writes should create safety backups when data loss is possible.
+6. Search operations use `safeGetAll()` pattern to gracefully handle missing stores.
+
+## Accessibility
 
 - All interactive elements have visible focus styles (`:focus-visible`).
+- Icon-only buttons must have both `title` and `aria-label` attributes.
 - Mode switcher uses `aria-pressed` state.
 - Tab navigation uses `aria-pressed` for active state.
 - All buttons have `type="button"` unless inside a form.
 - Color is never the only indicator — use text labels alongside badges.
 - Respect `prefers-reduced-motion` — animations disabled.
 - Touch targets minimum 44x44px on mobile.
+- Modal dialogs must implement focus trap (Tab cycles within modal).
+- Modal close must return focus to the trigger element.
 
 ## Theming
 
@@ -53,3 +72,12 @@
 - Accent color customizable via `--color-accent`.
 - All colors through CSS custom properties in `variables.css`.
 - No hardcoded colors in block styles.
+- Never set spacing/radius/motion tokens as inline styles — they must come from CSS so `[data-compact="true"]` can override them.
+
+## Data Safety
+
+- Export bundles include `_meta` with app name, version, timestamp, and record counts.
+- Import always validates bundle structure before writing.
+- Import creates a localStorage safety backup before clearing existing data.
+- Tags are normalized: lowercase, trimmed, spaces→hyphens, max 50 characters.
+- Search is resilient: individual store failures don't crash the entire search.

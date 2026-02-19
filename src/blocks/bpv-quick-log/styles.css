@@ -1,0 +1,114 @@
+.bpv-ql {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bpv-ql__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.bpv-ql__title {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.bpv-ql__date {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+/* Day-type toggle */
+.bpv-ql__type-row {
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.bpv-ql__type-btn {
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: border-color 150ms var(--ease), background 150ms var(--ease), color 150ms var(--ease);
+}
+
+.bpv-ql__type-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-text);
+}
+
+.bpv-ql__type-btn--active {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+
+/* Time fields */
+.bpv-ql__time-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 90px;
+  grid-template-rows: auto auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+
+.bpv-ql__time-row[hidden] { display: none !important; }
+
+.bpv-ql__net {
+  grid-column: 1 / -1;
+  font-size: 0.8125rem;
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+  padding: 2px 0;
+}
+
+.bpv-ql__net--ok {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.bpv-ql__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bpv-ql__field > span {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.bpv-ql__field--full {
+  width: 100%;
+}
+
+.bpv-ql__input--break {
+  /* narrower for break minutes */
+}
+
+/* Footer */
+.bpv-ql__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.bpv-ql__status {
+  font-size: 0.8125rem;
+  color: var(--color-success);
+}
+
+.bpv-ql__status--error {
+  color: var(--color-error);
+}

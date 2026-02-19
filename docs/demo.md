@@ -161,4 +161,218 @@ Manual walkthrough to verify the Inbox screen and processing flow.
 - [ ] Nav badge updates correctly
 - [ ] Empty state displays correctly
 - [ ] Dark mode looks correct
-- [ ] All 101 tests pass (`npm test`)
+- [ ] All 152 tests pass (`npm test`)
+
+---
+
+---
+
+# BPV Tracker — Demo Script
+
+Manual walkthrough for the BPV quick-log and weekly overview blocks.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. Switch to **BPV** mode (click the mode pill → choose BPV 🏢)
+
+---
+
+## 13. Quick Log — Log Today's Hours
+
+1. On the **Vandaag** tab, find the **Snel loggen** card (appears before the weekly overview)
+2. Verify the date shown is today
+3. The day-type buttons show: Gewerkt · Ziek · Afwezig · Vrij/Feestdag
+4. "Gewerkt" should be active by default (blue ring)
+5. Enter: **Start** = `08:00`, **Einde** = `16:45`, **Pauze** = `45`
+6. The "Netto:" display should update to **8u** (525 min − 45 min = 480 min)
+7. Enter a note: `CNC draaiwerk, krukas gefreesd`
+8. Click **Opslaan**
+
+**Expected:** Status shows "Opgeslagen ✓". The weekly overview progress bar updates.
+
+---
+
+## 14. Quick Log — Non-work Day
+
+1. In the **Snel loggen** card, click **Ziek**
+2. The time fields should hide (not relevant for sick days)
+3. Click **Opslaan**
+
+**Expected:** Entry saved without time data; net hours = 0u.
+
+---
+
+## 15. Quick Log — Upsert (Edit Same Day)
+
+1. Click **Gewerkt** again and change End to `17:30`, Break to `30`
+2. Netto should update to **9u** (570 − 30 = 540 min)
+3. Click **Opslaan**
+
+**Expected:** The existing entry for today is updated (same ID). No duplicate created.
+
+---
+
+## 16. Weekly Overview — Progress Bar
+
+1. Find the **Weekoverzicht BPV** card just below the quick-log
+2. The week label shows the current ISO week (e.g. `2026-W08`)
+3. The progress bar fills proportionally to logged hours (≥80% = green, 50–79% = amber, <50% = red)
+4. The label shows e.g. `8u / 40u (20%)`
+
+**Expected:** Bar updates immediately after saving in the quick-log card.
+
+---
+
+## 17. Weekly Overview — Day Grid
+
+1. Look at the 5-day grid (ma di wo do vr)
+2. Days with hours logged show the day type icon (✓ for work, 🤒 for sick)
+3. Days with logbook entries show 📝 indicator
+4. Empty days are faded
+
+**Expected:** Today's entry is reflected in the correct day column.
+
+---
+
+## 18. Weekly Overview — Week Navigation
+
+1. Click **‹** (previous week) — the label changes to the prior week
+2. Click **›** twice to go to next week — should show an empty week (all 5 days faded)
+3. Navigate back to current week
+
+**Expected:** Navigation works in both directions without errors.
+
+---
+
+## 19. Export — CSV
+
+1. Click the **CSV** button in the weekly overview card header
+2. Your browser downloads `bpv-uren.csv`
+3. Open the file — it should contain:
+   - Header row: `datum,week,type,start,einde,pauze_min,netto_min,netto_uren,notitie,omschrijving,tags`
+   - One row per logged day, sorted by date
+
+**Expected:** Valid CSV, opens correctly in Excel/Numbers/LibreOffice.
+
+---
+
+## 20. Export — JSON
+
+1. Click the **JSON** button
+2. Browser downloads `bpv-uren.json`
+3. Open the file — it should be a valid JSON array with objects containing `date`, `type`, `netHours`, `tags`, etc.
+
+**Expected:** `JSON.parse(fileContents)` succeeds; array is sorted by `date`.
+
+---
+
+## BPV Verification Checklist
+
+- [ ] Mode pill shows BPV mode is active (blue dot)
+- [ ] Snel loggen card appears on Vandaag tab in BPV mode
+- [ ] Time fields hide when switching to Ziek/Afwezig/Vrij
+- [ ] Net hours calculate correctly (end − start − break)
+- [ ] Upsert: saving twice for the same date keeps one record
+- [ ] Weekoverzicht card appears below quick-log
+- [ ] Progress bar reflects saved hours
+- [ ] Day grid shows correct icons per day
+- [ ] Week navigation works (‹ ›)
+- [ ] CSV export downloads and is valid
+- [ ] JSON export downloads and parses without errors
+- [ ] Dark mode looks correct in both new blocks
+- [ ] All 152 tests pass (`npm test`)
+
+---
+
+---
+
+# School Dashboard — Demo Script
+
+Manual walkthrough for the School mode dashboard block.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Switch to **School** mode (click the mode pill → choose School 📚)
+
+---
+
+## 21. School Dashboard — First Look
+
+1. Go to the **Vandaag** tab
+2. The first card should be **School Dashboard** (order 6, appears at the top)
+3. You should see four sections:
+   - **Volgende actie** — your next School task
+   - **Aankomende deadlines** — upcoming milestones/tasks within 14 days
+   - **BPV week** — compact progress bar showing hours logged this BPV week
+   - **Schoolprojecten** — active projects tagged School
+
+**Expected:** All four sections visible (or "geen" empty states when no data).
+
+---
+
+## 22. School Dashboard — Add a Next Action
+
+1. Find the **Taken** block on the Vandaag tab
+2. Add a task: `H3 samenvatting schrijven`
+3. The **School Dashboard** card at the top should now show it under **Volgende actie**
+
+**Expected:** Task shows with an empty circle button on the left.
+
+---
+
+## 23. School Dashboard — Mark Action Done
+
+1. Click the circle button next to the next action
+2. The task is marked done and disappears from the dashboard
+3. If you had a second task, it becomes the new next action
+
+**Expected:** One-click done; dashboard refreshes immediately.
+
+---
+
+## 24. School Dashboard — Upcoming Deadlines
+
+1. Add a milestone in the **Mijlpalen** block with a dueDate 3 days from now
+2. The deadline should appear in **Aankomende deadlines**
+3. The urgency badge shows amber (3–7 days) or red (0–2 days)
+
+**Expected:** Sorted by date; items beyond 14 days excluded; max 5 shown.
+
+---
+
+## 25. School Dashboard — BPV Week Bar
+
+1. Look at the **BPV week** row (visible in School mode)
+2. If you logged BPV hours via the BPV quick-log, the bar fills proportionally
+3. The label shows e.g. `8u / 40u`
+
+**Expected:** Live BPV progress visible from School mode — no mode switch needed.
+
+---
+
+## 26. School Dashboard — School Projects
+
+1. In the **Projects** block, add a project: `Eindopdracht netwerken` with mode School
+2. The project should appear as a purple chip in the School Dashboard
+
+**Expected:** Active School projects appear as compact purple chips.
+
+---
+
+## School Dashboard Verification Checklist
+
+- [ ] School Dashboard appears at top of Vandaag in School mode
+- [ ] Does NOT appear in BPV or Personal mode
+- [ ] "Volgende actie" shows first non-done School task by date
+- [ ] Marking done removes it and promotes next task
+- [ ] Empty state shows "Geen openstaande acties" when all done
+- [ ] Future-dated tasks (within 14 days) appear in deadlines
+- [ ] Deadlines beyond 14 days excluded
+- [ ] Urgency badge: red 0–2 days, amber 3–7, grey 8+
+- [ ] Max 5 deadlines shown
+- [ ] BPV week progress bar shows correct percentage
+- [ ] School projects appear as purple chips
+- [ ] All 152 tests pass (`npm test`)

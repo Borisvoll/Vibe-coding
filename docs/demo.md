@@ -467,4 +467,147 @@ Manual walkthrough for the School mode dashboard block.
 - [ ] Max 5 deadlines shown
 - [ ] BPV week progress bar shows correct percentage
 - [ ] School projects appear as purple chips
-- [ ] All 234 tests pass (`npm test`)
+- [ ] All 244 tests pass (`npm test`)
+
+---
+
+---
+
+# Main Dashboard — Demo Script
+
+Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. BORIS OS is active (default)
+
+---
+
+## D1. Dashboard Tab — First Look
+
+1. Click the **Dashboard** tab in the navigation
+2. You should see a 2-column grid (desktop) or 1-column (mobile) with 6 widget cards:
+   - **Vandaag** (amber) — today snapshot
+   - **Deze week** (purple) — week focus
+   - **Projecten** (cyan) — projects pulse
+   - **BPV** (blue) — hours progress
+   - **Verken** (rose) — curiosity prompt
+   - **Snel vastleggen** (emerald) — quick capture
+
+**Expected:** All 6 widgets visible with colored icon circles and loading states that fill with data.
+
+---
+
+## D2. Vandaag Widget — Today Snapshot
+
+1. Look at the **Vandaag** widget (top-left)
+2. It shows: first outcome text (or "Nog geen outcomes"), task count (e.g. "2/5 taken"), inbox count
+3. Click the widget → navigates to the **Vandaag** tab
+
+**Expected:** Task count reflects mode-filtered tasks. Inbox count is global.
+
+---
+
+## D3. Deze Week Widget — Week Focus
+
+1. Look at the **Deze week** widget (top-right)
+2. It shows: completed task count, habits completion (e.g. "2/3 gewoontes"), reflection days
+3. Click the widget → navigates to the Vandaag tab and scrolls to weekly review
+
+**Expected:** Data matches the Weekly Review block content.
+
+---
+
+## D4. Projecten Widget — Projects Pulse
+
+1. Look at the **Projecten** widget
+2. It shows: active project count, at-risk count (projects without next action), up to 3 project names with mode chips
+3. Click → navigates to Vandaag tab and scrolls to projects block
+
+**Expected:** Projects from ALL modes shown (cross-mode synopsis). At-risk projects marked with red "!" badge.
+
+---
+
+## D5. BPV Widget — Hours Progress
+
+1. Look at the **BPV** widget
+2. It shows: formatted hours (e.g. "8u / 40u"), percentage, color-coded progress bar
+3. Progress bar: green ≥80%, amber ≥50%, red <50%
+4. Last logbook date shown (or "Nog geen logboek deze week")
+5. Click → navigates to legacy BPV pages (`#hours`)
+
+**Expected:** Hours reflect the current week's BPV data regardless of active mode.
+
+---
+
+## D6. Verken Widget — Curiosity Prompt
+
+1. Look at the **Verken** widget (rose accent)
+2. It shows a rotating curiosity prompt in italic (e.g. "Bekijk 1 ding dat je deze week leerde")
+3. Click → navigates to the relevant section (inbox, planning, reflectie, or today depending on prompt)
+
+**Expected:** Different prompt each time the dashboard loads.
+
+---
+
+## D7. Snel Vastleggen Widget — Quick Capture
+
+1. Look at the **Snel vastleggen** widget (emerald accent)
+2. Type `Dashboard test item` in the input and press Enter (or click +)
+3. A "Vastgelegd!" confirmation appears briefly
+4. Switch to the **Inbox** tab — the new item should be there
+
+**Expected:** Item captured with current mode tag. Input clears after submit. Confirmation fades after 1.5s.
+
+---
+
+## D8. Mode Switch — Dashboard Updates
+
+1. On the Dashboard tab, note the widget values
+2. Switch mode (e.g. School → BPV) via the mode pill
+3. The section title updates: "Dashboard — BPV 🏢"
+4. The **Vandaag** widget refreshes with BPV-filtered task counts
+5. All widgets briefly show updated data
+
+**Expected:** Section title badge changes color + label. Widget data refreshes reactively.
+
+---
+
+## D9. Responsive Layout
+
+1. On desktop (≥600px): widgets display in a 2-column grid
+2. Resize browser to mobile width (<600px): widgets stack in 1 column
+3. All widgets remain readable and touch-friendly
+
+**Expected:** Clean responsive transition, no overflow or clipping.
+
+---
+
+## D10. Dark Mode
+
+1. Go to Settings → switch theme to Dark
+2. Navigate to the Dashboard tab
+3. All widgets use dark theme colors (surface, border, text)
+4. Icon circles adapt. Progress bar colors work in dark.
+
+**Expected:** Full dark mode support. No white flashes or hardcoded colors.
+
+---
+
+## Dashboard Verification Checklist
+
+- [ ] Dashboard tab shows 6 widgets in responsive grid
+- [ ] Vandaag widget: shows outcomes, task count, inbox count
+- [ ] Deze week widget: shows completed tasks, habits, reflection days
+- [ ] Projecten widget: shows cross-mode projects with mode chips
+- [ ] BPV widget: shows hours progress bar with correct color coding
+- [ ] Verken widget: shows rotating curiosity prompt
+- [ ] Snel vastleggen: captures to inbox with mode tag
+- [ ] Capture input NOT recreated on event refresh (type → switch mode → text preserved)
+- [ ] Widget click deep-links work (today, projects, BPV, etc.)
+- [ ] Mode switch updates section title badge + refreshes widget data
+- [ ] Responsive: 2-col desktop, 1-col mobile
+- [ ] Dark mode fully supported
+- [ ] All 244 tests pass (`npm test`)

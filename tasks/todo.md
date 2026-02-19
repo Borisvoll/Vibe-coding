@@ -287,6 +287,72 @@
 
 ---
 
+## BPV Tracker Module Sprint
+
+### Module Boundary
+- [x] Identify all existing BPV functionality (hours, logbook, blocks, pages)
+- [x] Create `src/stores/bpv.js` — clean TrackerEntry CRUD layer over `hours` + `logbook` stores
+
+### TrackerEntry CRUD (`src/stores/bpv.js`)
+- [x] `addHoursEntry(date, { type, startTime, endTime, breakMinutes, note })` — upsert by date
+- [x] `getHoursEntry(date)` — fetch entry for a specific date
+- [x] `updateHoursEntry(id, changes)` — update with netMinutes recalculation
+- [x] `deleteHoursEntry(id)` — remove entry
+
+### Weekly Overview (`getWeeklyOverview`)
+- [x] Aggregate hours + logbook for a given ISO week string
+- [x] Returns: totalMinutes, targetMinutes (40h), percentComplete, 5 day objects, highlights array
+- [x] `getPrevWeek` / `getNextWeek` helpers added to `src/utils.js`
+
+### Export (`exportEntries`)
+- [x] CSV: date, week, type, start, end, break, net_min, net_hours, note, description, tags
+- [x] JSON: same fields as array of objects, sorted by date
+
+### BPV Views (OS Blocks)
+- [x] `bpv-quick-log` block (order 8): today time entry form with live net calc, day-type switcher, note field — BPV mode, `today-sections` host
+- [x] `bpv-weekly-overview` block (order 14): week navigation, progress bar (red/yellow/green), 5-day grid with logbook indicator, highlights section, CSV + JSON export buttons — BPV mode, `today-sections` host
+
+### Testing
+- [x] Create `tests/stores/bpv.test.js` — 20 tests covering:
+  - TrackerEntry CRUD (add/get/update/delete, upsert, type validation)
+  - getWeeklyOverview (empty week, totals, capped %, day shape, logged flag)
+  - exportEntries (CSV header, row count, JSON parse, sorted dates)
+- [x] All 139 tests green
+
+### Documentation
+- [x] Append BPV Tracker scenario to `docs/demo.md`
+- [x] Update `docs/architecture.md` — Module 1 entry points, TrackerEntry schema
+- [x] Update `tasks/todo.md` with sprint checklist
+
+---
+
+### Review Notes — BPV Tracker Module Sprint
+
+**What was built:**
+- `src/stores/bpv.js`: clean CRUD layer that wraps the legacy `hours` + `logbook` IndexedDB stores. All blocks now write through this module instead of calling `put()` directly.
+- `bpv-quick-log` block: today-focused input with day-type pill switcher (Gewerkt / Ziek / Afwezig / Vrij), start/end time fields, break minutes, live net-hours display, note field. Upserts via `addHoursEntry`, emits `bpv:changed`.
+- `bpv-weekly-overview` block: week navigation (‹ ›), progress bar color-coded (green ≥80%, yellow ≥50%, red <50%), 5-day grid showing type + hours + logbook indicator (📝), highlights from logbook, CSV and JSON export buttons.
+- `getPrevWeek` / `getNextWeek` added to `src/utils.js` for week navigation.
+- 20 new tests (139 total). All green.
+
+**Files created:**
+- `src/stores/bpv.js`
+- `src/blocks/bpv-quick-log/` (index.js, view.js, styles.css)
+- `src/blocks/bpv-weekly-overview/` (index.js, view.js, styles.css)
+- `tests/stores/bpv.test.js`
+
+**Files modified:**
+- `src/utils.js` — `getPrevWeek`, `getNextWeek`
+- `src/blocks/registerBlocks.js` — CSS imports + block registrations
+
+**Design decisions:**
+- `bpv-quick-log` upserts by date (no duplicate entries possible)
+- Export downloads the entire history (not just one week) — useful for supervisor handoff
+- `bpv:changed` event wires the two blocks together: saving in quick-log refreshes weekly overview
+- Week navigation is unrestricted (allows browsing any week, not just BPV period)
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

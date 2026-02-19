@@ -3,6 +3,8 @@ import './inbox/styles.css';
 import './inbox-screen/styles.css';
 import './tasks/styles.css';
 import './bpv-log-summary/styles.css';
+import './bpv-quick-log/styles.css';
+import './bpv-weekly-overview/styles.css';
 import './daily-outcomes/styles.css';
 import './daily-reflection/styles.css';
 import './schedule-placeholder/styles.css';
@@ -23,6 +25,8 @@ import { registerInboxBlock } from './inbox/index.js';
 import { registerInboxScreenBlock } from './inbox-screen/index.js';
 import { registerTasksBlock } from './tasks/index.js';
 import { registerBPVLogSummaryBlock } from './bpv-log-summary/index.js';
+import { registerBPVQuickLogBlock } from './bpv-quick-log/index.js';
+import { registerBPVWeeklyOverviewBlock } from './bpv-weekly-overview/index.js';
 import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
 import { registerDailyReflectionBlock } from './daily-reflection/index.js';
 import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
@@ -41,6 +45,8 @@ export function registerDefaultBlocks(registry) {
   // BPV mode blocks
   registerBPVMiniCard(registry);
   registerBPVTodayBlock(registry);
+  registerBPVQuickLogBlock(registry);
+  registerBPVWeeklyOverviewBlock(registry);
 
   // School mode blocks
   registerSchoolCurrentProjectBlock(registry);

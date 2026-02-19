@@ -1,0 +1,165 @@
+.bpv-wo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* Header */
+.bpv-wo__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.bpv-wo__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.bpv-wo__week-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  min-width: 80px;
+  text-align: center;
+}
+
+.bpv-wo__nav-btn {
+  padding: 0 var(--space-2);
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.bpv-wo__export-btns {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* Progress bar */
+.bpv-wo__progress-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bpv-wo__progress-bar {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bpv-wo__progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 400ms var(--ease);
+}
+
+.bpv-wo__progress-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.bpv-wo__pct {
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+  font-size: 0.75rem;
+}
+
+/* Days grid */
+.bpv-wo__days {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-1);
+}
+
+.bpv-wo__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-2) var(--space-1);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.bpv-wo__day-name {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+}
+
+.bpv-wo__day-icon {
+  font-size: 0.9375rem;
+  line-height: 1;
+}
+
+.bpv-wo__day-time {
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+
+.bpv-wo__lb-dot {
+  font-size: 0.625rem;
+}
+
+/* Day states */
+.bpv-wo__day--work {
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg));
+  border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.bpv-wo__day--sick {
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg));
+  border-color: color-mix(in srgb, var(--color-warning) 30%, transparent);
+}
+
+.bpv-wo__day--absent,
+.bpv-wo__day--holiday {
+  background: color-mix(in srgb, var(--color-text-secondary) 6%, var(--color-bg));
+}
+
+.bpv-wo__day--empty {
+  opacity: 0.55;
+}
+
+/* Highlights */
+.bpv-wo__highlights {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-3);
+}
+
+.bpv-wo__highlights-label {
+  margin: 0 0 var(--space-1);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+}
+
+.bpv-wo__highlights-list {
+  margin: 0;
+  padding: 0 0 0 var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bpv-wo__highlights-list li {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.bpv-wo__loading {
+  font-size: 0.875rem;
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+  text-align: center;
+  padding: var(--space-4);
+}

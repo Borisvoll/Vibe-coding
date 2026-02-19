@@ -168,8 +168,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       hosts.forEach((hostName) => {
         const hostEl = app.querySelector(`[data-os-host="${hostName}"]`);
         if (!hostEl || typeof block.mount !== 'function') return;
-        const instance = block.mount(hostEl, context) || null;
-        mountedBlocks.push({ blockId: block.id, hostName, instance });
+        try {
+          const instance = block.mount(hostEl, context) || null;
+          mountedBlocks.push({ blockId: block.id, hostName, instance });
+        } catch (err) {
+          console.error(`Block "${block.id}" failed to mount:`, err);
+        }
       });
     });
 
@@ -246,6 +250,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     focusTrapCleanup = null;
     picker.classList.remove('mode-picker--visible');
     picker.addEventListener('transitionend', () => { picker.hidden = true; }, { once: true });
+    // Fallback: ensure picker hides even if transitionend doesn't fire
+    setTimeout(() => { picker.hidden = true; }, 500);
     // Return focus to trigger button
     app.querySelector('#mode-btn')?.focus();
   }
@@ -304,6 +310,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // ── Settings with mode-switch callback ──────────────────────
   renderSettingsBlock(app.querySelector('#new-os-settings-block'), {
     modeManager,
+    eventBus,
     onChange: async ({ key }) => {
       // Settings that require live re-rendering
     },

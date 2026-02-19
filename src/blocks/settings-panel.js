@@ -14,12 +14,33 @@ function getPresets() {
   return ACCENT_COLORS.filter((c) => ACCENT_PRESETS.includes(c.id));
 }
 
+const MODE_STORAGE_KEY = 'boris_mode';
+const VALID_MODES = ['BPV', 'School', 'Personal'];
+
+function getLocalModeManager() {
+  return {
+    getMode() {
+      try {
+        const saved = localStorage.getItem(MODE_STORAGE_KEY);
+        return VALID_MODES.includes(saved) ? saved : 'BPV';
+      } catch { return 'BPV'; }
+    },
+    setMode(mode) {
+      if (!VALID_MODES.includes(mode)) return;
+      try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch { /* ignore */ }
+    },
+  };
+}
+
 export async function renderSettingsBlock(container, { modeManager, eventBus, onChange } = {}) {
+  // Fallback: if no modeManager provided (legacy path), use localStorage directly
+  if (!modeManager) modeManager = getLocalModeManager();
+
   const theme = (await getSetting('theme')) || 'system';
   const accentId = (await getSetting('accentColor')) || 'blue';
   const compact = (await getSetting('compact')) || false;
   const accents = getPresets();
-  const currentMode = modeManager?.getMode?.() || 'BPV';
+  const currentMode = modeManager.getMode();
 
   container.innerHTML = `
     <section class="settings-block card">
@@ -101,7 +122,7 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
   container.querySelectorAll('.settings-mode-pill').forEach((pill) => {
     pill.addEventListener('click', () => {
       const mode = pill.dataset.mode;
-      if (!mode || !modeManager) return;
+      if (!mode) return;
       updateModePills(mode);
       modeManager.setMode(mode);
       onChange?.({ key: 'mode', value: mode });

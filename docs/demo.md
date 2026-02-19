@@ -671,3 +671,77 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 - [ ] Todo check/uncheck works, counter updates
 - [ ] Delete button appears on hover, removes todo
 - [ ] All 274 tests pass (`npm test`)
+
+---
+
+---
+
+# Visual System & Easter Egg — Demo Script
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. BORIS OS is active (default)
+
+---
+
+## V1. Card Hover Shadow
+
+1. Go to the **Vandaag** tab
+2. Hover over any block card (outcomes, todos, notes)
+3. A subtle shadow should appear on hover
+
+**Expected:** Cards have smooth shadow transition on hover. No shadow at rest.
+
+---
+
+## V2. No Hardcoded Colors in Dark Mode
+
+1. Go to Settings → switch theme to Dark
+2. Navigate through all tabs
+3. Check: no white text on white backgrounds, no `#fff` flashes
+4. All pill badges, check circles, and delete buttons use proper dark mode colors
+
+**Expected:** Full dark mode support everywhere. Colored elements use CSS variables.
+
+---
+
+## V3. Pill Badges Use var(--radius-full)
+
+1. Look at mode pills, urgency badges, habit chips, sent badges
+2. All should have consistent fully-rounded corners
+3. No visual differences between different pill types
+
+**Expected:** Consistent pill radius across all components.
+
+---
+
+## V4. Balatro Easter Egg
+
+1. From any page, type `balatro` on your keyboard (no input field focused needed)
+2. A full-page overlay appears with:
+   - Dark purple/blue swirl background (rotating)
+   - Faint CRT scanlines
+   - 5 playing cards with spring animation entrance
+   - Floating purple particles
+   - "BALATRO" title pulsing at the bottom
+3. Hover over cards — they lift and tilt
+4. Click anywhere or press **Escape** to dismiss
+5. Overlay fades out smoothly
+
+**Expected:** Smooth entrance, interactive cards, clean dismiss.
+
+---
+
+## Visual System Verification Checklist
+
+- [ ] `.os-mini-card` padding matches legacy BPV (20px)
+- [ ] Cards have hover shadow effect
+- [ ] No `999px` values in any block CSS (all use `var(--radius-full)`)
+- [ ] No hardcoded `#fff` in block CSS
+- [ ] No hardcoded `#ef4444` or `#f59e0b` in block CSS
+- [ ] Dark mode renders correctly across all blocks
+- [ ] Balatro easter egg triggers on typing "balatro"
+- [ ] Balatro dismisses on click or Escape
+- [ ] All tests pass (`npm test`)

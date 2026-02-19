@@ -17,7 +17,7 @@
 }
 
 .daily-reflection__counter--near {
-  color: var(--color-amber, #f59e0b);
+  color: var(--color-warning);
 }
 
 .daily-reflection__input {

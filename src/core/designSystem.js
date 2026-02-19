@@ -34,11 +34,9 @@ export function applyDesignTokens(root = document.documentElement) {
   root.style.setProperty('--font-sans', designTokens.typography.fontSans);
   root.style.setProperty('--font-size-base', designTokens.typography.fontSizeBase);
 
-  root.style.setProperty('--color-bg', designTokens.color.background);
-  root.style.setProperty('--color-surface', designTokens.color.surface);
-  root.style.setProperty('--color-text', designTokens.color.text);
-  root.style.setProperty('--color-border', designTokens.color.border);
-  root.style.setProperty('--color-border-light', designTokens.color.divider);
+  // NOTE: Color variables are intentionally NOT set here as inline styles.
+  // Inline styles override CSS attribute selectors like [data-theme="dark"],
+  // which would permanently break theme switching. Colors live in variables.css.
 
   root.style.setProperty('--space-1', designTokens.spacing.xs);
   root.style.setProperty('--space-2', designTokens.spacing.sm);

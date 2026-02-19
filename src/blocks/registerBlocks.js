@@ -6,6 +6,7 @@ import './bpv-log-summary/styles.css';
 import './daily-outcomes/styles.css';
 import './daily-reflection/styles.css';
 import './schedule-placeholder/styles.css';
+import './projects/styles.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
@@ -25,11 +26,13 @@ import { registerBPVLogSummaryBlock } from './bpv-log-summary/index.js';
 import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
 import { registerDailyReflectionBlock } from './daily-reflection/index.js';
 import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
+import { registerProjectsBlock } from './projects/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Today page MVP blocks
   registerDailyOutcomesBlock(registry);
   registerInboxBlock(registry);
+  registerProjectsBlock(registry);
   registerTasksBlock(registry);
   registerSchedulePlaceholderBlock(registry);
   registerBPVLogSummaryBlock(registry);

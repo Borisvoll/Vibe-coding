@@ -22,10 +22,46 @@
   font-weight: 600;
 }
 
+/* Segmented control — smooth mode switching */
 .os-mode-switch {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
+  display: inline-flex;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+}
+
+.os-mode-switch .btn {
+  border: none;
+  border-radius: calc(var(--radius-md) - 2px);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  box-shadow: none;
+  transition: background var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+
+.os-mode-switch .btn:hover:not(.btn-primary) {
+  background: var(--color-surface);
+  color: var(--color-text);
+  transform: none;
+}
+
+.os-mode-switch .btn.btn-primary {
+  background: var(--color-surface);
+  color: var(--color-accent);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm), 0 0 0 1px var(--color-border-light);
+  transform: none;
+}
+
+.os-mode-switch .btn.btn-primary:hover {
+  background: var(--color-surface);
+  transform: none;
+  box-shadow: var(--shadow-sm), 0 0 0 1px var(--color-border-light);
 }
 
 .os-nav {

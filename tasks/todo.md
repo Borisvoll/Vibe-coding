@@ -241,6 +241,52 @@
 
 ---
 
+## Projects Sprint + Deployment
+
+### Deployment
+- [x] Create `netlify.toml` — build command (`vite build --base=/`), publish dir, SPA redirect
+
+### Mode Switcher
+- [x] Restyle `.os-mode-switch` as a segmented control (inline-flex container, floating pill on active)
+
+### Projects (DB v6)
+- [x] Bump `DB_VERSION` to 6, add `os_projects` store (mode, status, updated_at indexes)
+- [x] Update `clearAllData` and `exportAllData` to include `os_projects`
+- [x] Create `src/stores/projects.js` — CRUD + `setNextAction` (one-next-action enforcement)
+- [x] Create `src/blocks/projects/` (index, view, styles) — list + progressive disclosure detail
+- [x] Projects block: status filter by mode, sorted active→paused→done
+- [x] Project detail: goal, current next action, "set next action" form, status buttons
+- [x] One-next-action rule: `setNextAction(projectId, taskId)` always replaces previous
+- [x] Register `projects` block in `registerBlocks.js` (order 12, between inbox and tasks)
+- [x] Update `schema.test.js` — expect version 6, 29 stores
+- [x] Create `tests/stores/projects.test.js` — 18 tests covering CRUD + one-next-action rule
+- [x] Update `docs/architecture.md` — DB v6, Module 6 includes projects
+- [x] All 119 tests green, build clean
+
+---
+
+### Review Notes — Projects Sprint
+
+**What was built:**
+- `os_projects` IndexedDB store (DB v6, 29 stores total)
+- `src/stores/projects.js`: addProject, getProjects, getActiveProjects, updateProject, setNextAction, clearNextAction, deleteProject
+- One-next-action rule: `setNextAction(projectId, taskId)` always overwrites `nextActionId` on the project record — impossible to have two next actions for one project
+- Projects block at order 12 (between Inbox and Tasks on Today page)
+- Progressive disclosure: click project row → expands detail (goal + current next action + set-action form + status controls)
+- Mode-aware: shows projects matching current mode (or mode=null) sorted active→paused→done
+- 18 new tests — all passing (119 total)
+- Smooth segmented-control mode switcher (pill highlights active mode with subtle shadow)
+- `netlify.toml` ready for `netlify deploy --prod` (needs `netlify login` first)
+
+**One-next-action constraint design:**
+- Enforced at store level, not UI — `setNextAction` is the only write path
+- Project record has single `nextActionId` field (string | null)
+- Setting a new next action always clears the old one atomically
+- Clearing is explicit: `clearNextAction(projectId)` sets to null
+- Tests verify: initial null, set first, replace second, independent per project
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

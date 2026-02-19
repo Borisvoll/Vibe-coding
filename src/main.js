@@ -20,7 +20,7 @@ import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
 import { createOSShell } from './os/shell.js';
 
-export const SCHEMA_VERSION = 5;
+export const SCHEMA_VERSION = 6;
 
 export const modules = [
   { id: 'dashboard',        label: 'Dashboard',         icon: 'dashboard',        route: '',                page: () => import('./pages/dashboard.js') },

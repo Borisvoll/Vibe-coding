@@ -120,11 +120,14 @@ export function renderInboxScreen(container, context) {
   }
 
   function updateNavBadge(count) {
-    const badge = document.getElementById('inbox-badge');
-    if (badge) {
-      badge.textContent = count;
-      badge.hidden = count === 0;
-    }
+    // Update both mobile nav badge and sidebar badge
+    ['inbox-badge', 'sidebar-inbox-badge'].forEach((id) => {
+      const badge = document.getElementById(id);
+      if (badge) {
+        badge.textContent = count;
+        badge.hidden = count === 0;
+      }
+    });
   }
 
   // --- Processing Panel ---

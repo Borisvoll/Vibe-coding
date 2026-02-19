@@ -7,9 +7,9 @@ import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } fro
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
 
 const MODE_OPTIONS = [
-  { key: 'School',   label: 'School',      emoji: '📚', color: 'var(--color-purple)' },
-  { key: 'Personal', label: 'Persoonlijk', emoji: '🌱', color: 'var(--color-emerald)' },
-  { key: 'BPV',      label: 'BPV',         emoji: '🏢', color: 'var(--color-blue)' },
+  { key: 'School',   label: 'School',      emoji: '📚', color: 'var(--color-purple)',  colorLight: 'var(--color-purple-light)' },
+  { key: 'Personal', label: 'Persoonlijk', emoji: '🌱', color: 'var(--color-emerald)', colorLight: 'var(--color-emerald-light)' },
+  { key: 'BPV',      label: 'BPV',         emoji: '🏢', color: 'var(--color-blue)',    colorLight: 'var(--color-blue-light)' },
 ];
 
 function getPresets() {
@@ -53,7 +53,7 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         </div>
         <div class="settings-mode-group" data-setting="mode">
           ${MODE_OPTIONS.map((m) => `
-            <button type="button" class="settings-mode-pill ${m.key === currentMode ? 'settings-mode-pill--active' : ''}" data-mode="${m.key}">
+            <button type="button" class="settings-mode-pill ${m.key === currentMode ? 'settings-mode-pill--active' : ''}" data-mode="${m.key}" style="--pill-color:${m.color};--pill-color-light:${m.colorLight}">
               <span class="settings-mode-pill__dot" style="background:${m.color}"></span>
               ${m.emoji} ${m.label}
             </button>

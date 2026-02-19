@@ -611,3 +611,233 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 - [ ] Responsive: 2-col desktop, 1-col mobile
 - [ ] Dark mode fully supported
 - [ ] All 244 tests pass (`npm test`)
+
+---
+
+## Daily Page — Mode-Aware Verification
+
+### Daily Todos — Mode Isolation
+
+1. Switch to **School** mode (mode picker in header)
+2. Go to **Vandaag** tab
+3. Find the **Taken 📚** card
+4. Add a todo: type `Wiskunde opgave 3` and press Enter
+5. Verify it appears in the list with an unchecked circle (purple accent)
+6. Check the box — verify item shows strikethrough and counter updates (e.g. `1/1`)
+
+**Expected:** Todo saved, done state persists on page reload.
+
+---
+
+### Daily Todos — Mode Isolation Check
+
+1. Still on **Vandaag** tab with School todo visible
+2. Switch to **Persoonlijk** mode
+3. **Expected:** Taken card is now empty (Personal has its own todo list)
+4. Add a todo: `Sporten`
+5. Switch back to **School** mode
+6. **Expected:** `Wiskunde opgave 3` is back — School list was preserved
+
+---
+
+### Top 3 Outcomes — Mode-Aware
+
+1. In **School** mode, find the **Top 3 vandaag 📚** card
+2. Type `Wiskunde hfst 4 afronden` in slot 1 — tab or click away (auto-saves)
+3. Switch to **Persoonlijk** mode
+4. **Expected:** Slot 1 is empty (Personal has its own outcomes)
+5. Type `30 min mediteren` in slot 1 for Personal
+6. Switch back to School — `Wiskunde hfst 4 afronden` is still there
+
+---
+
+### Notes — Mode-Aware
+
+1. In **School** mode, find the **Notitie** card
+2. Type a short note — auto-saves after 500ms
+3. Verify character counter shows e.g. `24/500`
+4. Switch to **Persoonlijk** — note field is empty (separate per mode)
+5. At 425+ characters: counter turns amber (approaching limit)
+
+---
+
+### Acceptance Checklist
+
+- [ ] School todos are invisible in Personal mode and vice versa
+- [ ] BPV todos are invisible in School/Personal
+- [ ] Outcomes persist per mode+date independently
+- [ ] Notes auto-save (no save button needed)
+- [ ] Notes capped at 500 characters (counter shows, textarea enforces)
+- [ ] Todo check/uncheck works, counter updates
+- [ ] Delete button appears on hover, removes todo
+- [ ] All 274 tests pass (`npm test`)
+
+---
+
+---
+
+# Visual System & Easter Egg — Demo Script
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. BORIS OS is active (default)
+
+---
+
+## V1. Card Hover Shadow
+
+1. Go to the **Vandaag** tab
+2. Hover over any block card (outcomes, todos, notes)
+3. A subtle shadow should appear on hover
+
+**Expected:** Cards have smooth shadow transition on hover. No shadow at rest.
+
+---
+
+## V2. No Hardcoded Colors in Dark Mode
+
+1. Go to Settings → switch theme to Dark
+2. Navigate through all tabs
+3. Check: no white text on white backgrounds, no `#fff` flashes
+4. All pill badges, check circles, and delete buttons use proper dark mode colors
+
+**Expected:** Full dark mode support everywhere. Colored elements use CSS variables.
+
+---
+
+## V3. Pill Badges Use var(--radius-full)
+
+1. Look at mode pills, urgency badges, habit chips, sent badges
+2. All should have consistent fully-rounded corners
+3. No visual differences between different pill types
+
+**Expected:** Consistent pill radius across all components.
+
+---
+
+## V4. Balatro Easter Egg
+
+1. From any page, type `balatro` on your keyboard (no input field focused needed)
+2. A full-page overlay appears with:
+   - Dark purple/blue swirl background (rotating)
+   - Faint CRT scanlines
+   - 5 playing cards with spring animation entrance
+   - Floating purple particles
+   - "BALATRO" title pulsing at the bottom
+3. Hover over cards — they lift and tilt
+4. Click anywhere or press **Escape** to dismiss
+5. Overlay fades out smoothly
+
+**Expected:** Smooth entrance, interactive cards, clean dismiss.
+
+---
+
+## Visual System Verification Checklist
+
+- [ ] `.os-mini-card` padding matches legacy BPV (20px)
+- [ ] Cards have hover shadow effect
+- [ ] No `999px` values in any block CSS (all use `var(--radius-full)`)
+- [ ] No hardcoded `#fff` in block CSS
+- [ ] No hardcoded `#ef4444` or `#f59e0b` in block CSS
+- [ ] Dark mode renders correctly across all blocks
+- [ ] Balatro easter egg triggers on typing "balatro"
+- [ ] Balatro dismisses on click or Escape
+- [ ] All tests pass (`npm test`)
+
+---
+
+---
+
+# Stable OS Sidebar — Demo Script
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser at desktop width (≥768px)
+3. BORIS OS is active (default)
+
+---
+
+## S1. Sidebar Visibility
+
+1. Open the app at ≥768px width
+2. A **vertical sidebar** should appear on the left (200px wide)
+3. Items: Dashboard (home icon), Vandaag (sun), Inbox (inbox), Planning (calendar), divider, Instellingen (gear), Legacy
+
+**Expected:** Sidebar is visible with all 6 items + divider. Mobile header/tabs are hidden.
+
+---
+
+## S2. Sidebar Navigation
+
+1. Click each sidebar item in sequence: Dashboard → Vandaag → Inbox → Planning → Instellingen
+2. The active item gets a **4px mode-colored left accent bar**
+3. The content area switches to match
+
+**Expected:** Same behavior as old tab navigation. Active item is highlighted with mode color.
+
+---
+
+## S3. Mode Switch Does NOT Change Sidebar
+
+1. Open the mode picker (click mode pill at bottom of sidebar)
+2. Switch from School → Personal → BPV
+3. Observe the sidebar
+
+**Expected:** Sidebar items remain identical. Only the accent color changes. No items appear or disappear.
+
+---
+
+## S4. Dashboard Breadcrumb
+
+1. Click Vandaag in the sidebar
+2. A subtle "← Dashboard" link appears above the section title
+3. Click it
+
+**Expected:** Returns to Dashboard tab. The link is hidden on the Dashboard tab itself.
+
+---
+
+## S5. Mobile Fallback
+
+1. Resize the browser to <768px (mobile width)
+2. The sidebar disappears
+3. A horizontal tab bar appears at the top
+
+**Expected:** Full mobile navigation works. Same tabs, same mode pill in the header.
+
+---
+
+## S6. Inbox Badge on Sidebar
+
+1. Add items to inbox
+2. Check the sidebar Inbox item
+
+**Expected:** Badge count appears next to "Inbox" in the sidebar (and in mobile nav).
+
+---
+
+## S7. Settings Width
+
+1. Click Instellingen in the sidebar
+2. The settings content should be centered with max-width 640px
+
+**Expected:** Settings rows are not stretched to full width on wide screens. Mode pills show their own mode color when active (purple for School, emerald for Personal, blue for BPV).
+
+---
+
+## Sidebar Verification Checklist
+
+- [ ] Desktop: sidebar visible with 6 items (Dashboard, Vandaag, Inbox, Planning, divider, Instellingen)
+- [ ] Mobile (<768px): horizontal tabs, no sidebar
+- [ ] Sidebar items are STABLE — mode switch does NOT change them
+- [ ] Active item has 4px mode-colored left accent bar
+- [ ] "← Dashboard" breadcrumb on non-dashboard tabs
+- [ ] Inbox badge updates in sidebar
+- [ ] Settings page centered (max-width 640px)
+- [ ] Settings mode pills use their own mode color
+- [ ] Card top border is 4px (prominent accent)
+- [ ] Mode hero banner has 4px left border
+- [ ] All tests pass (`npm test`)

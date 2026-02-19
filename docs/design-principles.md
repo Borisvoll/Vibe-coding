@@ -47,6 +47,25 @@ The Main Dashboard is a cross-mode synopsis — colorful but clean, following Ra
 7. **Responsive grid** — 1 column on mobile, 2 columns at `min-width: 600px`. Use `gap: var(--space-3)`.
 8. **Event-driven refresh** — Widgets refresh on `mode:changed`, `tasks:changed`, `inbox:changed`, `projects:changed`, `bpv:changed`. All subscriptions cleaned up on `unmount()`.
 
+## Unified Card Language
+
+All OS blocks share a common visual language through the `src/ui/` token layer:
+
+1. **Token indirection** — Block CSS uses `--ui-*` semantic tokens (from `tokens.css`), never raw `--color-*` values for surfaces, borders, and text. This allows future theme changes in one place.
+2. **Card consistency** — The `.os-mini-card` and `.ui-card` classes share the same padding (`--ui-card-padding` = 20px), radius (`--ui-card-radius` = 12px), and hover shadow (`--ui-card-shadow`). This matches the legacy BPV dashboard feel.
+3. **No hardcoded values** — Never use `999px`, `#fff`, `#ef4444`, or any raw hex in block CSS. Use `var(--radius-full)`, `var(--color-accent-text)`, `var(--color-error)` etc. See `docs/ui-guidelines.md` for the full mapping.
+4. **Mode-aware accents** — `--ui-accent` inherits from `--mode-accent` (set by `data-mode` on the shell root). Blocks get the correct mode color automatically.
+5. **Typography hierarchy** — Use `.ui-stat` (2rem/800) for headline numbers, `.ui-label` (0.8125rem/600/uppercase) for section headers, `.ui-meta` (0.75rem) for secondary info, `.ui-caption` (0.6875rem) for hints.
+
+## Stable Navigation
+
+1. **Mode-independent sidebar** — Navigation items (Dashboard, Vandaag, Inbox, Planning, Instellingen) are fixed. They never appear/disappear based on mode. Mode changes *content*, not *structure* (Rams: stable patterns, no noise).
+2. **Dashboard as Home** — Dashboard is always the first sidebar item and reachable from every tab via a subtle "← Dashboard" breadcrumb (Jobs: obvious home path).
+3. **Active indicator follows mode** — The 4px left accent bar on the active sidebar item uses `--mode-accent`, so it changes color with mode but not position (Ive: calm, premium).
+4. **BPV is a mode, not a destination** — BPV has no sidebar item. BPV content appears via mode-filtered blocks and dashboard deep links.
+
+See `docs/nav-architecture.md` for full implementation details.
+
 ## Block Design Rules
 
 1. Each block is self-contained (own index.js, view.js, store.js, styles.css).

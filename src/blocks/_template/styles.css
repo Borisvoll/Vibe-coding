@@ -1,8 +1,8 @@
 .os-block-template {
-  border: 1px solid #d1d5db;
-  border-radius: 12px;
-  padding: 12px;
-  background: #fff;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-card-radius);
+  padding: var(--ui-card-padding);
+  background: var(--ui-surface);
 }
 
 .os-block-template__title {
@@ -13,5 +13,5 @@
 .os-block-template__text,
 .os-block-template__meta {
   margin: 0;
-  color: #4b5563;
+  color: var(--ui-text-muted);
 }

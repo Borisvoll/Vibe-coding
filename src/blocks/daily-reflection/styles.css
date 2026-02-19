@@ -1,16 +1,27 @@
+.daily-reflection__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
 .daily-reflection__title {
-  margin: 0 0 var(--space-2);
+  margin: 0;
   font-size: 0.9375rem;
   font-weight: 600;
+}
+
+.daily-reflection__counter {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+}
+
+.daily-reflection__counter--near {
+  color: var(--color-warning);
 }
 
 .daily-reflection__input {
   width: 100%;
   font-size: 0.875rem;
   resize: vertical;
-  margin-bottom: var(--space-2);
-}
-
-.daily-reflection__save {
-  float: right;
 }

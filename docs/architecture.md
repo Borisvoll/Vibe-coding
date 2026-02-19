@@ -14,7 +14,7 @@ BORIS is a Personal OS / Second Brain. This document defines its **kernel + modu
 │  ┌───────────────────── KERNEL ──────────────────────────────┐  │
 │  │  EventBus · ModeManager · BlockRegistry · FeatureFlags    │  │
 │  │  DesignSystem · MigrationManager · ModeCaps · Router      │  │
-│  │  DB (IndexedDB v6) · applyUserSettings()                  │  │
+│  │  DB (IndexedDB v7) · applyUserSettings()                  │  │
 │  └──────────────────────────┬────────────────────────────────┘  │
 │                             │                                   │
 │  ┌──── MODULES (domain boundaries) ─────────────────────────┐  │
@@ -85,15 +85,48 @@ Internship (BPV) time tracking, daily logging, competency assessment, and goal m
 
 ### Module 2: Planning & Daily
 
-Daily top-3 tasks, weekly reviews, energy tracking, focus timer.
+Daily entries (top-3 outcomes + todos + notes), weekly reviews, energy tracking.
 
 | Aspect | Details |
 |--------|---------|
-| **Stores** | `dailyPlans`, `weekReviews`, `energy` |
+| **Stores** | `dailyPlans` (v7, mode-aware), `weekReviews`, `energy` |
+| **Store adapters** | `src/stores/daily.js`, `src/stores/weekly-review.js` |
+| **Aggregators** | `src/os/dailyAggregator.js` — `getDailySummary`, `getWeeklySummary`, `getMonthlySummary` |
 | **Pages** | planning, today, dashboard |
-| **Blocks** | `personal-energy`, `personal-week-planning`, `personal-weekly-reflection` |
-| **Mode** | All (mode-filtered via blocks) |
-| **Events emitted** | `plan:changed`, `energy:changed` |
+| **Blocks** | `daily-outcomes`, `daily-todos`, `daily-reflection`, `personal-energy`, `personal-week-planning`, `personal-weekly-reflection` |
+| **Mode** | All — **each mode has its own daily entry per date** |
+| **Events emitted** | `daily:changed { mode, date }` |
+
+#### Daily Entries — Source of Truth
+
+`dailyPlans` is the **single source of truth** for daily/weekly/monthly goal tracking.
+
+**Entity schema (v7):**
+```js
+{
+  id:        '2026-02-19__School',  // composite key: date__mode
+  date:      '2026-02-19',
+  mode:      'School' | 'Personal' | 'BPV',
+  outcomes:  string[3],             // top-3 goal statements (always 3 slots)
+  todos:     [{ id, text, done, createdAt, doneAt }],
+  notes:     string,                // max 500 chars
+  updatedAt: ISO string,
+}
+```
+
+**Design decisions:**
+- `date` index is **non-unique** (v7) to allow all 3 modes to have an entry per date
+- Composite id `${date}__${mode}` makes lookups O(1) via `getByKey`
+- `daily:changed { mode, date }` lets blocks filter updates by mode (no spurious re-renders)
+- Aggregators in `dailyAggregator.js` are pure functions — no side effects, stable zero shapes
+
+**Data flow (source → dashboard):**
+```
+dailyPlans (mode, date)
+  → getDailySummary(mode, date)   → today widget on Dashboard
+  → getWeeklySummary(mode, week)  → week focus widget
+  → getMonthlySummary(mode, month)→ future month theme view
+```
 
 ### Module 3: Knowledge Management
 

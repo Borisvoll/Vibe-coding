@@ -7,6 +7,7 @@ import './bpv-quick-log/styles.css';
 import './bpv-weekly-overview/styles.css';
 import './school-dashboard/styles.css';
 import './personal-dashboard/styles.css';
+import './weekly-review/styles.css';
 import './daily-outcomes/styles.css';
 import './daily-reflection/styles.css';
 import './schedule-placeholder/styles.css';
@@ -35,6 +36,7 @@ import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
 import { registerDailyReflectionBlock } from './daily-reflection/index.js';
 import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
 import { registerProjectsBlock } from './projects/index.js';
+import { registerWeeklyReviewBlock } from './weekly-review/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Today page MVP blocks
@@ -67,6 +69,9 @@ export function registerDefaultBlocks(registry) {
   registerPersonalEnergyBlock(registry);
   registerPersonalWeeklyReflectionBlock(registry);
   registerPersonalWeekPlanningBlock(registry);
+
+  // Weekly review (all modes)
+  registerWeeklyReviewBlock(registry);
 
   // Inbox screen (full-page processing)
   registerInboxScreenBlock(registry);

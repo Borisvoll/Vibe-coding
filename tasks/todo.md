@@ -464,6 +464,77 @@
 
 ---
 
+## Weekly Review Email Sprint
+
+### Data Aggregation (`src/stores/weekly-review.js`)
+- [x] `aggregateWeeklyReview(weekStr)` — aggregates from os_tasks, hours/bpv, os_personal_wellbeing, os_inbox, os_projects
+- [x] Completed tasks (done this week, sorted by doneAt)
+- [x] BPV hours (formattedTotal, percentComplete, progress bar data)
+- [x] Gratitude, reflections, journal notes from personal wellbeing entries
+- [x] Habits summary (water/movement/focus completion rates)
+- [x] Active projects + processed inbox count
+- [x] Rotating weekly prompts — emotionally-aware reflection questions
+- [x] `isReviewSent(week)` / `markReviewSent(week)` — prevent duplicate sends
+- [x] `isFriday()` helper for prompt timing
+
+### Netlify Serverless Function (`netlify/functions/send-weekly-review.mjs`)
+- [x] POST endpoint: receives aggregated data, sends HTML email via Resend API
+- [x] Environment variables only (RESEND_API_KEY, RECIPIENT_EMAIL, SITE_URL) — zero personal info in client code
+- [x] Beautiful HTML email: dashboard stats, BPV progress bar, task list, gratitude/reflections, habits, projects, emotional prompt, CTA button
+- [x] Dieter Rams inspired: clean typography, lots of white space, minimal color
+- [x] "Even stilstaan" section with rotating emotionally-aware prompt
+
+### Weekly Review UI Block (`weekly-review`, order 90, all modes, today-sections)
+- [x] `src/blocks/weekly-review/` (index.js, view.js, styles.css)
+- [x] Dashboard preview: stats row (tasks/hours/verwerkt), BPV bar, task list, habits, gratitude, reflections, journal, projects
+- [x] "Even stilstaan" prompt section
+- [x] "Verstuur naar email" button (POST to serverless function)
+- [x] Sent badge when already sent this week
+- [x] Reacts to `tasks:changed`, `bpv:changed` events
+
+### Friday Prompt
+- [x] Shell checks `isFriday()` on load
+- [x] If not yet sent this week, shows gentle banner: "Het is vrijdag — tijd voor je weekoverzicht?"
+- [x] "Bekijk" scrolls to weekly review block, "×" dismisses
+
+### Configuration
+- [x] `netlify.toml` updated: functions directory, redirect rules
+
+### Testing
+- [x] Create `tests/stores/weekly-review.test.js` — 15 tests covering:
+  - aggregateWeeklyReview: empty shape, completed tasks, open tasks, BPV hours, gratitude, reflections, journal, processed inbox, habits
+  - getWeeklyPrompt: returns string, different per week
+  - isReviewSent / markReviewSent: false by default, true after mark, independent weeks
+  - isFriday: returns boolean
+- [x] All 182 tests green
+
+---
+
+### Review Notes — Weekly Review Email Sprint
+
+**Architecture:**
+- Client aggregates all week data from IndexedDB → POST to `/.netlify/functions/send-weekly-review`
+- Serverless function formats HTML email and sends via Resend API (`https://api.resend.com/emails`)
+- Email address stored ONLY in Netlify env var `RECIPIENT_EMAIL` — never in client code
+- Resend API key in `RESEND_API_KEY` env var
+- Site URL in `SITE_URL` env var (for email CTA button)
+
+**Setup instructions:**
+1. Deploy to Netlify (connect repo → auto-builds)
+2. In Netlify dashboard → Site settings → Environment variables, add:
+   - `RESEND_API_KEY` — get from resend.com (free: 100 emails/day)
+   - `RECIPIENT_EMAIL` — borisvoll@hotmail.com
+   - `SITE_URL` — your Netlify URL (e.g. https://boris-os.netlify.app)
+3. Done. Open app on Friday → see prompt → click "Verstuur"
+
+**Emotional wellness design:**
+- 8 rotating weekly prompts that encourage feeling over doing
+- "Even stilstaan" section in both email and preview with warm, non-prescriptive language
+- Gratitude section elevated to encourage daily practice
+- Closing note: "Elke emotie — ook de lastige — is informatie over wat belangrijk voor je is"
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

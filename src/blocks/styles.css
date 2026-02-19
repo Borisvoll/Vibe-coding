@@ -61,6 +61,12 @@
   gap: var(--space-2);
 }
 
+.os-shell__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
 .os-shell__title {
   margin: 0;
   font-size: 1rem;
@@ -114,6 +120,49 @@
 .os-mode-btn:hover .os-mode-btn__chevron {
   opacity: 0.8;
   transform: translateY(1px);
+}
+
+/* ── Settings gear button ─────────────────────────────────── */
+.os-settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 200ms var(--ease),
+              border-color 200ms var(--ease),
+              background 200ms var(--ease),
+              transform 200ms var(--ease);
+}
+
+.os-settings-btn:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-secondary);
+  background: var(--color-surface-hover);
+}
+
+.os-settings-btn--active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
+.os-settings-btn--active:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.os-settings-btn svg {
+  transition: transform 400ms var(--ease);
+}
+
+.os-settings-btn:hover svg {
+  transform: rotate(30deg);
 }
 
 /* ── Mode picker overlay ───────────────────────────────────── */

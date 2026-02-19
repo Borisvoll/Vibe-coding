@@ -57,3 +57,9 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** Two test files (`tests/stores/daily.test.js` and `tests/stores/daily-outcomes.test.js`) used the old `getDailyEntry(date)` and `saveDailyEntry({ date, tasks })` signatures. Changing the store's public API to require `mode` broke 15 existing tests.
 
 **Prevention:** Before changing any exported function's signature, `grep` all test files for the function name. Update all call sites in tests before running the suite. Consider backwards-compatible overloads only when migration cost is high.
+
+## 10. Never hardcode colors or magic numbers in block CSS (2026-02-19)
+
+**Issue:** 16 instances of `999px` border-radius, 4 instances of `#fff`, and several hardcoded hex colors (`#ef4444`, `#f59e0b`, `#d1d5db`) were found across block CSS files. These break dark mode and prevent theme customization.
+
+**Prevention:** Always use CSS variables from `variables.css` or `tokens.css`. Use `var(--radius-full)` not `999px`, `var(--color-accent-text)` not `#fff`, `var(--color-error)` not `#ef4444`. Run `grep -r "999px\|#fff\|#ef4444" src/blocks/` before shipping.

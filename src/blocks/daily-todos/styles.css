@@ -81,7 +81,7 @@
 
 .daily-todos__item--done .daily-todos__check {
   background: var(--todo-color, var(--color-accent));
-  color: #fff;
+  color: var(--color-accent-text);
 }
 
 .daily-todos__text {
@@ -118,5 +118,5 @@
 }
 
 .daily-todos__delete:hover {
-  color: var(--color-danger, #ef4444);
+  color: var(--color-error);
 }

@@ -639,6 +639,126 @@
 
 ---
 
+---
+
+## Quality Operator Audit + Polish Pass (2026-02-19)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Workflow: Plan Mode → Approval → Implement → Verify
+
+### Before (Baseline)
+
+| Metric | Value |
+|--------|-------|
+| Tests | **219 passed**, 0 failed (17 files) |
+| Build | **Clean** ✓ (1 pre-existing warning: db.js dynamic/static import mix) |
+| JS Errors | 0 |
+| TODOs/FIXMEs | 0 |
+
+---
+
+### Audit Findings Summary
+
+**Inconsistencies inventoried (from deep file audit):**
+
+1. **`src/styles/base.css`** — No global `:focus-visible` outline. Keyboard users get no visible focus rings on nav buttons, mode picker cards, action buttons.
+2. **`src/blocks/styles.css`** (shared hub) — ~8 hardcoded `px` values that bypass spacing scale: `gap: 7px`, `padding: 5px 12px 5px 9px`, `margin: 0 0 2px`, `width: 22px; height: 22px`, badge dimensions.
+3. **`src/blocks/inbox/styles.css`** — `.inbox-block__item` has no `:hover` state. Makes inbox list feel dead.
+4. **`docs/current-state.md`** — Stale: says "IndexedDB v5 / 28 stores". Reality: v6 / 29 stores, 219 tests, 3 additional devDeps (vitest, fake-indexeddb, netlify-cli).
+5. **Empty state microcopy** — Tasks block: "Nog geen taken voor vandaag" — functional but passive. Could be warmer/actionable (Rams: strong defaults). Projects, inbox empty states similar.
+6. **`src/os/shell.js`** mode picker — mode cards have no `:focus-visible` ring. Keyboard navigation works (focus trap present) but ring invisible.
+7. **`blocks/styles.css` `.os-badge`** — min-width/height hardcoded as px, not consistent with size scale.
+8. **`src/blocks/tasks/styles.css`** — `.tasks-block__input` has no `:focus` state beyond browser default chrome.
+
+**Not found / No action needed:**
+- Hardcoded hex colors in JS files → ✅ None (all use CSS variables)
+- Event listener leaks → ✅ Cleanup patterns consistent
+- Duplicate utility functions → ✅ Centralized in utils.js
+- TODO/FIXME/HACK markers → ✅ None
+
+---
+
+### Top 10 QoL Opportunities (→ docs/qol.md)
+
+| # | Opportunity | Impact | Effort | Status |
+|---|-------------|--------|--------|--------|
+| 1 | Global `:focus-visible` outline in `base.css` | High | Low | Plan |
+| 2 | Inbox item hover state | High | Low | Plan |
+| 3 | `blocks/styles.css` spacing normalization | Medium | Low | Plan |
+| 4 | Mode picker card focus ring | Medium | Low | Plan |
+| 5 | Task input `:focus` styling | Medium | Low | Plan |
+| 6 | Empty state microcopy improvements | Medium | Low | Plan |
+| 7 | Update `docs/current-state.md` (stale v5 refs) | Low | Low | Plan |
+| 8 | `docs/qol.md` — QoL opportunity register | Low | Low | Plan |
+| 9 | `docs/design-polish.md` — Rams/Ive/Jobs reflection | Low | Low | Plan |
+| 10 | `docs/demo.md` — validate existing demo checklist | Low | Low | Plan |
+
+---
+
+### Acceptance Criteria
+
+- [ ] All 219 tests still green (no regressions)
+- [ ] Build still clean
+- [ ] `:focus-visible` visible on all interactive elements in BORIS OS
+- [ ] Inbox items show hover state
+- [ ] `blocks/styles.css` spacing more consistent (px → CSS vars where trivial)
+- [ ] Empty state messages warmer and more actionable (Dutch)
+- [ ] `docs/current-state.md` accurate (v6, 219 tests, correct devDeps)
+- [ ] `docs/qol.md` written with top 10 table
+- [ ] `docs/design-polish.md` written (Rams/Ive/Jobs reflection)
+- [ ] Changes minimal + elegant (no over-engineering)
+
+---
+
+### Phase 0 — Docs Audit
+
+- [ ] Update `docs/current-state.md` — fix v5→v6, 28→29 stores, test count, devDeps
+- [ ] Create `docs/qol.md` — top 10 QoL opportunities register with impact/effort
+- [ ] Verify `docs/demo.md` still accurate (12 steps)
+
+### Phase 1 — CSS Polish (High Impact, Zero Risk)
+
+- [ ] `src/styles/base.css` — Add global `:focus-visible` outline rule (2px solid accent, 2px offset)
+- [ ] `src/blocks/styles.css` — Normalize hardcoded px values → CSS variable equivalents where trivial
+- [ ] `src/blocks/inbox/styles.css` — Add `.inbox-block__item:hover` background state
+- [ ] `src/blocks/tasks/styles.css` — Add `.tasks-block__input:focus` style (outline ring)
+- [ ] `src/os/shell.js` modal — Verify mode picker cards get `:focus-visible` from global rule
+
+### Phase 2 — UX Microcopy (Low Risk)
+
+- [ ] `src/blocks/tasks/view.js` — Improve empty state message (warmer, actionable hint)
+- [ ] `src/blocks/projects/view.js` — Improve empty state message
+- [ ] `src/blocks/inbox/view.js` — Verify empty state ("Inbox is leeg") is already good
+
+### Phase 3 — Design Docs (Required by task spec)
+
+- [ ] Create `docs/design-polish.md` — What was removed (Rams), progressive disclosure (Ive), stronger defaults (Jobs), what was NOT done (scope)
+
+### Phase 4 — Verify
+
+- [ ] Run `npm test` — all 219 tests green
+- [ ] Run `npm run build` — clean
+- [ ] Update tasks/todo.md "After" section
+- [ ] Update tasks/lessons.md if any corrections needed
+
+---
+
+### After (To be filled after implementation)
+
+| Metric | Value |
+|--------|-------|
+| Tests | TBD |
+| Build | TBD |
+| Changes | TBD |
+
+---
+
+### Review Notes — Quality Operator Pass
+
+> To be filled after implementation.
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

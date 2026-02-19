@@ -161,7 +161,7 @@ Manual walkthrough to verify the Inbox screen and processing flow.
 - [ ] Nav badge updates correctly
 - [ ] Empty state displays correctly
 - [ ] Dark mode looks correct
-- [ ] All 139 tests pass (`npm test`)
+- [ ] All 152 tests pass (`npm test`)
 
 ---
 
@@ -282,4 +282,97 @@ Manual walkthrough for the BPV quick-log and weekly overview blocks.
 - [ ] CSV export downloads and is valid
 - [ ] JSON export downloads and parses without errors
 - [ ] Dark mode looks correct in both new blocks
-- [ ] All 139 tests pass (`npm test`)
+- [ ] All 152 tests pass (`npm test`)
+
+---
+
+---
+
+# School Dashboard — Demo Script
+
+Manual walkthrough for the School mode dashboard block.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Switch to **School** mode (click the mode pill → choose School 📚)
+
+---
+
+## 21. School Dashboard — First Look
+
+1. Go to the **Vandaag** tab
+2. The first card should be **School Dashboard** (order 6, appears at the top)
+3. You should see four sections:
+   - **Volgende actie** — your next School task
+   - **Aankomende deadlines** — upcoming milestones/tasks within 14 days
+   - **BPV week** — compact progress bar showing hours logged this BPV week
+   - **Schoolprojecten** — active projects tagged School
+
+**Expected:** All four sections visible (or "geen" empty states when no data).
+
+---
+
+## 22. School Dashboard — Add a Next Action
+
+1. Find the **Taken** block on the Vandaag tab
+2. Add a task: `H3 samenvatting schrijven`
+3. The **School Dashboard** card at the top should now show it under **Volgende actie**
+
+**Expected:** Task shows with an empty circle button on the left.
+
+---
+
+## 23. School Dashboard — Mark Action Done
+
+1. Click the circle button next to the next action
+2. The task is marked done and disappears from the dashboard
+3. If you had a second task, it becomes the new next action
+
+**Expected:** One-click done; dashboard refreshes immediately.
+
+---
+
+## 24. School Dashboard — Upcoming Deadlines
+
+1. Add a milestone in the **Mijlpalen** block with a dueDate 3 days from now
+2. The deadline should appear in **Aankomende deadlines**
+3. The urgency badge shows amber (3–7 days) or red (0–2 days)
+
+**Expected:** Sorted by date; items beyond 14 days excluded; max 5 shown.
+
+---
+
+## 25. School Dashboard — BPV Week Bar
+
+1. Look at the **BPV week** row (visible in School mode)
+2. If you logged BPV hours via the BPV quick-log, the bar fills proportionally
+3. The label shows e.g. `8u / 40u`
+
+**Expected:** Live BPV progress visible from School mode — no mode switch needed.
+
+---
+
+## 26. School Dashboard — School Projects
+
+1. In the **Projects** block, add a project: `Eindopdracht netwerken` with mode School
+2. The project should appear as a purple chip in the School Dashboard
+
+**Expected:** Active School projects appear as compact purple chips.
+
+---
+
+## School Dashboard Verification Checklist
+
+- [ ] School Dashboard appears at top of Vandaag in School mode
+- [ ] Does NOT appear in BPV or Personal mode
+- [ ] "Volgende actie" shows first non-done School task by date
+- [ ] Marking done removes it and promotes next task
+- [ ] Empty state shows "Geen openstaande acties" when all done
+- [ ] Future-dated tasks (within 14 days) appear in deadlines
+- [ ] Deadlines beyond 14 days excluded
+- [ ] Urgency badge: red 0–2 days, amber 3–7, grey 8+
+- [ ] Max 5 deadlines shown
+- [ ] BPV week progress bar shows correct percentage
+- [ ] School projects appear as purple chips
+- [ ] All 152 tests pass (`npm test`)

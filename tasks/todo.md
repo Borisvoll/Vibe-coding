@@ -353,6 +353,54 @@
 
 ---
 
+## School Dashboard Sprint
+
+### School Dashboard Block (`school-dashboard`, order 6, School mode, today-sections)
+- [x] `src/blocks/school-dashboard/store.js` — `getSchoolDashboardData()` aggregates 4 sources
+- [x] **Volgende actie** — first non-done School task (os_tasks, sorted by date → createdAt)
+- [x] **Aankomende deadlines** — milestones + future School tasks within 14 days, sorted by date, max 5
+- [x] **BPV week** — compact progress bar via `getWeeklyOverview(getCurrentWeek())` from bpv store
+- [x] **Schoolprojecten** — active os_projects where mode='School' shown as purple chips
+- [x] Mark-done button on next action (circle icon, toggles via `toggleTask`, emits `tasks:changed`)
+- [x] Urgency badges: red 0–2 days, amber 3–7, grey 8–14
+- [x] Reactives to `mode:changed`, `tasks:changed`, `bpv:changed` events
+- [x] Register in `registerBlocks.js` (CSS import + function call)
+
+### Testing
+- [x] Create `tests/blocks/school-dashboard.test.js` — 13 tests covering:
+  - Empty state (all null/empty)
+  - nextAction: correct task, ignores other modes, priority by date
+  - deadlines: future tasks included, today excluded, beyond-14d excluded, sorted, capped at 5
+  - schoolProjects: only School+active
+  - bpvWeek: structure, reflects logged hours
+- [x] All 152 tests green
+
+### Documentation
+- [x] Append School Dashboard demo scenario to `docs/demo.md` (steps 21–26 + checklist)
+- [x] Update `tasks/todo.md`
+- [x] Rewrite `README.md` with app overview, features, run/deploy guide
+
+---
+
+### Review Notes — School Dashboard Sprint
+
+**What was built:**
+- `school-dashboard` block (order 6): appears first on School mode Today page
+- 4 sections in a single minimal card: next action + deadlines + BPV progress + projects
+- Next action mark-done circle button — one tap, no confirmation needed
+- Deadline urgency badges auto-color by days remaining
+- BPV week progress visible from School mode (cross-module view — helpful for students doing both)
+- Purple chips for active School projects
+- 13 new tests (152 total)
+
+**Design decisions:**
+- Sections separated by thin dividers (no cards-within-card); single `os-mini-card` container
+- No forms or inputs in the dashboard block — it's read-only; editing happens in domain blocks
+- `deadline.date > today` — today's tasks are the "next action", not deadlines
+- BPV progress embedded even in School mode — avoids having to switch mode to check hours
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

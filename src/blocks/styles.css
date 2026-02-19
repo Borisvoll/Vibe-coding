@@ -50,9 +50,6 @@
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  max-width: var(--max-os-content-width);
-  margin: 0 auto;
-  width: 100%;
 }
 
 .os-shell__header-left {
@@ -360,40 +357,40 @@
   transition: background 400ms var(--ease), opacity 300ms var(--ease);
 }
 
-/* ── Mode hero banner — unmissable mode indicator ──────────── */
+/* ── Mode hero banner — compact mode indicator ────────────── */
 .os-mode-hero {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--mode-accent-light, var(--color-accent-light));
-  border-left: 4px solid var(--mode-accent, var(--color-accent));
-  margin-bottom: var(--space-2);
+  border-left: 3px solid var(--mode-accent, var(--color-accent));
+  margin-bottom: var(--space-3);
   animation: hero-enter 400ms var(--ease-out) both;
   transition: background 400ms var(--ease), border-color 400ms var(--ease);
 }
 
 .os-mode-hero__emoji {
-  font-size: 1.75rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 
 .os-mode-hero__text {
   display: flex;
   flex-direction: column;
-  gap: 0.125rem;
+  gap: 0;
 }
 
 .os-mode-hero__label {
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 700;
   color: var(--mode-accent, var(--color-accent));
   letter-spacing: -0.01em;
 }
 
 .os-mode-hero__desc {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--color-text-secondary);
 }
 
@@ -429,9 +426,6 @@
   display: flex;
   gap: var(--space-1);
   padding: var(--space-2) var(--space-4);
-  max-width: var(--max-os-content-width);
-  margin: 0 auto;
-  width: 100%;
 }
 
 .os-nav__button {
@@ -477,13 +471,8 @@
 
 /* ── Content area ──────────────────────────────────────────── */
 .os-shell__content {
-  width: 100%;
-  max-width: var(--max-os-content-width);
-  margin: 0 auto;
-  padding: var(--space-4);
-  display: grid;
-  gap: var(--space-4);
   flex: 1;
+  padding: var(--space-4);
   transition: opacity 300ms var(--ease);
 }
 
@@ -498,8 +487,8 @@
 }
 
 .os-section__title {
-  margin: 0 0 var(--space-2);
-  font-size: 0.9375rem;
+  margin: 0 0 var(--space-4);
+  font-size: 1.125rem;
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -522,13 +511,13 @@
 .os-host-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .os-host-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 /* Block entrance for all host children (covers non-card blocks too) */
@@ -547,41 +536,50 @@
   font-size: 0.8125rem;
 }
 
-/* ── Tablet: wider spacing ─────────────────────────────────── */
+/* ── Tablet ────────────────────────────────────────────────── */
 @media (min-width: 768px) {
-  .os-shell__header-inner {
-    padding: var(--space-3) var(--space-6);
-  }
-
+  .os-shell__header-inner,
   .os-nav__inner {
-    padding: var(--space-2) var(--space-6);
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
   }
 
   .os-shell__content {
     padding: var(--space-5) var(--space-6);
-    gap: var(--space-5);
   }
 
   .os-host-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-/* ── Desktop: full-width utilization ──────────────────────── */
+/* ── Desktop ──────────────────────────────────────────────── */
 @media (min-width: 1024px) {
-  .os-shell__content {
-    padding: var(--space-6) var(--space-8);
-    gap: var(--space-6);
-  }
-
   .os-shell__header-inner,
   .os-nav__inner {
-    padding-left: var(--space-8);
-    padding-right: var(--space-8);
+    padding-left: var(--space-10);
+    padding-right: var(--space-10);
+  }
+
+  .os-shell__content {
+    padding: var(--space-6) var(--space-10);
   }
 
   .os-host-grid {
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ── Wide desktop ─────────────────────────────────────────── */
+@media (min-width: 1440px) {
+  .os-shell__header-inner,
+  .os-nav__inner {
+    padding-left: var(--space-16);
+    padding-right: var(--space-16);
+  }
+
+  .os-shell__content {
+    padding: var(--space-8) var(--space-16);
   }
 }
 
@@ -603,6 +601,11 @@
 @keyframes block-enter {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Settings section — constrained width for readability ─── */
+.os-section[data-os-section="settings"] .settings-block {
+  max-width: 700px;
 }
 
 /* ── Settings row label ────────────────────────────────────── */

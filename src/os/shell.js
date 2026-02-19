@@ -1,8 +1,9 @@
-import { getSetting } from '../db.js';
+import { getSetting, setSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { formatDateShort, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
+import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'settings'];
 
@@ -74,6 +75,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <span class="os-sidebar__date">${todayLabel}</span>
         </div>
 
+        <div class="os-sidebar__section-label">Modules</div>
         <nav class="os-sidebar__nav">
           <button class="os-sidebar__item" type="button" data-os-tab="dashboard">
             <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -96,6 +98,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
         <div class="os-sidebar__divider"></div>
 
+        <div class="os-sidebar__section-label">Systeem</div>
         <nav class="os-sidebar__system">
           <button class="os-sidebar__item" type="button" data-os-tab="settings">
             <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -117,6 +120,55 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           </button>
         </div>
       </aside>
+
+      <!-- Desktop top bar (hidden on mobile via CSS) -->
+      <header class="os-shell__topbar">
+        <div class="os-shell__topbar-inner">
+          <button id="sidebar-toggle-btn" type="button" class="os-topbar__hamburger" aria-label="Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <span class="os-topbar__spacer"></span>
+          <div class="os-topbar__gear-wrap">
+            <button id="topbar-settings-btn" type="button" class="os-topbar__gear" aria-label="Instellingen" aria-haspopup="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+            <div class="os-topbar__menu" id="topbar-menu">
+              <div class="os-topbar__menu-label">Thema</div>
+              <div class="os-topbar__theme-switcher" id="os-theme-switcher">
+                <button class="os-topbar__theme-option" data-theme="light">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                  Licht
+                </button>
+                <button class="os-topbar__theme-option" data-theme="system">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                  Auto
+                </button>
+                <button class="os-topbar__theme-option" data-theme="dark">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                  Donker
+                </button>
+              </div>
+              <div class="os-topbar__menu-divider"></div>
+              <div class="os-topbar__menu-label">Accentkleur</div>
+              <div class="os-topbar__accent-picker" id="os-accent-picker">
+                ${ACCENT_COLORS.map(c => `
+                  <div class="os-topbar__accent-dot" data-color="${c.id}" data-hex="${c.hex}" title="${c.label}" style="background:${c.hex}"></div>
+                `).join('')}
+              </div>
+              <div class="os-topbar__menu-divider"></div>
+              <button class="os-topbar__menu-item" data-action="settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Alle instellingen
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <!-- Mobile top bar (hidden on desktop via CSS) -->
       <header class="os-shell__header os-shell__header--mobile">
@@ -409,6 +461,80 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   });
 
+  // Desktop topbar — sidebar toggle (hamburger)
+  app.querySelector('#sidebar-toggle-btn')?.addEventListener('click', () => {
+    const shell = app.querySelector('#new-os-shell');
+    if (shell) shell.classList.toggle('os-shell--sidebar-collapsed');
+  });
+
+  // Desktop topbar — gear dropdown menu
+  const gearBtn = app.querySelector('#topbar-settings-btn');
+  const gearMenu = app.querySelector('#topbar-menu');
+
+  gearBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    gearMenu.classList.toggle('os-topbar__menu--open');
+  });
+
+  function closeGearMenu(e) {
+    if (gearMenu && !gearMenu.contains(e.target) && !gearBtn.contains(e.target)) {
+      gearMenu.classList.remove('os-topbar__menu--open');
+    }
+  }
+  document.addEventListener('click', closeGearMenu);
+
+  // Theme switcher in gear menu
+  const osThemeSwitcher = app.querySelector('#os-theme-switcher');
+  async function setOSTheme(theme) {
+    osThemeSwitcher?.querySelectorAll('.os-topbar__theme-option').forEach(opt => {
+      opt.classList.toggle('os-topbar__theme-option--active', opt.dataset.theme === theme);
+    });
+    await setSetting('theme', theme);
+    if (theme === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }
+
+  osThemeSwitcher?.querySelectorAll('.os-topbar__theme-option').forEach(opt => {
+    opt.addEventListener('click', () => setOSTheme(opt.dataset.theme));
+  });
+
+  // Accent picker in gear menu
+  const osAccentPicker = app.querySelector('#os-accent-picker');
+  async function setOSAccent(colorId, hex) {
+    osAccentPicker?.querySelectorAll('.os-topbar__accent-dot').forEach(d => {
+      d.classList.toggle('os-topbar__accent-dot--active', d.dataset.color === colorId);
+    });
+    applyAccentColor(hex);
+    await setSetting('accentColor', colorId);
+  }
+
+  osAccentPicker?.querySelectorAll('.os-topbar__accent-dot').forEach(dot => {
+    dot.addEventListener('click', () => setOSAccent(dot.dataset.color, dot.dataset.hex));
+  });
+
+  // "Alle instellingen" button in gear menu
+  gearMenu?.querySelector('[data-action="settings"]')?.addEventListener('click', () => {
+    gearMenu.classList.remove('os-topbar__menu--open');
+    setActiveTab('settings');
+  });
+
+  // Load saved theme + accent into gear menu
+  (async () => {
+    const savedTheme = await getSetting('theme') || 'system';
+    osThemeSwitcher?.querySelectorAll('.os-topbar__theme-option').forEach(opt => {
+      opt.classList.toggle('os-topbar__theme-option--active', opt.dataset.theme === savedTheme);
+    });
+    const savedAccent = await getSetting('accentColor');
+    if (savedAccent) {
+      osAccentPicker?.querySelectorAll('.os-topbar__accent-dot').forEach(d => {
+        d.classList.toggle('os-topbar__accent-dot--active', d.dataset.color === savedAccent);
+      });
+    }
+  })();
+
   // Legacy switch button — switch back to legacy interface
   app.querySelector('#legacy-switch-btn')?.addEventListener('click', () => {
     import('../core/featureFlags.js').then(({ setFeatureFlag }) => {
@@ -525,6 +651,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     unsubscribeInboxOpen?.();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
+    document.removeEventListener('click', closeGearMenu);
     eventBus.clear();
   }, { once: true });
 }

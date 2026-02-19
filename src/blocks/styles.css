@@ -440,7 +440,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 200px;
+    width: 240px;
     height: 100vh;
     height: 100dvh;
     background: var(--color-surface);
@@ -459,7 +459,7 @@
 
   /* Push main content to the right */
   .os-shell__content {
-    margin-left: 200px;
+    margin-left: 240px;
   }
 
   /* Hide mobile header and mobile nav on desktop */
@@ -570,6 +570,15 @@
   margin-left: auto;
 }
 
+.os-sidebar__section-label {
+  padding: var(--space-1) var(--space-4) var(--space-1);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
 .os-sidebar__divider {
   height: 1px;
   background: var(--color-border-light);
@@ -585,6 +594,224 @@
 .os-sidebar__mode .os-mode-btn {
   width: 100%;
   justify-content: flex-start;
+}
+
+/* ── Desktop top bar (hamburger + gear) ────────────────────── */
+.os-shell__topbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .os-shell__topbar {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    height: 48px;
+    z-index: 90;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    transition: left 300ms var(--ease), border-color 400ms var(--ease);
+  }
+
+  #new-os-shell[data-mode] .os-shell__topbar {
+    border-bottom-color: color-mix(in srgb, var(--mode-accent, var(--color-border)) 30%, var(--color-border));
+  }
+
+  /* When sidebar is collapsed, topbar stretches full width */
+  .os-shell--sidebar-collapsed .os-shell__topbar {
+    left: 0;
+  }
+
+  .os-shell__topbar-inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 var(--space-4);
+  }
+
+  .os-topbar__spacer {
+    flex: 1;
+  }
+
+  .os-topbar__hamburger,
+  .os-topbar__gear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: color 150ms var(--ease), background 150ms var(--ease);
+  }
+
+  .os-topbar__hamburger:hover,
+  .os-topbar__gear:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+
+  .os-topbar__gear svg {
+    transition: transform 400ms var(--ease);
+  }
+
+  .os-topbar__gear:hover svg {
+    transform: rotate(30deg);
+  }
+
+  /* Gear dropdown wrapper */
+  .os-topbar__gear-wrap {
+    position: relative;
+  }
+
+  /* Gear dropdown menu */
+  .os-topbar__menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 240px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    padding: var(--space-2);
+    z-index: 300;
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+    pointer-events: none;
+    transition: opacity var(--duration-fast) var(--ease),
+                transform var(--duration-fast) var(--ease);
+  }
+
+  .os-topbar__menu--open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+
+  .os-topbar__menu-label {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    padding: var(--space-2) var(--space-2) var(--space-1);
+  }
+
+  .os-topbar__menu-divider {
+    height: 1px;
+    background: var(--color-border-light);
+    margin: var(--space-1) 0;
+  }
+
+  /* Theme switcher */
+  .os-topbar__theme-switcher {
+    display: flex;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+  }
+
+  .os-topbar__theme-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    flex: 1;
+    justify-content: center;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text-secondary);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease);
+  }
+
+  .os-topbar__theme-option:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+
+  .os-topbar__theme-option--active {
+    border-color: var(--color-accent);
+    background: var(--color-accent-light);
+    color: var(--color-accent);
+  }
+
+  /* Accent picker */
+  .os-topbar__accent-picker {
+    display: flex;
+    gap: 6px;
+    padding: var(--space-1) var(--space-2);
+    flex-wrap: wrap;
+  }
+
+  .os-topbar__accent-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all var(--duration-fast) var(--ease);
+  }
+
+  .os-topbar__accent-dot:hover {
+    transform: scale(1.15);
+  }
+
+  .os-topbar__accent-dot--active {
+    border-color: var(--color-text);
+    box-shadow: 0 0 0 2px var(--color-surface);
+  }
+
+  /* Menu item button */
+  .os-topbar__menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    padding: var(--space-2);
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    text-align: left;
+    transition: background var(--duration-fast) var(--ease);
+  }
+
+  .os-topbar__menu-item:hover {
+    background: var(--color-surface-hover);
+  }
+
+  .os-topbar__menu-item svg {
+    color: var(--color-text-secondary);
+  }
+
+  /* Push content down to account for topbar */
+  .os-shell__content {
+    margin-top: 48px;
+  }
+
+  /* Sidebar collapse/expand transitions */
+  .os-shell--sidebar-collapsed .os-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .os-sidebar {
+    transition: transform 300ms var(--ease), border-color 400ms var(--ease);
+  }
+
+  .os-shell--sidebar-collapsed .os-shell__content {
+    margin-left: 0;
+    transition: margin-left 300ms var(--ease);
+  }
 }
 
 /* ── Mobile Navigation (hidden on desktop) ────────────────── */

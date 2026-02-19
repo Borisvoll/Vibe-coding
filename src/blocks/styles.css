@@ -629,9 +629,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Settings section — constrained width for readability ─── */
+/* ── Settings section — full-width like all other sections ─── */
 .os-section[data-os-section="settings"] .settings-block {
-  max-width: 700px;
+  width: 100%;
 }
 
 /* ── Settings row label ────────────────────────────────────── */

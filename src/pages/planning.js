@@ -65,7 +65,7 @@ export function createPage(container) {
     return `
       <div class="card focus-card" style="text-align:center; padding:var(--space-8)">
         <h3 style="margin-bottom:var(--space-6)">Focus Mode — 45 minuten</h3>
-        <div class="focus-timer" style="font-size:3rem; font-weight:700; font-variant-numeric:tabular-nums; color:${focusState.running ? 'var(--color-blue)' : 'var(--color-text-primary)'}; margin-bottom:var(--space-4)">
+        <div class="focus-timer" style="font-size:3rem; font-weight:700; font-variant-numeric:tabular-nums; color:${focusState.running ? 'var(--color-blue)' : 'var(--color-text)'}; margin-bottom:var(--space-4)">
           ${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}
         </div>
         <div class="progress-bar" style="margin-bottom:var(--space-6); max-width:300px; margin-left:auto; margin-right:auto">
@@ -89,7 +89,7 @@ export function createPage(container) {
           <div style="text-align:left; max-width:400px; margin:0 auto">
             <h4 style="margin-bottom:var(--space-3); color:var(--color-text-secondary)">Top 3 taken vandaag</h4>
             ${tasks.map((t, i) => `
-              <div style="display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); background:var(--color-bg-secondary); border-radius:var(--radius-md); margin-bottom:var(--space-2)">
+              <div style="display:flex; align-items:center; gap:var(--space-3); padding:var(--space-3); background:var(--color-surface-hover); border-radius:var(--radius-md); margin-bottom:var(--space-2)">
                 <span style="font-weight:600; color:var(--color-blue)">${i + 1}</span>
                 <span>${escapeHTML(t)}</span>
               </div>
@@ -166,7 +166,7 @@ export function createPage(container) {
             <button class="energy-btn" data-level="${level}" style="
               width:56px; height:56px; border-radius:50%; border:2px solid ${getEnergyColor(level)};
               background: ${currentLevel === level ? getEnergyColor(level) : 'transparent'};
-              color: ${currentLevel === level ? '#fff' : getEnergyColor(level)};
+              color: ${currentLevel === level ? 'var(--color-accent-text)' : getEnergyColor(level)};
               font-size:1.25rem; font-weight:700; cursor:pointer; transition: all 0.2s;
             ">${level}</button>
           `).join('')}
@@ -194,7 +194,7 @@ export function createPage(container) {
   }
 
   function getEnergyColor(level) {
-    return { 1: '#f43f5e', 2: '#f97316', 3: '#f59e0b', 4: '#10b981', 5: '#4f6ef7' }[level] || '#9094ad';
+    return { 1: 'var(--color-rose)', 2: 'var(--color-orange)', 3: 'var(--color-amber)', 4: 'var(--color-emerald)', 5: 'var(--color-blue)' }[level] || 'var(--color-text-tertiary)';
   }
 
   function bindEnergyEvents(entries) {

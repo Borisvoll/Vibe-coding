@@ -9,6 +9,7 @@ export function renderInbox(container, context) {
     <article class="inbox-block os-mini-card" data-mount-id="${mountId}">
       <div class="inbox-block__header">
         <h3 class="inbox-block__title">Inbox</h3>
+        <button type="button" class="inbox-block__open btn btn-ghost btn-sm" title="Open inbox (Ctrl+I)">Verwerk</button>
         <button type="button" class="inbox-block__toggle btn btn-ghost btn-sm" aria-expanded="false">
           <span class="inbox-block__count">0</span>
         </button>
@@ -48,6 +49,11 @@ export function renderInbox(container, context) {
     tag.addEventListener('click', () => {
       setSelectedMode(tag.getAttribute('data-tag-mode'));
     });
+  });
+
+  const openBtn = el.querySelector('.inbox-block__open');
+  openBtn.addEventListener('click', () => {
+    eventBus.emit('inbox:open');
   });
 
   toggleBtn.addEventListener('click', () => {

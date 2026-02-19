@@ -1,5 +1,6 @@
 import './styles.css';
 import './inbox/styles.css';
+import './inbox-screen/styles.css';
 import './tasks/styles.css';
 import './bpv-log-summary/styles.css';
 import './daily-outcomes/styles.css';
@@ -18,6 +19,7 @@ import { registerPersonalEnergyBlock } from './personal-energy/index.js';
 import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
 import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
 import { registerInboxBlock } from './inbox/index.js';
+import { registerInboxScreenBlock } from './inbox-screen/index.js';
 import { registerTasksBlock } from './tasks/index.js';
 import { registerBPVLogSummaryBlock } from './bpv-log-summary/index.js';
 import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
@@ -50,4 +52,7 @@ export function registerDefaultBlocks(registry) {
   registerPersonalEnergyBlock(registry);
   registerPersonalWeeklyReflectionBlock(registry);
   registerPersonalWeekPlanningBlock(registry);
+
+  // Inbox screen (full-page processing)
+  registerInboxScreenBlock(registry);
 }

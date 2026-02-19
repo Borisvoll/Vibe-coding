@@ -2,7 +2,7 @@ import { getSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { formatDateShort, getToday } from '../utils.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'planning', 'reflectie', 'archief'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief'];
 
 export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   let activeTab = 'today';
@@ -26,6 +26,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       <nav id="os-nav" class="os-nav" aria-label="BORIS navigatie">
         <button class="os-nav__button" type="button" data-os-tab="dashboard">Dashboard</button>
         <button class="os-nav__button" type="button" data-os-tab="today">Vandaag</button>
+        <button class="os-nav__button" type="button" data-os-tab="inbox">
+          Inbox <span class="os-nav__badge" id="inbox-badge" hidden>0</span>
+        </button>
         <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
         <button class="os-nav__button" type="button" data-os-tab="reflectie">Reflectie</button>
         <button class="os-nav__button" type="button" data-os-tab="archief">Archief</button>
@@ -39,6 +42,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <h2 class="os-section__title">Vandaag</h2>
           <div class="os-host-stack" data-os-host="today-sections"></div>
           <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
+        </section>
+        <section class="os-section" data-os-section="inbox" hidden>
+          <div class="os-host-stack" data-os-host="inbox-screen"></div>
         </section>
         <section class="os-section" data-os-section="planning" hidden>
           <h2 class="os-section__title">Planning</h2>
@@ -158,6 +164,25 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     renderHosts();
   });
 
+  // Listen for inbox:open event (from quick-action or Ctrl+I)
+  const unsubscribeInboxOpen = eventBus.on('inbox:open', () => {
+    setActiveTab('inbox');
+  });
+
+  // Global Ctrl+I shortcut to open inbox
+  function handleGlobalKeydown(e) {
+    if (e.ctrlKey && e.key === 'i' && !e.shiftKey && !e.altKey && !e.metaKey) {
+      e.preventDefault();
+      setActiveTab('inbox');
+      // Focus the capture input after tab switch
+      setTimeout(() => {
+        const input = app.querySelector('.inbox-screen__capture-input');
+        input?.focus();
+      }, 50);
+    }
+  }
+  document.addEventListener('keydown', handleGlobalKeydown);
+
   renderSettingsBlock(app.querySelector('#new-os-settings-block'), {
     onChange: async ({ key }) => {
       if (key === 'focusMode') {
@@ -173,6 +198,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();
+    unsubscribeInboxOpen?.();
+    document.removeEventListener('keydown', handleGlobalKeydown);
     eventBus.clear();
   }, { once: true });
 }

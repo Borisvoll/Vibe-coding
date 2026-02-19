@@ -174,6 +174,73 @@
 
 ---
 
+## Inbox Screen + Processing Sprint
+
+### Inbox Processing Flow
+- [x] Extend `src/stores/inbox.js` — add `getInboxItemById`, `getInboxCount`, `saveToReference`, `deleteItem`
+- [x] Extend `promoteToTask` to accept optional explicit mode parameter
+- [x] Add 'inbox' tab to OS shell (`SHELL_TABS`, nav button, section with `inbox-screen` host)
+- [x] Add nav badge with live item count (`os-nav__badge`)
+- [x] Create `src/blocks/inbox-screen/` — full processing screen (view, index, styles)
+- [x] Item list with keyboard selection (J/K navigation, highlight)
+- [x] Processing panel (Enter) — mode selector, task/reference/archive/delete actions
+- [x] Quick-action shortcuts: T=task, R=reference, A=archive, D=delete
+- [x] Register `inbox-screen` block in `registerBlocks.js`
+
+### Shortcuts + Quick Actions
+- [x] Add `inbox:open` event listener in OS shell (switches to inbox tab)
+- [x] Add global `Ctrl+I` shortcut in OS shell (opens inbox, focuses capture input)
+- [x] Add "Verwerk" quick-action button on Today page inbox block (emits `inbox:open`)
+
+### Testing
+- [x] Create `tests/stores/inbox-processing.test.js` — 14 tests for state transitions
+- [x] Test: getInboxItemById, getInboxCount, promoteToTask mode override/fallback
+- [x] Test: saveToReference (creates ref, archives item, link content, custom category)
+- [x] Test: deleteItem (permanent removal)
+- [x] Test: full processing flow (add 3 → promote/reference/delete → inbox empty)
+- [x] All 101 tests green
+
+### Documentation
+- [x] Create `docs/demo.md` — manual demo script with 12 verification steps
+- [x] Update `tasks/todo.md` with sprint checklist
+
+---
+
+### Review Notes — Inbox Processing Sprint
+
+**What was built:**
+- Full Inbox screen as dedicated OS tab with keyboard-driven processing
+- GTD-style flow: capture → process → task/reference/archive/delete
+- Keyboard shortcuts for speed: J/K navigate, T/R/A/D quick-process, Enter for panel, Esc to close
+- Ctrl+I global shortcut opens inbox from any tab and focuses capture input
+- "Verwerk" button on Today page inbox block for zero-friction access
+- Nav badge with live unprocessed count
+- 14 new tests covering all state transitions (101 total)
+- Manual demo script with 12 verification steps
+
+**Files created:**
+- `src/blocks/inbox-screen/index.js` — block registration on `inbox-screen` host
+- `src/blocks/inbox-screen/view.js` — full rendering with keyboard shortcuts (~305 lines)
+- `src/blocks/inbox-screen/styles.css` — styles for screen, items, processing panel, badge
+- `tests/stores/inbox-processing.test.js` — 14 state transition tests
+- `docs/demo.md` — manual demo script
+
+**Files modified:**
+- `src/stores/inbox.js` — 4 new exports, mode parameter for promoteToTask
+- `src/os/shell.js` — inbox tab, section, badge, Ctrl+I shortcut, inbox:open listener
+- `src/blocks/inbox/view.js` — "Verwerk" quick-action button
+- `src/blocks/inbox/styles.css` — header layout for new button
+- `src/blocks/registerBlocks.js` — inbox-screen registration
+
+**Design decisions:**
+- Processing shortcuts work directly from list (T/R/A/D) for speed, no panel needed
+- Enter opens full panel for mode selection or when user wants to review before acting
+- Ctrl+I is the global entry point — works from any tab, focuses capture input
+- Nav badge hidden when count is 0 (clean, minimal)
+- Empty state is encouraging: "Inbox is leeg — goed bezig!"
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

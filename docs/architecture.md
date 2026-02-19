@@ -14,7 +14,7 @@ BORIS is a Personal OS / Second Brain. This document defines its **kernel + modu
 │  ┌───────────────────── KERNEL ──────────────────────────────┐  │
 │  │  EventBus · ModeManager · BlockRegistry · FeatureFlags    │  │
 │  │  DesignSystem · MigrationManager · ModeCaps · Router      │  │
-│  │  DB (IndexedDB v5) · applyUserSettings()                  │  │
+│  │  DB (IndexedDB v6) · applyUserSettings()                  │  │
 │  └──────────────────────────┬────────────────────────────────┘  │
 │                             │                                   │
 │  ┌──── MODULES (domain boundaries) ─────────────────────────┐  │
@@ -32,7 +32,7 @@ BORIS is a Personal OS / Second Brain. This document defines its **kernel + modu
 │                             │                                   │
 │                    ┌────────┴────────┐                          │
 │                    │    IndexedDB    │                          │
-│                    │  (28 stores)   │                          │
+│                    │  (29 stores)   │                          │
 │                    └────────────────┘                          │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -117,17 +117,18 @@ School project management — projects, milestones, skills, concept tracking.
 | **Blocks** | `school-today`, `school-mini-card`, `school-current-project`, `school-milestones`, `school-skill-tracker`, `school-concept-vault` |
 | **Mode** | School |
 
-### Module 6: Inbox + Tasks (shared service)
+### Module 6: Inbox + Tasks + Projects (shared service)
 
-Cross-cutting unified inbox and mode-aware task management. Used by all modes.
+Cross-cutting unified inbox, mode-aware task management, and project management. Used by all modes.
 
 | Aspect | Details |
 |--------|---------|
-| **Stores** | `os_inbox`, `os_tasks` |
-| **Store adapters** | `src/stores/inbox.js`, `src/stores/tasks.js` |
-| **Blocks** | `inbox`, `tasks` |
+| **Stores** | `os_inbox`, `os_tasks`, `os_projects` |
+| **Store adapters** | `src/stores/inbox.js`, `src/stores/tasks.js`, `src/stores/projects.js` |
+| **Blocks** | `inbox`, `inbox-screen`, `tasks`, `projects` |
 | **Mode** | All (mode-filtered queries) |
-| **Events emitted** | `tasks:changed`, `inbox:changed` |
+| **Events emitted** | `tasks:changed`, `inbox:changed`, `projects:changed` |
+| **Constraint** | One declared Next Action per active project (enforced in `projects.js:setNextAction`) |
 
 ### Module 7: Settings & Admin
 

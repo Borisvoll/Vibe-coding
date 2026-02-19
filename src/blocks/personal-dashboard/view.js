@@ -3,6 +3,7 @@ import {
   saveTodayEntry,
   toggleHabit,
 } from './store.js';
+import { escapeHTML } from '../../utils.js';
 
 const HABIT_META = {
   water: { label: 'Water', icon: '💧' },
@@ -75,7 +76,7 @@ export function mountPersonalDashboard(container, { eventBus }) {
             ${sparks.map((s) => `
               <li class="personal-dash__spark">
                 <span class="personal-dash__spark-icon">✦</span>
-                <span class="personal-dash__spark-text">${escapeHtml(s.text)}</span>
+                <span class="personal-dash__spark-text">${escapeHTML(s.text)}</span>
               </li>
             `).join('')}
           </ul>
@@ -124,8 +125,3 @@ export function mountPersonalDashboard(container, { eventBus }) {
   };
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}

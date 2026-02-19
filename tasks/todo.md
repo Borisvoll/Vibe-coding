@@ -535,6 +535,110 @@
 
 ---
 
+## Search, Tags & Backup Sprint
+
+### Global Search (`src/stores/search.js`)
+- [x] `globalSearch(query)` — searches across os_tasks, os_inbox, os_projects, hours, logbook, dailyPlans, os_personal_wellbeing
+- [x] Match scoring: position-based relevance (lower index = better match)
+- [x] Results sorted by score then date (newer first)
+- [x] Resilient: individual store failures don't crash search (`safeGetAll` pattern)
+- [x] Minimum query length: 2 characters
+- [x] Create `tests/stores/search.test.js` — 8 tests
+
+### Tagging System (`src/stores/tags.js`)
+- [x] `addTag(storeName, recordId, tag)` — add tag to any taggable record
+- [x] `removeTag(storeName, recordId, tag)` — remove specific tag
+- [x] `getByTag(storeName, tag)` — get all records with tag
+- [x] `getAllTags(storeName?)` — get all unique tags, optional store filter
+- [x] Tag normalization: lowercase, trim, spaces→hyphens, max 50 chars
+- [x] Taggable stores: os_tasks, os_inbox, os_projects, hours, logbook
+- [x] Create `tests/stores/tags.test.js` — 12 tests
+
+### Export/Import Bundle (`src/stores/backup.js`)
+- [x] `exportBundle()` — full JSON bundle with `_meta` (app, version, timestamp, recordCounts)
+- [x] `downloadBundle()` — triggers browser download as JSON file
+- [x] `validateBundle(bundle)` — validates structure, app name, stores presence
+- [x] `importBundle(bundle, { merge })` — imports with safety backup before clearing
+- [x] `restoreFromSafetyBackup()` — rollback from localStorage backup
+- [x] `readBundleFile(file)` — reads File object to parsed JSON
+- [x] Safety backup in localStorage before destructive import
+- [x] Warnings for empty backups, unknown stores
+- [x] Create `tests/stores/backup.test.js` — 17 tests (including 6 roundtrip tests)
+- [x] Roundtrip tests: tasks, inbox, projects, BPV hours, personal wellbeing, JSON serialization
+
+### Testing
+- [x] All 219 tests green
+
+---
+
+### Review Notes — Search, Tags & Backup Sprint
+
+**What was built:**
+- Global search across 7 IndexedDB stores with position-based relevance scoring
+- Simple tagging system with normalization and cross-store queries
+- Full export/import bundle with validation, safety backup, and anti-data-loss checks
+- 37 new tests (219 total) — all passing
+
+**Design decisions:**
+- Search uses `safeGetAll()` wrapper to catch individual store failures gracefully
+- Tags are normalized (lowercase, no spaces, max 50 chars) for consistent querying
+- Export bundle includes `_meta.recordCounts` so user can verify before importing
+- Import creates a localStorage safety backup (max 5MB) before clearing data
+- `validateBundle()` returns `{ valid, errors, warnings, meta }` for progressive feedback
+
+**Trust milestone:**
+- Export/import roundtrip tests verify data integrity for all 5 major entity types
+- Import rejects invalid bundles (wrong app, missing meta, missing stores)
+- Safety backup enables rollback if import fails mid-operation
+
+---
+
+## Quality Pass Sprint
+
+### Refactoring
+- [x] Remove duplicate `escapeHtml` from `personal-dashboard/view.js` — import from `src/utils.js`
+- [x] Add `safeGetAll()` error protection to `search.js` (graceful store failure handling)
+
+### Accessibility
+- [x] Add `aria-label` to accent color dots in settings panel
+- [x] Add `aria-label` to inbox promote/archive icon buttons
+- [x] Add `aria-label` to inbox toggle count button
+- [x] Add `aria-label` to project clear-next-action button
+- [x] Implement focus trap in mode picker modal (Tab cycles within cards)
+- [x] Return focus to mode button when picker closes
+
+### Documentation
+- [x] Update `docs/design-principles.md` — Eno philosophy, store rules, data safety, accessibility rules
+- [x] Update `docs/qa-checklist.md` — comprehensive 10-section QA checklist
+- [x] Create `docs/future.md` — calendar, sync, PWA, AI features (risks, privacy, modular plan)
+- [x] Update `tasks/todo.md` with sprint notes
+
+### Testing
+- [x] All 219 tests green after quality fixes
+
+---
+
+### Review Notes — Quality Pass Sprint
+
+**Issues identified and fixed:**
+1. **Duplicate utility function**: `personal-dashboard/view.js` had its own `escapeHtml()` instead of importing from `utils.js`. Removed duplicate, imported shared function.
+2. **Search resilience**: `search.js` had no error handling for individual store reads. Added `safeGetAll()` wrapper that returns `[]` on failure.
+3. **Missing aria-labels**: Icon-only buttons in settings (accent dots), inbox (promote/archive), and projects (clear action) lacked screen reader labels. All fixed.
+4. **No focus trap in mode picker**: Modal dialog allowed Tab to escape to background elements. Added keyboard focus trap and return-focus-on-close.
+
+**Audit findings (documented, not all fixed — low severity):**
+- Some stores mix UI logic with data logic (backup.js `downloadBundle` creates DOM elements)
+- Block pass-through stores (`inbox/store.js`, `tasks/store.js`) add no value — could be removed
+- Inline styles for dynamic widths on progress bars — acceptable for dynamic values
+- Settings panel could use progressive disclosure (`<details>` for advanced options)
+
+**Documentation updates:**
+- `docs/design-principles.md`: Added Eno philosophy, store design rules, data safety principles, expanded accessibility section
+- `docs/qa-checklist.md`: Rewrote as comprehensive 10-section checklist covering visual, interaction, mode isolation, data ops, accessibility, weekly review, persistence, build, and service worker
+- `docs/future.md`: New file describing 4 future features (calendar, sync, PWA, AI) with risks, privacy approach, and modular implementation plan for each
+
+---
+
 ## Milestone 2: Module Boundaries + Planning Tab (Future)
 
 - [ ] Create `src/modules/` folder structure with `index.js` per domain

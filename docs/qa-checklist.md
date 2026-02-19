@@ -1,35 +1,71 @@
-# QA-checklist BORIS OS (alignment pass)
+# QA Checklist — BORIS OS
 
-## 1) Visuele checks
-- [ ] Typografie, spacing en card-stijl komen overeen met de originele BPV Tracker.
-- [ ] Knoppen en inputs gebruiken gedeelde componentklassen (`.btn`, `.form-input`, etc.).
-- [ ] Geen opvallende one-off stijlen of onrustige animaties.
-- [ ] Donkere modus blijft leesbaar (contrast op cards, tekst en borders).
+## 1) Visual Checks
+- [ ] Typography, spacing and card styles consistent across all blocks
+- [ ] Buttons and inputs use shared component classes (`.btn`, `.form-input`, etc.)
+- [ ] No one-off styles or jarring animations
+- [ ] Dark mode: all cards, text, and borders remain readable
+- [ ] Compact mode: spacing reduces correctly, no overlaps
+- [ ] Accent color: all interactive elements reflect chosen accent
+- [ ] Mode wash animation plays on mode switch (subtle, 600ms)
 
-## 2) Interactie checks
-- [ ] Moduswissel (BPV / School / Persoonlijk) voelt direct, zonder dubbele renders.
-- [ ] Tabwissel (Dashboard/Vandaag/Planning/Reflectie/Archief) werkt zonder layout-sprongen.
-- [ ] Lege staten tonen nette melding i.p.v. lege pagina.
-- [ ] Focusmodus toont alleen Vandaag en verbergt overige tabs/secties netjes.
+## 2) Interaction Checks
+- [ ] Mode switch (BPV / School / Personal) feels instant, no double renders
+- [ ] Tab switch (Dashboard/Vandaag/Inbox/Planning/Reflectie/Archief) — no layout jumps
+- [ ] Empty states show friendly message, not blank page
+- [ ] Ctrl+I opens inbox tab and focuses capture input
+- [ ] Escape closes mode picker modal
 
-## 3) Moduswissel checks
-- [ ] BPV toont alleen BPV-relevante blokken.
-- [ ] School toont alleen School-relevante blokken.
-- [ ] Persoonlijk toont alleen Persoonlijk-relevante blokken.
-- [ ] Blokken unmounten schoon bij moduswissel (geen dubbel listeners).
+## 3) Mode Isolation
+- [ ] BPV shows only BPV-relevant blocks
+- [ ] School shows only School-relevant blocks
+- [ ] Personal shows only Personal-relevant blocks
+- [ ] Blocks unmount cleanly on mode switch (no duplicate listeners)
+- [ ] Mode picker dialog traps focus (Tab cycles within modal)
+- [ ] Mode picker returns focus to trigger button on close
 
-## 4) Vandaag checks per modus
-- [ ] **BPV Vandaag**: max 3 focuspunten, uren snelinvoer-link, 1 leermoment, korte reflectie, links naar doelen/project.
-- [ ] **School Vandaag**: max 3 focustaken, huidige projectfocus, snelle leeropbrengst, link naar mijlpalen.
-- [ ] **Persoonlijk Vandaag**: max 5 taken, simpele agendablokken, energie/stemming + dankbaarheid (1 regel), één betekenisvolle actie.
-- [ ] Data-isolatie klopt: School/Persoonlijk tonen geen BPV-records.
+## 4) Today Page — Per Mode
+- [ ] **BPV**: Quick log, weekly overview, tasks, inbox, projects, weekly review
+- [ ] **School**: School dashboard (next action, deadlines, BPV bar, projects), tasks, inbox, projects
+- [ ] **Personal**: Personal dashboard (gratitude, reflection, journal, habits, sparks), tasks, inbox
+- [ ] Data isolation: School/Personal never show BPV-only records
 
-## 5) Dashboard checks per modus
-- [ ] Dashboard bevat alleen mode-relevante kaarten.
-- [ ] Kaarten lezen/schrijven naar de juiste stores.
-- [ ] Kaartlinks verwijzen naar passende routes/secties.
+## 5) Data Operations
+- [ ] Export creates valid JSON bundle with `_meta` (app, version, exportedAt, recordCounts)
+- [ ] Import validates bundle before writing (rejects invalid/wrong app name)
+- [ ] Import creates safety backup in localStorage before clearing data
+- [ ] Import roundtrip: export → import → data matches (tasks, inbox, projects, BPV, personal)
+- [ ] Search returns results from all stores (tasks, inbox, projects, hours, logbook, dailyPlans, wellbeing)
+- [ ] Search handles missing/empty stores gracefully
+- [ ] Tags normalize correctly (lowercase, trim, spaces→hyphens, max 50 chars)
 
-## 6) Service worker / update checks
-- [ ] Nieuwe versie triggert banner: “Nieuwe versie beschikbaar”.
-- [ ] Klik op “Ververs” activeert skipWaiting + herlaadt app.
-- [ ] Diagnostiek toont versie + SW status correct.
+## 6) Accessibility
+- [ ] All icon-only buttons have `aria-label` and `title`
+- [ ] All interactive elements show visible focus ring (`:focus-visible`)
+- [ ] Radio groups have proper `<label>` elements
+- [ ] Accent color dots have `aria-label` attributes
+- [ ] Progress bars include text percentage, not just color
+- [ ] Touch targets ≥44x44px on mobile
+
+## 7) Weekly Review Email
+- [ ] Aggregation includes: completed tasks, BPV hours, gratitude, reflections, journal, habits, projects
+- [ ] "Verstuur" button sends POST to serverless function
+- [ ] Sent badge shows after successful send
+- [ ] Friday prompt appears if not yet sent this week
+- [ ] Email contains no hardcoded personal info (all from env vars)
+
+## 8) Persistence
+- [ ] Gratitude/reflection/journal auto-save (600ms debounce) without explicit button
+- [ ] Habit toggles persist immediately
+- [ ] Theme, accent color, compact mode survive page refresh
+- [ ] BPV quick log upserts by date (no duplicate entries)
+
+## 9) Build & Tests
+- [ ] `npm run build` passes without errors
+- [ ] `npx vitest run` — all tests pass
+- [ ] No console errors in browser dev tools during normal usage
+
+## 10) Service Worker
+- [ ] New version triggers "Nieuwe versie beschikbaar" banner
+- [ ] Click "Ververs" activates skipWaiting + reloads app
+- [ ] Diagnostics shows correct version + SW status

@@ -7,11 +7,19 @@
   grid-template-columns: 1fr;
   gap: var(--space-3);
   width: 100%;
+  /* Span full width when inside os-host-grid */
+  grid-column: 1 / -1;
 }
 
 @media (min-width: 600px) {
   .dash-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dash-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 

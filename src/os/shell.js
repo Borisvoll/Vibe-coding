@@ -2,8 +2,9 @@ import { getSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { formatDateShort, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
+import { startTutorial } from '../core/tutorial.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief', 'settings'];
 
 // Mode order: School & Personal first, BPV secondary (Rams: match user's primary context)
 const MODE_META = {
@@ -49,13 +50,24 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
             <h1 class="os-shell__title">BORIS</h1>
             <span class="os-shell__date">${todayLabel}</span>
           </div>
-          <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
-            <span class="os-mode-btn__dot"></span>
-            <span class="os-mode-btn__label"></span>
-            <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
+          <div class="os-shell__header-actions">
+            <button id="legacy-switch-btn" type="button" class="os-interface-toggle" title="Schakel naar Legacy interface">
+              Legacy
+            </button>
+            <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
+              <span class="os-mode-btn__dot"></span>
+              <span class="os-mode-btn__label"></span>
+              <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button id="settings-btn" type="button" class="os-settings-btn" aria-label="Instellingen" title="Instellingen">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -120,7 +132,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <h2 class="os-section__title">Archief</h2>
           <p class="os-host-empty">Archiefweergave volgt in een volgende iteratie.</p>
         </section>
-        <section class="os-section" data-os-section="settings">
+        <section class="os-section" data-os-section="settings" hidden>
+          <h2 class="os-section__title">Instellingen</h2>
           <div id="new-os-settings-block"></div>
         </section>
       </main>
@@ -131,12 +144,16 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     activeTab = SHELL_TABS.includes(tab) ? tab : 'today';
     app.querySelectorAll('[data-os-section]').forEach((section) => {
       const name = section.getAttribute('data-os-section');
-      if (name === 'settings') return;
       section.hidden = name !== activeTab;
     });
     app.querySelectorAll('[data-os-tab]').forEach((button) => {
       button.setAttribute('aria-pressed', String(button.getAttribute('data-os-tab') === activeTab));
     });
+    // Update settings button active state
+    const settingsBtn = app.querySelector('#settings-btn');
+    if (settingsBtn) {
+      settingsBtn.classList.toggle('os-settings-btn--active', activeTab === 'settings');
+    }
   }
 
   function ensureHostEmptyStates() {
@@ -334,16 +351,35 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   app.querySelector('.mode-picker__backdrop')?.addEventListener('click', () => hideModePicker());
 
   // Escape key closes picker
-  document.addEventListener('keydown', (e) => {
+  function handleEscapeKey(e) {
     if (e.key === 'Escape' && !app.querySelector('#mode-picker')?.hidden) {
       hideModePicker();
     }
-  });
+  }
+  document.addEventListener('keydown', handleEscapeKey);
 
   app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
     tabButton.addEventListener('click', () => {
       setActiveTab(tabButton.getAttribute('data-os-tab'));
     });
+  });
+
+  // Legacy switch button — switch back to legacy interface
+  app.querySelector('#legacy-switch-btn')?.addEventListener('click', () => {
+    import('../core/featureFlags.js').then(({ setFeatureFlag }) => {
+      setFeatureFlag('enableNewOS', false);
+      window.location.hash = '';
+      window.location.reload();
+    });
+  });
+
+  // Settings gear button — toggles settings section
+  app.querySelector('#settings-btn')?.addEventListener('click', () => {
+    if (activeTab === 'settings') {
+      setActiveTab('today');
+    } else {
+      setActiveTab('settings');
+    }
   });
 
   let modeTransitionTimer = null;
@@ -409,6 +445,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setTimeout(() => showModePicker(), 400);
   }
 
+  // Start tutorial for new users (after mode picker)
+  const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
+  setTimeout(() => startTutorial(), tutorialDelay);
+
   // ── Friday prompt: gentle nudge to send weekly review ───────
   (async () => {
     try {
@@ -443,6 +483,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     unsubscribeMode?.();
     unsubscribeInboxOpen?.();
     document.removeEventListener('keydown', handleGlobalKeydown);
+    document.removeEventListener('keydown', handleEscapeKey);
     eventBus.clear();
   }, { once: true });
 }

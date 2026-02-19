@@ -440,7 +440,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    width: 200px;
+    width: 240px;
     height: 100vh;
     height: 100dvh;
     background: var(--color-surface);
@@ -459,7 +459,7 @@
 
   /* Push main content to the right */
   .os-shell__content {
-    margin-left: 200px;
+    margin-left: 240px;
   }
 
   /* Hide mobile header and mobile nav on desktop */
@@ -570,6 +570,15 @@
   margin-left: auto;
 }
 
+.os-sidebar__section-label {
+  padding: var(--space-1) var(--space-4) var(--space-1);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
 .os-sidebar__divider {
   height: 1px;
   background: var(--color-border-light);
@@ -585,6 +594,94 @@
 .os-sidebar__mode .os-mode-btn {
   width: 100%;
   justify-content: flex-start;
+}
+
+/* ── Desktop top bar (hamburger + gear) ────────────────────── */
+.os-shell__topbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .os-shell__topbar {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 240px;
+    right: 0;
+    height: 48px;
+    z-index: 90;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    transition: left 300ms var(--ease), border-color 400ms var(--ease);
+  }
+
+  #new-os-shell[data-mode] .os-shell__topbar {
+    border-bottom-color: color-mix(in srgb, var(--mode-accent, var(--color-border)) 30%, var(--color-border));
+  }
+
+  /* When sidebar is collapsed, topbar stretches full width */
+  .os-shell--sidebar-collapsed .os-shell__topbar {
+    left: 0;
+  }
+
+  .os-shell__topbar-inner {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 0 var(--space-4);
+  }
+
+  .os-topbar__spacer {
+    flex: 1;
+  }
+
+  .os-topbar__hamburger,
+  .os-topbar__gear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: color 150ms var(--ease), background 150ms var(--ease);
+  }
+
+  .os-topbar__hamburger:hover,
+  .os-topbar__gear:hover {
+    color: var(--color-text);
+    background: var(--color-surface-hover);
+  }
+
+  .os-topbar__gear svg {
+    transition: transform 400ms var(--ease);
+  }
+
+  .os-topbar__gear:hover svg {
+    transform: rotate(30deg);
+  }
+
+  /* Push content down to account for topbar */
+  .os-shell__content {
+    margin-top: 48px;
+  }
+
+  /* Sidebar collapse/expand transitions */
+  .os-shell--sidebar-collapsed .os-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .os-sidebar {
+    transition: transform 300ms var(--ease), border-color 400ms var(--ease);
+  }
+
+  .os-shell--sidebar-collapsed .os-shell__content {
+    margin-left: 0;
+    transition: margin-left 300ms var(--ease);
+  }
 }
 
 /* ── Mobile Navigation (hidden on desktop) ────────────────── */

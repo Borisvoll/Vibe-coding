@@ -1,5 +1,5 @@
 const DEFAULT_FLAGS = {
-  enableNewOS: false,
+  enableNewOS: true,
 };
 
 const BLOCK_FLAGS = {

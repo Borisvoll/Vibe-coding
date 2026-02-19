@@ -4,6 +4,30 @@ import { formatDateShort, getToday } from '../utils.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'reflectie', 'archief'];
 
+const MODE_META = {
+  BPV: {
+    label: 'BPV',
+    description: 'Beroepspraktijkvorming',
+    color: 'var(--color-blue)',
+    colorLight: 'var(--color-blue-light)',
+    emoji: '🏢',
+  },
+  School: {
+    label: 'School',
+    description: 'Opleiding & studie',
+    color: 'var(--color-purple)',
+    colorLight: 'var(--color-purple-light)',
+    emoji: '📚',
+  },
+  Personal: {
+    label: 'Persoonlijk',
+    description: 'Persoonlijke groei & leven',
+    color: 'var(--color-emerald)',
+    colorLight: 'var(--color-emerald-light)',
+    emoji: '🌱',
+  },
+};
+
 export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   let activeTab = 'today';
   let mountedBlocks = [];
@@ -17,12 +41,36 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <h1 class="os-shell__title">BORIS</h1>
           <span class="os-shell__date">${todayLabel}</span>
         </div>
-        <div id="mode-switch" class="os-mode-switch" role="group" aria-label="Moduskeuze">
-          <button type="button" class="btn btn-secondary btn-sm" data-mode="BPV">BPV</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-mode="School">School</button>
-          <button type="button" class="btn btn-secondary btn-sm" data-mode="Personal">Persoonlijk</button>
-        </div>
+        <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
+          <span class="os-mode-btn__dot"></span>
+          <span class="os-mode-btn__label"></span>
+          <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
       </header>
+      <div id="mode-picker" class="mode-picker" role="dialog" aria-label="Kies een modus" aria-modal="true" hidden>
+        <div class="mode-picker__backdrop"></div>
+        <div class="mode-picker__panel">
+          <p class="mode-picker__eyebrow">Jouw context</p>
+          <h2 class="mode-picker__title">Welke modus?</h2>
+          <div class="mode-picker__cards">
+            ${Object.entries(MODE_META).map(([key, m]) => `
+              <button type="button" class="mode-card" data-mode="${key}"
+                style="--mode-color:${m.color};--mode-color-light:${m.colorLight}">
+                <span class="mode-card__emoji">${m.emoji}</span>
+                <span class="mode-card__label">${m.label}</span>
+                <span class="mode-card__desc">${m.description}</span>
+                <span class="mode-card__check" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8L6.5 11.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
       <nav id="os-nav" class="os-nav" aria-label="BORIS navigatie">
         <button class="os-nav__button" type="button" data-os-tab="dashboard">Dashboard</button>
         <button class="os-nav__button" type="button" data-os-tab="today">Vandaag</button>
@@ -136,21 +184,60 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     ensureHostEmptyStates();
   }
 
-  function updateModeButtons() {
+  function updateModeBtn() {
     const mode = modeManager.getMode();
-    app.querySelectorAll('#mode-switch [data-mode]').forEach((button) => {
-      const active = button.getAttribute('data-mode') === mode;
-      button.setAttribute('aria-pressed', String(active));
-      button.classList.toggle('btn-primary', active);
-      button.classList.toggle('btn-secondary', !active);
+    const meta = MODE_META[mode] || MODE_META.BPV;
+    const btn = app.querySelector('#mode-btn');
+    if (!btn) return;
+    btn.querySelector('.os-mode-btn__dot').style.background = meta.color;
+    btn.querySelector('.os-mode-btn__label').textContent = meta.label;
+    btn.style.setProperty('--mode-color', meta.color);
+    btn.style.setProperty('--mode-color-light', meta.colorLight);
+
+    // Update active card in picker
+    app.querySelectorAll('.mode-card').forEach((card) => {
+      card.classList.toggle('mode-card--active', card.getAttribute('data-mode') === mode);
     });
   }
 
-  // Event listeners
-  app.querySelectorAll('#mode-switch [data-mode]').forEach((button) => {
-    button.addEventListener('click', () => {
-      modeManager.setMode(button.getAttribute('data-mode'));
+  function showModePicker() {
+    const picker = app.querySelector('#mode-picker');
+    if (!picker) return;
+    picker.hidden = false;
+    requestAnimationFrame(() => picker.classList.add('mode-picker--visible'));
+    // Focus first card
+    setTimeout(() => {
+      const active = picker.querySelector('.mode-card--active') || picker.querySelector('.mode-card');
+      active?.focus();
+    }, 50);
+  }
+
+  function hideModePicker() {
+    const picker = app.querySelector('#mode-picker');
+    if (!picker) return;
+    picker.classList.remove('mode-picker--visible');
+    picker.addEventListener('transitionend', () => { picker.hidden = true; }, { once: true });
+  }
+
+  // Mode picker — card clicks
+  app.querySelectorAll('.mode-card').forEach((card) => {
+    card.addEventListener('click', () => {
+      modeManager.setMode(card.getAttribute('data-mode'));
+      hideModePicker();
     });
+  });
+
+  // Mode button pill click
+  app.querySelector('#mode-btn')?.addEventListener('click', () => showModePicker());
+
+  // Backdrop click closes picker
+  app.querySelector('.mode-picker__backdrop')?.addEventListener('click', () => hideModePicker());
+
+  // Escape key closes picker
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !app.querySelector('#mode-picker')?.hidden) {
+      hideModePicker();
+    }
   });
 
   app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
@@ -160,7 +247,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   });
 
   const unsubscribeMode = eventBus.on('mode:changed', () => {
-    updateModeButtons();
+    updateModeBtn();
     renderHosts();
   });
 
@@ -191,10 +278,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     },
   });
 
-  updateModeButtons();
+  updateModeBtn();
   renderHosts();
   setActiveTab(activeTab);
   applyFocusMode();
+
+  // Show mode picker on first visit so user can set their context
+  if (modeManager.isFirstVisit?.()) {
+    setTimeout(() => showModePicker(), 400);
+  }
 
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();

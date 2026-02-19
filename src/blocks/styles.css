@@ -36,6 +36,12 @@
 .os-shell__header {
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
+  transition: border-color 400ms var(--ease);
+}
+
+/* Header bottom border follows mode accent */
+#new-os-shell[data-mode] .os-shell__header {
+  border-bottom-color: color-mix(in srgb, var(--mode-accent, var(--color-border)) 30%, var(--color-border));
 }
 
 .os-shell__header-inner {
@@ -283,14 +289,68 @@
 #new-os-shell[data-mode="School"] {
   --mode-accent: var(--color-purple);
   --mode-accent-light: var(--color-purple-light);
+  --mode-bg-tint: color-mix(in srgb, var(--color-purple) 4%, var(--color-bg));
+  --mode-card-border: var(--color-purple);
 }
 #new-os-shell[data-mode="Personal"] {
   --mode-accent: var(--color-emerald);
   --mode-accent-light: var(--color-emerald-light);
+  --mode-bg-tint: color-mix(in srgb, var(--color-emerald) 4%, var(--color-bg));
+  --mode-card-border: var(--color-emerald);
 }
 #new-os-shell[data-mode="BPV"] {
   --mode-accent: var(--color-blue);
   --mode-accent-light: var(--color-blue-light);
+  --mode-bg-tint: color-mix(in srgb, var(--color-blue) 4%, var(--color-bg));
+  --mode-card-border: var(--color-blue);
+}
+
+/* ── Background tint: whole content area follows mode ──────── */
+#new-os-shell[data-mode] .os-shell__content {
+  background: var(--mode-bg-tint, var(--color-bg));
+  transition: background 400ms var(--ease), opacity 300ms var(--ease);
+}
+
+/* ── Mode hero banner — unmissable mode indicator ──────────── */
+.os-mode-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--mode-accent-light, var(--color-accent-light));
+  border-left: 4px solid var(--mode-accent, var(--color-accent));
+  margin-bottom: var(--space-2);
+  animation: hero-enter 400ms var(--ease-out) both;
+  transition: background 400ms var(--ease), border-color 400ms var(--ease);
+}
+
+.os-mode-hero__emoji {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.os-mode-hero__text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.os-mode-hero__label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--mode-accent, var(--color-accent));
+  letter-spacing: -0.01em;
+}
+
+.os-mode-hero__desc {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+@keyframes hero-enter {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
 
 /* ── Navigation ────────────────────────────────────────────── */
@@ -461,6 +521,7 @@
 /* ── Shared block card ─────────────────────────────────────── */
 .os-mini-card {
   border: 1px solid var(--color-border);
+  border-top: 3px solid var(--mode-card-border, var(--color-border));
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   padding: var(--space-4);
@@ -468,6 +529,7 @@
   color: var(--color-text);
   animation: block-enter var(--duration-slow) var(--ease-out) both;
   animation-delay: var(--stagger, 0ms);
+  transition: border-color 400ms var(--ease);
 }
 
 /* Block entrance — used by os-mini-card and host children after mode switch */

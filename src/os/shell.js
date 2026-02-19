@@ -245,6 +245,34 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   }
 
+  // Mode hero banner — large colored bar at top of visible sections
+  function updateModeHero(mode) {
+    const meta = MODE_META[mode] || MODE_META.School;
+    const heroHTML = `
+      <div class="os-mode-hero">
+        <span class="os-mode-hero__emoji">${meta.emoji}</span>
+        <div class="os-mode-hero__text">
+          <span class="os-mode-hero__label">${meta.label}</span>
+          <span class="os-mode-hero__desc">${meta.description}</span>
+        </div>
+      </div>`;
+
+    // Insert or replace hero in dashboard + today sections
+    ['dashboard', 'today'].forEach((section) => {
+      const sectionEl = app.querySelector(`[data-os-section="${section}"]`);
+      if (!sectionEl) return;
+      const existing = sectionEl.querySelector('.os-mode-hero');
+      if (existing) {
+        existing.outerHTML = heroHTML;
+      } else {
+        const title = sectionEl.querySelector('.os-section__title');
+        if (title) {
+          title.insertAdjacentHTML('afterend', heroHTML);
+        }
+      }
+    });
+  }
+
   let focusTrapCleanup = null;
 
   function showModePicker() {
@@ -325,6 +353,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     triggerModeWash(mode);
     updateModeBtn();
     updateSectionTitles(mode);
+    updateModeHero(mode);
 
     // Content crossfade: brief fade-out, remount blocks, fade-in
     const content = app.querySelector('.os-shell__content');
@@ -371,6 +400,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   setShellMode(modeManager.getMode());
   updateModeBtn();
   updateSectionTitles(modeManager.getMode());
+  updateModeHero(modeManager.getMode());
   renderHosts();
   setActiveTab(activeTab);
 

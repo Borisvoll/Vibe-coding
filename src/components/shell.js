@@ -53,6 +53,22 @@ export function createShell(container) {
             ${icon('settings')}
           </button>
           <div class="hamburger-menu" id="hamburger-menu">
+            <div class="hamburger-menu-label">Modus</div>
+            <div class="settings-mode-group" id="hamburger-mode-picker">
+              <button type="button" class="settings-mode-pill" data-mode="BPV">
+                <span class="settings-mode-pill__dot" style="background:var(--color-blue)"></span>
+                🏢 BPV
+              </button>
+              <button type="button" class="settings-mode-pill" data-mode="School">
+                <span class="settings-mode-pill__dot" style="background:var(--color-purple)"></span>
+                📚 School
+              </button>
+              <button type="button" class="settings-mode-pill" data-mode="Personal">
+                <span class="settings-mode-pill__dot" style="background:var(--color-emerald)"></span>
+                🌱 Persoonlijk
+              </button>
+            </div>
+            <div class="hamburger-menu-divider"></div>
             <div class="hamburger-menu-label">Thema</div>
             <div class="theme-switcher" id="theme-switcher">
               <button class="theme-option" data-theme="light">${icon('sun')} Licht</button>
@@ -184,8 +200,34 @@ export function createShell(container) {
     await setSetting('compact', next);
   });
 
+  // Mode picker
+  const MODE_KEY = 'boris_mode';
+  const MODES = ['BPV', 'School', 'Personal'];
+  const modePicker = container.querySelector('#hamburger-mode-picker');
+
+  function updateModePills(mode) {
+    modePicker.querySelectorAll('.settings-mode-pill').forEach(p => {
+      p.classList.toggle('settings-mode-pill--active', p.dataset.mode === mode);
+    });
+  }
+
+  modePicker.querySelectorAll('.settings-mode-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const mode = pill.dataset.mode;
+      if (!mode || !MODES.includes(mode)) return;
+      try { localStorage.setItem(MODE_KEY, mode); } catch { /* ignore */ }
+      updateModePills(mode);
+    });
+  });
+
   // Load saved settings
   (async () => {
+    // Mode
+    try {
+      const savedMode = localStorage.getItem(MODE_KEY);
+      updateModePills(MODES.includes(savedMode) ? savedMode : 'BPV');
+    } catch { updateModePills('BPV'); }
+
     const theme = await getSetting('theme') || 'system';
     setActiveTheme(theme);
 

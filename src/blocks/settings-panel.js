@@ -43,6 +43,7 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
   const theme = (await getSetting('theme')) || 'system';
   const accentId = (await getSetting('accentColor')) || 'blue';
   const compact = (await getSetting('compact')) || false;
+  const reduceMotion = (await getSetting('reduceMotion')) || false;
   const accents = getPresets();
   const currentMode = modeManager.getMode();
 
@@ -103,6 +104,17 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
           <label class="radio-option ${compact ? 'selected' : ''}">
             <input type="radio" name="density" value="compact" ${compact ? 'checked' : ''}>Compact
           </label>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Verminder animaties</div>
+          <div class="settings-desc">Minder beweging in de interface</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-2)" data-setting="reduce-motion">
+          <button type="button" class="settings-mode-pill ${reduceMotion ? 'settings-mode-pill--active' : ''}" data-reduce-motion="on">Aan</button>
+          <button type="button" class="settings-mode-pill ${!reduceMotion ? 'settings-mode-pill--active' : ''}" data-reduce-motion="off">Uit</button>
         </div>
       </div>
 
@@ -203,6 +215,19 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         // Start tutorial immediately after restart
         import('../core/tutorial.js').then(({ startTutorial }) => startTutorial());
       }
+    });
+  });
+
+  // ── Reduce motion ──────────────────────────────────────────
+  container.querySelectorAll('[data-setting="reduce-motion"] .settings-mode-pill').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const on = btn.dataset.reduceMotion === 'on';
+      await setSetting('reduceMotion', on);
+      if (on) document.documentElement.setAttribute('data-reduce-motion', 'true');
+      else document.documentElement.removeAttribute('data-reduce-motion');
+      container.querySelectorAll('[data-setting="reduce-motion"] .settings-mode-pill').forEach((b) => {
+        b.classList.toggle('settings-mode-pill--active', b.dataset.reduceMotion === (on ? 'on' : 'off'));
+      });
     });
   });
 

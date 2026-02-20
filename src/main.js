@@ -69,6 +69,12 @@ async function applyUserSettings() {
   if (compact) {
     document.documentElement.setAttribute('data-compact', 'true');
   }
+
+  // Reduce-motion preference (user-controlled, independent of OS setting)
+  const reduceMotion = await getSetting('reduceMotion');
+  if (reduceMotion) {
+    document.documentElement.setAttribute('data-reduce-motion', 'true');
+  }
 }
 
 async function init() {
@@ -84,7 +90,7 @@ async function init() {
   const enableNewOS = getFeatureFlag('enableNewOS');
   if (enableNewOS) {
     try {
-      initNewOSShell();
+      await initNewOSShell();
       return;
     } catch (err) {
       console.error('BORIS OS failed to load, falling back to legacy:', err);
@@ -148,12 +154,14 @@ async function initLegacy() {
   initAutoSync().catch(() => {});
 }
 
-function initNewOSShell() {
+async function initNewOSShell() {
   const app = document.getElementById('app');
   if (!app) return;
 
+  // Read mode from IDB (set in previous session); fall back to localStorage cache
+  const savedMode = await getSetting('boris_mode').catch(() => null);
   const eventBus = createEventBus();
-  const modeManager = createModeManager(eventBus, 'School');
+  const modeManager = createModeManager(eventBus, savedMode || 'School');
   const blockRegistry = createBlockRegistry();
   registerDefaultBlocks(blockRegistry);
 

@@ -991,14 +991,17 @@
 }
 
 .hub-mindmap__canvas-wrap {
-  overflow: auto;
+  overflow: hidden;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
+  height: 420px;
   max-height: 480px;
   outline: none;
   box-shadow: var(--shadow-sm);
-  cursor: default;
+  cursor: grab;
+  position: relative;
+  touch-action: none;
 }
 
 .hub-mindmap__canvas-wrap:focus-visible {
@@ -1006,34 +1009,27 @@
   outline-offset: 2px;
 }
 
-.hub-mindmap__svg {
+.hub-mindmap__canvas {
   display: block;
-  font-family: var(--font-sans);
+  width: 100%;
+  height: 100%;
 }
 
-.hub-mindmap__node {
-  cursor: pointer;
-  transition: opacity var(--duration-fast) var(--ease);
-}
-
-.hub-mindmap__node:hover rect {
-  filter: brightness(1.06);
-}
-
-.hub-mindmap__node--selected rect {
-  filter: brightness(1.04);
+.hub-mindmap__edit-overlay {
+  position: absolute;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .hub-mindmap__inline-edit {
   width: 100%;
-  height: 100%;
   border: 2px solid var(--project-accent, var(--color-accent));
   border-radius: 6px;
   background: var(--color-surface);
   color: var(--color-text);
   font-size: 13px;
   font-family: var(--font-sans);
-  padding: 4px var(--space-2);
+  padding: 6px var(--space-2);
   box-sizing: border-box;
 }
 
@@ -1249,6 +1245,216 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
+   BANNER TAB
+   ══════════════════════════════════════════════════════════════ */
+
+.hub-banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  animation: hub-enter var(--duration-fast) var(--ease-out) both;
+}
+
+.hub-banner__cover-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hub-banner__cover-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hub-banner__cover-preview--pdf {
+  padding: var(--space-8) var(--space-4);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 3rem;
+}
+
+.hub-banner__cover-img {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  display: block;
+  box-shadow: var(--shadow-md);
+}
+
+.hub-banner__cover-placeholder {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hub-banner__cover-initials {
+  font-size: clamp(2rem, 6vw, 4rem);
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: -0.05em;
+  user-select: none;
+}
+
+.hub-banner__cover-remove {
+  align-self: flex-start;
+}
+
+.hub-banner__upload-label {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.hub-banner__status {
+  font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.hub-banner__status--error {
+  background: var(--color-error-light);
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 25%, var(--color-border));
+}
+
+/* ── Accent swatches ────────────────────────────────────────── */
+.hub-banner__accent-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hub-banner__section-title {
+  margin: 0;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hub-banner__accent-swatches {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.hub-banner__swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    transform var(--duration-fast) var(--ease-spring),
+    border-color var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease);
+  padding: 0;
+  outline: none;
+}
+
+.hub-banner__swatch:hover {
+  transform: scale(1.15);
+  box-shadow: var(--shadow-sm);
+}
+
+.hub-banner__swatch:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.hub-banner__swatch--active {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-text);
+  transform: scale(1.1);
+}
+
+.hub-banner__swatch--auto {
+  background: var(--color-surface);
+  border: 2px dashed var(--color-border);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary);
+}
+
+.hub-banner__swatch--auto.hub-banner__swatch--active {
+  border-style: solid;
+  border-color: var(--color-text);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PIN BUTTON & BADGE
+   ══════════════════════════════════════════════════════════════ */
+
+.hub-detail__pin-btn {
+  transition:
+    background var(--duration-fast) var(--ease),
+    color var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease-spring);
+}
+
+.hub-detail__pin-btn:hover {
+  transform: scale(1.1);
+}
+
+.hub-detail__pin-btn--active {
+  background: color-mix(in srgb, var(--project-accent, var(--color-accent)) 15%, var(--color-surface));
+  color: var(--project-accent, var(--color-accent));
+}
+
+.hub-detail__pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--project-accent, var(--color-accent));
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+  background: color-mix(in srgb, var(--project-accent, var(--color-accent)) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--project-accent, var(--color-accent)) 20%, var(--color-border));
+}
+
+/* ── Pinned card indicator ──────────────────────────────────── */
+.hub-card--pinned {
+  border-color: color-mix(in srgb, var(--project-accent, var(--color-accent)) 50%, var(--color-border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--project-accent, var(--color-accent)) 20%, transparent),
+              var(--shadow-sm);
+}
+
+.hub-card__pin-indicator {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  font-size: 0.85rem;
+  z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+}
+
+.hub-card {
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════════
    RESPONSIVE
    ══════════════════════════════════════════════════════════════ */
 
@@ -1283,5 +1489,10 @@
   .hub-files__cover-preview {
     max-width: 100%;
     width: 100%;
+  }
+
+  .hub-banner__cover-img,
+  .hub-banner__cover-placeholder {
+    max-width: 100%;
   }
 }

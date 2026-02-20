@@ -1,5 +1,81 @@
 # Personal OS / Second Brain — Todo
 
+---
+
+## Project-Hub 2.0 — Implementation Plan
+
+**Feature branch:** `claude/life-dashboard-modular-blocks-AOPzD`
+**Date:** 2026-02-20
+
+### Context
+Most of Project Hub 2.0 is already implemented. This sprint closes 3 specific gaps:
+1. **Banner tab** — separate tab for cover/accent (currently inside Files tab)
+2. **Pin to Today** — project-level pin to Vandaag (one pin per mode)
+3. **Manual accent picker** — hand-pick swatches + auto-extract in Banner tab
+
+### Open Questions → Decisions
+| Question | Decision | Rationale |
+|----------|----------|-----------|
+| Cover > 15 MB? | **No** — keep 15 MB cap | IndexedDB limits; mobile browsers |
+| Accentkleur auto of hand-pick? | **Both** — auto-extract + 6 swatches | Best of both worlds |
+| Pin to Today: één of meerdere? | **Één per modus** | Focused intent; BORIS philosophy |
+
+### Checklist
+
+#### 1. Store layer — `src/stores/projects.js`
+- [ ] Add `setPinned(projectId, modeOrNull)` — sets `pinnedForMode` field, clears previous pin in same mode
+- [ ] Add `getPinnedProject(mode)` — returns pinned project for mode (or null)
+- [ ] `addProject()` gets `pinnedForMode: null` default field
+
+#### 2. Banner tab — NEW `src/blocks/project-hub/tabs/banner.js`
+- [ ] Cover upload section (image/PDF, max 15 MB, downscale >1MP)
+- [ ] Auto-extract accent color on upload (existing `extractAvgRGB` logic, moved here)
+- [ ] Manual accent swatches (6 preset colors + "auto" reset)
+- [ ] Cover preview with remove button
+- [ ] Return `{ unmount() }` contract
+
+#### 3. Files tab — UPDATE `src/blocks/project-hub/tabs/files.js`
+- [ ] Remove cover upload section (moved to Banner tab)
+- [ ] Remove `extractAvgRGB` helper (move to `banner.js`)
+- [ ] Keep file attachments section intact (no other changes)
+
+#### 4. Detail view — UPDATE `src/blocks/project-hub/detail.js`
+- [ ] Add `{ id: 'banner', label: 'Banner' }` as first item in TABS array
+- [ ] Import and mount `renderBannerTab` from `./tabs/banner.js`
+- [ ] Add Pin button to `hub-detail__topbar-actions`
+- [ ] Pin button handler: calls `setPinned`, emits `projects:changed`, updates button state
+- [ ] Show pinned badge (`📌 Vast in Vandaag`) below status in header when `project.pinnedForMode`
+
+#### 5. List view — UPDATE `src/blocks/project-hub/list.js`
+- [ ] Show 📌 pin indicator on cards where `project.pinnedForMode === currentMode`
+- [ ] Remove/replace existing pin if clicking pin on a different card (handled by store)
+
+#### 6. Styles — UPDATE `src/blocks/project-hub/styles.css`
+- [ ] `.hub-banner` — Banner tab container styles
+- [ ] `.hub-banner__accent-swatches` — color swatch grid
+- [ ] `.hub-banner__swatch` + `--active` — individual color dot
+- [ ] `.hub-detail__pin-btn` — pin button in topbar (uses `--project-accent`)
+- [ ] `.hub-card__pin-indicator` — small 📌 on list cards
+
+#### 7. Tests — UPDATE `tests/stores/project-hub.test.js`
+- [ ] `setPinned` sets `pinnedForMode` on target project
+- [ ] `setPinned` clears previous pin in same mode (only one pin per mode)
+- [ ] `getPinnedProject(mode)` returns correct project
+- [ ] `getPinnedProject(mode)` returns null when nothing pinned
+- [ ] Pin is per-mode (BPV pin doesn't affect School)
+
+#### 8. Verification
+- [ ] All 478+ tests pass
+- [ ] Timeline drag functional (HTML5 drag API, no rAF loops)
+- [ ] Banner tab renders cover + swatches
+- [ ] Pin button in detail updates Today view
+- [ ] Git commit + push to `claude/life-dashboard-modular-blocks-AOPzD`
+
+### Review Section
+*(to be filled after implementation)*
+
+---
+
 ## Completed: MVP Sprint 1 (M0–M6)
 
 <details>

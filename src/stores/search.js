@@ -1,151 +1,159 @@
 import { getAll } from '../db.js';
 
+const THRESHOLD = 0.3;
+
 /**
- * Global search across all major stores.
- * Returns results grouped by type, sorted by relevance (text match position).
+ * Maps each result type to display metadata and navigation target.
+ * Exported for use in command-palette, tests, and Web Worker.
+ */
+export const GROUP_META = {
+  project: { label: 'Projecten', icon: '🚀', tab: 'projects', focus: null },
+  task:    { label: 'Taken',     icon: '✓',  tab: 'today',    focus: 'tasks' },
+  inbox:   { label: 'Inbox',     icon: '📥', tab: 'inbox',    focus: null },
+  daily:   { label: 'Dagplannen',icon: '📅', tab: 'today',    focus: null },
+  journal: { label: 'Dagboek',   icon: '📓', tab: 'today',    focus: 'reflection' },
+  hours:   { label: 'Uren',      icon: '⏱',  tab: 'today',    focus: 'mode' },
+  logbook: { label: 'Logboek',   icon: '📋', tab: 'today',    focus: 'mode' },
+};
+
+// Preferred display order for groups in the palette
+export const GROUP_ORDER = ['project', 'task', 'inbox', 'daily', 'journal', 'hours', 'logbook'];
+
+/**
+ * Fuzzy match score — returns 0.0–1.0, or -1 if no match / below threshold.
+ *
+ * Scoring:
+ *  • Exact full-string match        → 1.0
+ *  • Exact substring at word-start  → 1.0
+ *  • Exact substring mid-string     → 0.7–1.0 (position-adjusted)
+ *  • Ordered subsequence match      → 0.3–0.65 (density + boundary bonuses)
+ *  • No match / below threshold     → -1
+ *
+ * Exported for use in the Web Worker (no DB dependency, pure function).
+ */
+export function fuzzyScore(text, query) {
+  if (!text || !query) return -1;
+  const t = text.toLowerCase();
+  const q = query.toLowerCase();
+
+  if (t === q) return 1.0;
+
+  // Exact substring match
+  const exactIdx = t.indexOf(q);
+  if (exactIdx >= 0) {
+    if (exactIdx === 0) return 1.0; // starts the string — top relevance
+    if (t[exactIdx - 1] === ' ' || t[exactIdx - 1] === '-') return 0.95; // word boundary
+    // Mid-string: decrease slightly with depth
+    const pos = exactIdx / Math.max(t.length - q.length, 1);
+    return Math.max(0.7, 0.94 - pos * 0.24);
+  }
+
+  // Subsequence: all query chars must appear in-order within text
+  let qi = 0;
+  let consecutive = 0;
+  let bonus = 0;
+
+  for (let ti = 0; ti < t.length && qi < q.length; ti++) {
+    if (t[ti] === q[qi]) {
+      consecutive++;
+      if (consecutive > 1) bonus += 0.05 * consecutive;
+      if (ti === 0 || t[ti - 1] === ' ' || t[ti - 1] === '-' || t[ti - 1] === '_') {
+        bonus += 0.1; // word-boundary bonus
+      }
+      qi++;
+    } else {
+      consecutive = 0;
+    }
+  }
+
+  if (qi < q.length) return -1; // not all chars matched
+
+  // Density: matched chars vs total text length, capped below exact-match range
+  const density = q.length / t.length;
+  const score = Math.min(0.65, density * 1.5 + bonus);
+  return score >= THRESHOLD ? score : -1;
+}
+
+/**
+ * Returns the best fuzzy score across multiple text fields.
+ * Exported for use in the Web Worker.
+ */
+export function fuzzyScoreMulti(fields, query) {
+  let best = -1;
+  for (const f of fields) {
+    const s = fuzzyScore(f, query);
+    if (s > best) best = s;
+  }
+  return best;
+}
+
+function safeGetAll(store) {
+  return getAll(store).catch(() => []);
+}
+
+/**
+ * Global fuzzy search across all major stores.
+ * Returns flat array sorted by score (desc) then date (desc).
  */
 export async function globalSearch(query) {
   if (!query || query.trim().length < 2) return [];
+  const q = query.trim();
 
-  const q = query.trim().toLowerCase();
+  // Read all stores in parallel
+  const [tasks, inbox, projects, hours, logbook, dailyPlans, wellbeing] = await Promise.all([
+    safeGetAll('os_tasks'),
+    safeGetAll('os_inbox'),
+    safeGetAll('os_projects'),
+    safeGetAll('hours'),
+    safeGetAll('logbook'),
+    safeGetAll('dailyPlans'),
+    safeGetAll('os_personal_wellbeing'),
+  ]);
+
   const results = [];
 
-  function safeGetAll(store) {
-    return getAll(store).catch(() => []);
-  }
-
-  // ── Tasks ──────────────────────────────────────────────────
-  const tasks = await safeGetAll('os_tasks');
   for (const t of tasks) {
-    const score = matchScore(t.text, q);
-    if (score >= 0) {
-      results.push({
-        type: 'task',
-        id: t.id,
-        title: t.text,
-        subtitle: `${t.mode || ''} · ${t.status}`,
-        date: t.date,
-        score,
-      });
-    }
+    const score = fuzzyScore(t.text, q);
+    if (score >= 0) results.push({ type: 'task', id: t.id, title: t.text, subtitle: `${t.mode || ''} · ${t.status}`, date: t.date, score });
   }
 
-  // ── Inbox ──────────────────────────────────────────────────
-  const inbox = await safeGetAll('os_inbox');
   for (const item of inbox) {
-    const score = matchScore(item.text, q);
-    if (score >= 0) {
-      results.push({
-        type: 'inbox',
-        id: item.id,
-        title: item.text,
-        subtitle: `${item.type || 'gedachte'} · ${item.status}`,
-        date: item.createdAt?.slice(0, 10),
-        score,
-      });
-    }
+    const score = fuzzyScore(item.text, q);
+    if (score >= 0) results.push({ type: 'inbox', id: item.id, title: item.text, subtitle: `${item.type || 'gedachte'} · ${item.status}`, date: item.createdAt?.slice(0, 10), score });
   }
 
-  // ── Projects ───────────────────────────────────────────────
-  const projects = await safeGetAll('os_projects');
   for (const p of projects) {
-    const titleScore = matchScore(p.title, q);
-    const goalScore = matchScore(p.goal, q);
-    const score = Math.min(
-      titleScore >= 0 ? titleScore : 999,
-      goalScore >= 0 ? goalScore : 999,
-    );
-    if (score < 999) {
-      results.push({
-        type: 'project',
-        id: p.id,
-        title: p.title,
-        subtitle: `${p.mode || ''} · ${p.status}`,
-        date: p.updated_at?.slice(0, 10),
-        score,
-      });
-    }
+    const score = fuzzyScoreMulti([p.title, p.goal], q);
+    if (score >= 0) results.push({ type: 'project', id: p.id, title: p.title, subtitle: `${p.mode || ''} · ${p.status}`, date: p.updated_at?.slice(0, 10), score });
   }
 
-  // ── Hours / BPV entries ────────────────────────────────────
-  const hours = await safeGetAll('hours');
   for (const h of hours) {
-    const score = matchScore(h.note || h.description || '', q);
-    if (score >= 0) {
-      results.push({
-        type: 'hours',
-        id: h.id,
-        title: h.note || h.description || `${h.type} — ${h.date}`,
-        subtitle: `BPV · ${h.date}`,
-        date: h.date,
-        score,
-      });
-    }
+    const score = fuzzyScore(h.note || h.description || '', q);
+    if (score >= 0) results.push({ type: 'hours', id: h.id, title: h.note || h.description || `${h.type} — ${h.date}`, subtitle: `BPV · ${h.date}`, date: h.date, score });
   }
 
-  // ── Logbook ────────────────────────────────────────────────
-  const logbook = await safeGetAll('logbook');
   for (const entry of logbook) {
-    const textScore = matchScore(entry.text || entry.description || '', q);
-    const tagScore = (entry.tags || []).some((tag) => tag.toLowerCase().includes(q)) ? 0 : -1;
-    const score = Math.min(
-      textScore >= 0 ? textScore : 999,
-      tagScore >= 0 ? tagScore : 999,
-    );
-    if (score < 999) {
-      results.push({
-        type: 'logbook',
-        id: entry.id,
-        title: entry.text || entry.description || `Logboek ${entry.date}`,
-        subtitle: `Logboek · ${entry.date}`,
-        date: entry.date,
-        score,
-      });
-    }
+    const fields = [entry.text || entry.description || '', ...(entry.tags || [])];
+    const score = fuzzyScoreMulti(fields, q);
+    if (score >= 0) results.push({ type: 'logbook', id: entry.id, title: entry.text || entry.description || `Logboek ${entry.date}`, subtitle: `Logboek · ${entry.date}`, date: entry.date, score });
   }
 
-  // ── Daily plans ────────────────────────────────────────────
-  const dailyPlans = await safeGetAll('dailyPlans');
   for (const dp of dailyPlans) {
-    const tasks = dp.tasks || [];
-    const matched = tasks.some((t) => (t.text || '').toLowerCase().includes(q));
-    const evalMatch = matchScore(dp.evaluation || '', q);
-    if (matched || evalMatch >= 0) {
-      results.push({
-        type: 'daily',
-        id: dp.id,
-        title: tasks.map((t) => t.text).join(', ') || `Dagplan ${dp.date}`,
-        subtitle: `Dagplan · ${dp.date}`,
-        date: dp.date,
-        score: matched ? 0 : evalMatch,
-      });
-    }
+    const taskTexts = (dp.tasks || []).map((t) => t.text || '').filter(Boolean);
+    const fields = [...taskTexts, dp.evaluation || ''];
+    const score = fuzzyScoreMulti(fields, q);
+    if (score >= 0) results.push({ type: 'daily', id: dp.id, title: taskTexts.join(', ') || `Dagplan ${dp.date}`, subtitle: `Dagplan · ${dp.date}`, date: dp.date, score });
   }
 
-  // ── Wellbeing (journal/gratitude/reflection) ───────────────
-  const wellbeing = await safeGetAll('os_personal_wellbeing');
   for (const w of wellbeing) {
     const fields = [w.gratitude, w.reflection, w.journalNote, w.mood].filter(Boolean);
-    let bestScore = 999;
-    for (const f of fields) {
-      const s = matchScore(f, q);
-      if (s >= 0 && s < bestScore) bestScore = s;
-    }
-    if (bestScore < 999) {
-      results.push({
-        type: 'journal',
-        id: w.id,
-        title: w.journalNote || w.gratitude || w.reflection || `Wellbeing ${w.date || w.id}`,
-        subtitle: `Dagboek · ${w.date || w.id}`,
-        date: w.date || w.id,
-        score: bestScore,
-      });
-    }
+    const score = fuzzyScoreMulti(fields, q);
+    if (score >= 0) results.push({ type: 'journal', id: w.id, title: w.journalNote || w.gratitude || w.reflection || `Wellbeing ${w.date || w.id}`, subtitle: `Dagboek · ${w.date || w.id}`, date: w.date || w.id, score });
   }
 
-  // Sort by score (lower = more relevant), then by date (newer first)
+  // Higher score = more relevant; ties (same score) broken by recency
   results.sort((a, b) => {
-    if (a.score !== b.score) return a.score - b.score;
+    if (a.score !== b.score) return b.score - a.score;
     return (b.date || '').localeCompare(a.date || '');
   });
 
@@ -153,11 +161,52 @@ export async function globalSearch(query) {
 }
 
 /**
- * Simple match score: returns position of match, or -1 if no match.
- * Lower = better (exact start match > middle match).
+ * Grouped search results for the command palette.
+ *
+ * Returns an array of group objects:
+ *   { type, label, icon, tab, focus, items, visibleCount }
+ *
+ * - `items`        — full list of matching items (sorted by recency)
+ * - `visibleCount` — how many the UI should show initially (= Math.min(items.length, maxPerGroup))
+ *
+ * The UI can increment `visibleCount` for "Show more" without re-querying.
  */
-function matchScore(text, query) {
-  if (!text) return -1;
-  const idx = text.toLowerCase().indexOf(query);
-  return idx;
+export async function globalSearchGrouped(query, { maxPerGroup = 6 } = {}) {
+  if (!query || query.trim().length < 2) return [];
+  const flat = await globalSearch(query);
+
+  // Group by type
+  const byType = new Map();
+  for (const result of flat) {
+    if (!byType.has(result.type)) byType.set(result.type, []);
+    byType.get(result.type).push(result);
+  }
+
+  // Sort within each group by recency (newest first)
+  for (const items of byType.values()) {
+    items.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
+  const seen = new Set();
+  const groups = [];
+
+  for (const type of [...GROUP_ORDER, ...byType.keys()]) {
+    if (seen.has(type) || !byType.has(type)) continue;
+    seen.add(type);
+
+    const items = byType.get(type);
+    const meta = GROUP_META[type] || { label: type, icon: '·', tab: 'today', focus: null };
+
+    groups.push({
+      type,
+      label: meta.label,
+      icon: meta.icon,
+      tab: meta.tab,
+      focus: meta.focus,
+      items,
+      visibleCount: Math.min(items.length, maxPerGroup),
+    });
+  }
+
+  return groups;
 }

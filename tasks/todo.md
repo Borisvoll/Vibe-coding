@@ -1922,3 +1922,185 @@ Presets: gewoon arrays van block-IDs per context.
 | Timer in 2-min-launcher leaks | Memory | clearInterval in unmount |
 | Clipboard API niet beschikbaar | Macroboard fails | Fallback: select + "Kopieer handmatig" |
 | socialLog array groeit eindeloos | Performance | Cap op 100 entries, FIFO |
+
+---
+
+## Phase 1: Clutter Audit & Structural Consolidation (2026-02-20)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Status: **AUDIT COMPLETE — AWAITING APPROVAL BEFORE IMPLEMENTATION**
+
+---
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **400 passed**, 0 failed (26 files) |
+| Build | **Clean** (164 kB CSS, 269 kB JS) |
+| Blocks | **39 registered** |
+| DB version | 8 (31 object stores) |
+| Task-related stores | **7 distinct systems** |
+
+---
+
+### A) STRUCTURAL AUDIT REPORT
+
+#### 1. Task Store Inventory — 7 Competing Systems
+
+| # | System | IndexedDB Store | Scope | Mode-Aware | Done Tracking | Cap | Displayed In |
+|---|--------|----------------|-------|------------|---------------|-----|-------------|
+| 1 | **Global Tasks** | `os_tasks` | Persistent, cross-day | Yes (mode index) | status='done' + doneAt | 3/3/5 | tasks, done-list, worry-dump |
+| 2 | **Daily Todos** | `dailyPlans` (embedded array) | Single day + mode | Yes (mode index) | done boolean | None | daily-todos |
+| 3 | **List Items** | `os_list_items` | Persistent, per-list | No | done boolean | None | lijsten, lijsten-screen |
+| 4 | **Inbox Items** | `os_inbox` | Capture → promote/archive | Yes (mode index) | status transitions | None | inbox, inbox-screen |
+| 5 | **Project Next Actions** | `os_projects` (FK to os_tasks) | Per project | Yes | Via linked task | 1 per project | projects |
+| 6 | **Context Checklist** | localStorage (ephemeral) | Daily reset, per mode | Yes | Checkbox state | Fixed 4-6 | context-checklist |
+| 7 | **Habits** | `os_personal_wellbeing` | Daily, 3 booleans | No (Personal only) | boolean | Fixed 3 | personal-energy |
+
+**Critical overlap:** Systems 1 and 2 both appear on Vandaag under "Taken" section. User must mentally choose between `os_tasks` (tasks block) and `dailyPlans.todos` (daily-todos block) with no clear guidance on which to use.
+
+#### 2. List/Project Overlap — 4 Separate Collection Systems
+
+| System | Store | Hierarchy | Completion | Priorities | Due Dates | Mode |
+|--------|-------|-----------|-----------|-----------|-----------|------|
+| **Lists** | `os_lists` + `os_list_items` | Yes (parent/subtask) | Yes | Yes (P1-P4) | Yes | All |
+| **Projects** | `os_projects` | No | Via next action | No | No | Per mode |
+| **Milestones** | `os_school_milestones` | No | No | No | Yes | School only |
+| **Week Plan** | `os_personal_week_plan` | No | No | No | No | Personal only |
+
+**Finding:** Lists is a superset of Milestones and Week Plan in capability. All 3 mode-specific collection systems (milestones, week plan, school-current-project) use separate stores that could theoretically be modeled as typed lists.
+
+#### 3. Vandaag Page — Block Density Per Host Slot
+
+| Host Slot | Section | Block Count (School) | Block Count (Personal) | Block Count (BPV) |
+|-----------|---------|---------------------|----------------------|-------------------|
+| `vandaag-hero` | Top 3 + Hero | 2 | 3 (+ brain-state) | 2 |
+| `vandaag-cockpit` | Stats | 2 | 2 | 2 |
+| `vandaag-tasks` | Taken | 3 (daily-todos, tasks, context-checklist) | 3 | 3 |
+| `vandaag-projects` | Projecten & Lijsten | 2 (projects, lijsten) | 2 | 2 |
+| `vandaag-capture` | Inbox | 1 | 2 (+ worry-dump) | 1 |
+| `vandaag-reflection` | Reflectie | 1 | 2 (+ conversation-debrief) | 1 |
+| `vandaag-mode` | Context | 4 (school-today, school-dashboard, tasks, schedule) | 5 (+ boundaries) | 6 (bpv-today, bpv-quick-log, bpv-log-summary, bpv-weekly-overview, tasks, schedule) |
+| `vandaag-weekly` | Weekoverzicht | 1 | 1 | 1 |
+| **TOTAL** | | **16** | **20** | **18** |
+
+**Finding:** Personal mode has **20 blocks** on a single page. The `vandaag-mode` (Context) section alone has 4-6 blocks. Combined with 3 blocks in Taken, user sees 7+ cards before scrolling past the first 3 sections.
+
+#### 4. Mode Duplication Analysis
+
+| Pattern | Blocks | Total Lines | Consolidation Potential |
+|---------|--------|-------------|----------------------|
+| Mini-cards (mode indicator) | 3 (school/personal/bpv-mini-card) | 48 | **HIGH** — Identical except label text |
+| Mode "today" blocks | 3 (school/personal/bpv-today) | 189 | **MEDIUM** — Similar structure, different data |
+| Mode dashboards | 2 (school/personal-dashboard) | 265 | **LOW** — Architecturally distinct |
+
+#### 5. Redundant UI Patterns
+
+| Pattern | Where | Issue |
+|---------|-------|-------|
+| **Dual task entry** | daily-todos + tasks blocks both in `vandaag-tasks` | User has 2 input fields that create tasks in different stores |
+| **Triple done tracking** | done-list quick-add, tasks toggle, worry-dump "yes" | 3 paths to mark something done in os_tasks |
+| **Inbox → Task → Done flow** | inbox promote, project next-action, worry-dump | 3 separate creation flows all ending in os_tasks |
+| **No cross-system search** | Lists not in globalSearch() | User can't find list items via Ctrl+K |
+| **Inconsistent events** | lists/projects emit events, milestones/weekplan don't | Some blocks stale after changes in others |
+
+---
+
+### B) 3-LEVEL HIERARCHY MAPPING
+
+Target: strict separation into Focus / Projects / Archive.
+
+```
+LEVEL 1 — FOCUS (Today)
+├── Daily Outcomes (Top 3 goals)         → dailyPlans.outcomes
+├── Active Tasks (mode-capped)           → os_tasks (status='todo')
+├── Context Checklist (daily reset)      → localStorage
+└── Inbox Quick Capture                  → os_inbox
+
+LEVEL 2 — PROJECTS (Ongoing)
+├── Projects + Next Actions              → os_projects + os_tasks FK
+├── Persistent Lists (Todoist-style)     → os_lists + os_list_items
+└── Mode-Specific Work                   → school-today, personal-today, bpv-today
+
+LEVEL 3 — ARCHIVE (Reference)
+├── Done Tasks                           → os_tasks (status='done')
+├── Archived Inbox                       → os_inbox (status='archived')
+├── Daily Reflections                    → dailyPlans (notes, reflection)
+├── Weekly Reviews                       → weekly-review aggregation
+└── BPV Logs                             → hours, logbook stores
+```
+
+**Key question:** Where do `dailyPlans.todos` fit? They currently sit at Level 1 alongside `os_tasks`, creating the dual-task-entry problem.
+
+---
+
+### C) RECOMMENDED CONSOLIDATION ACTIONS
+
+#### Priority 1: Resolve Dual Task System (HIGH IMPACT)
+**Problem:** `daily-todos` and `tasks` blocks both in `vandaag-tasks`. Two input fields, two stores, no sync.
+**Options:**
+- **A) Merge daily-todos INTO tasks block** — Daily todos become os_tasks with date=today. One input, one list.
+- **B) Differentiate clearly** — daily-todos becomes "dagplan notities" (not tasks), tasks block becomes the sole task entry.
+- **C) Remove daily-todos from Vandaag** — Move to daily-reflection section as lightweight notes.
+
+#### Priority 2: Reduce Vandaag Card Count (HIGH IMPACT)
+**Problem:** 16-20 cards on one page = cognitive overload.
+**Actions:**
+- Collapse `vandaag-mode` to max 2 blocks (merge mode-today + mode-dashboard into single block)
+- Move done-list out of cockpit → integrate into tasks block as collapsible "Afgerond" section
+- Merge context-checklist into tasks block header as inline checkboxes
+
+#### Priority 3: Consolidate Mini-Cards (QUICK WIN)
+**Problem:** 3 identical blocks (48 lines) that differ only in label.
+**Action:** Single parameterized `mode-indicator` block.
+
+#### Priority 4: Unify Event System (MEDIUM IMPACT)
+**Problem:** Milestones and week plan don't emit events.
+**Action:** Add `milestones:changed` and `weekplan:changed` events.
+
+#### Priority 5: Add Lists to Search (MEDIUM IMPACT)
+**Problem:** `os_list_items` not indexed in `globalSearch()`.
+**Action:** Extend `search.js` to include list items.
+
+---
+
+### D) WHAT NOT TO CHANGE
+
+| Keep As-Is | Reason |
+|------------|--------|
+| Projects vs Lists distinction | Different mental models (GTD next-action vs Todoist checklist) |
+| Mode-specific dashboards | School/Personal data models are fundamentally different |
+| Inbox processing flow | Well-designed, covers capture → triage → action |
+| Block registry architecture | Solid, extensible, clean contract |
+| EventBus pub/sub | Correct decoupling, no direct imports between blocks |
+
+---
+
+### E) IMPLEMENTATION APPROACH (IF APPROVED)
+
+**Phase 1 — Quick Wins (no store changes)**
+- [ ] Consolidate 3 mini-cards → 1 parameterized block
+- [ ] Add list items to global search
+- [ ] Add missing event emissions to milestones/weekplan
+
+**Phase 2 — Task Hierarchy (store-level)**
+- [ ] Decide: merge daily-todos into os_tasks OR differentiate
+- [ ] Implement chosen approach
+- [ ] Update tests
+
+**Phase 3 — Card Reduction (UI-level)**
+- [ ] Merge done-list into tasks block
+- [ ] Merge context-checklist into tasks block header
+- [ ] Consolidate mode-today + mode-dashboard per mode
+- [ ] Enforce max 12 visible cards on Vandaag
+
+**Phase 4 — Verify**
+- [ ] All tests green
+- [ ] Build clean
+- [ ] Visual regression check (all 3 modes)
+- [ ] Update CLAUDE.md host slot documentation
+
+---
+
+**STOP. Awaiting approval before implementing any structural changes.**

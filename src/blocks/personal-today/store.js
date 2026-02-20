@@ -1,20 +1,22 @@
 import { getAll, put, remove } from '../../db.js';
 import { generateId } from '../../utils.js';
+import { addTask as addOsTask, getTasksForToday, deleteTask } from '../../stores/tasks.js';
 
-const TASK_STORE = 'os_personal_tasks';
+const MODE = 'Personal';
 const AGENDA_STORE = 'os_personal_agenda';
 const ACTION_STORE = 'os_personal_actions';
 const WELLBEING_STORE = 'os_personal_wellbeing';
 
 export async function listTasks() {
-  return (await getAll(TASK_STORE).catch(() => [])).sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+  const tasks = await getTasksForToday(MODE);
+  return tasks.filter((t) => t.status !== 'done').sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
 }
 
 export async function addTask(text) {
-  return put(TASK_STORE, { id: generateId(), text, createdAt: new Date().toISOString(), updated_at: new Date().toISOString() });
+  return addOsTask(text, MODE);
 }
 
-export async function removeTask(id) { return remove(TASK_STORE, id); }
+export async function removeTask(id) { return deleteTask(id); }
 
 export async function listAgenda() {
   return (await getAll(AGENDA_STORE).catch(() => [])).sort((a, b) => String(a.start || '').localeCompare(String(b.start || '')));

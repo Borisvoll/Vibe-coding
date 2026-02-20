@@ -2,7 +2,6 @@ import { APP_VERSION } from '../version.js';
 import { ACCENT_COLORS } from '../constants.js';
 import { setTheme } from '../core/themeEngine.js';
 import { getSetting, setSetting } from '../db.js';
-import { getFeatureFlag, setFeatureFlag } from '../core/featureFlags.js';
 import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } from '../core/tutorial.js';
 import { createThemeStudio } from '../ui/theme-studio.js';
 
@@ -120,21 +119,6 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
 
       <div class="settings-row">
         <div>
-          <div class="settings-label">Interface</div>
-          <div class="settings-desc">Wissel tussen BORIS OS en Legacy</div>
-        </div>
-        <div class="settings-mode-group" data-setting="interface">
-          <button type="button" class="settings-mode-pill ${getFeatureFlag('enableNewOS') ? 'settings-mode-pill--active' : ''}" data-interface="os">
-            ✦ BORIS OS
-          </button>
-          <button type="button" class="settings-mode-pill ${!getFeatureFlag('enableNewOS') ? 'settings-mode-pill--active' : ''}" data-interface="legacy">
-            Legacy
-          </button>
-        </div>
-      </div>
-
-      <div class="settings-row">
-        <div>
           <div class="settings-label">Tutorial</div>
           <div class="settings-desc">Leer BORIS kennen met korte tips</div>
         </div>
@@ -228,25 +212,6 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
       container.querySelectorAll('[data-setting="reduce-motion"] .settings-mode-pill').forEach((b) => {
         b.classList.toggle('settings-mode-pill--active', b.dataset.reduceMotion === (on ? 'on' : 'off'));
       });
-    });
-  });
-
-  // ── Interface toggle ─────────────────────────────────────
-  container.querySelectorAll('[data-setting="interface"] .settings-mode-pill').forEach((pill) => {
-    pill.addEventListener('click', () => {
-      const target = pill.dataset.interface;
-      if (!target) return;
-      const enableOS = target === 'os';
-      setFeatureFlag('enableNewOS', enableOS);
-      // Update pill state immediately for feedback
-      container.querySelectorAll('[data-setting="interface"] .settings-mode-pill').forEach((p) => {
-        p.classList.toggle('settings-mode-pill--active', p.dataset.interface === target);
-      });
-      // Reload to switch interface
-      setTimeout(() => {
-        window.location.hash = '';
-        window.location.reload();
-      }, 200);
     });
   });
 

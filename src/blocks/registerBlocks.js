@@ -24,6 +24,7 @@ import './brain-state/styles.css';
 import './worry-dump/styles.css';
 import './conversation-debrief/styles.css';
 import './context-checklist/styles.css';
+import './project-detail/styles.css';
 import '../ui/theme-studio.css';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
@@ -51,6 +52,7 @@ import { registerBrainStateBlock } from './brain-state/index.js';
 import { registerWorryDumpBlock } from './worry-dump/index.js';
 import { registerConversationDebriefBlock } from './conversation-debrief/index.js';
 import { registerContextChecklistBlock } from './context-checklist/index.js';
+import { registerProjectDetailBlock } from './project-detail/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
@@ -85,6 +87,9 @@ export function registerDefaultBlocks(registry) {
   registerBPVLogSummaryBlock(registry);
   registerBPVWeeklyOverviewBlock(registry);
   registerBoundariesBlock(registry);
+
+  // Planning tab — project detail view
+  registerProjectDetailBlock(registry);
 
   // Main dashboard (synopsis widgets — max 3 cards: dashboard + inbox + lijsten)
   registerDashboardBlock(registry);

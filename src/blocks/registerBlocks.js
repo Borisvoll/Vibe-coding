@@ -15,6 +15,7 @@ import './daily-reflection/styles.css';
 import './schedule-placeholder/styles.css';
 import './projects/styles.css';
 import './dashboard/styles.css';
+import './daily-cockpit/styles.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
@@ -42,9 +43,11 @@ import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.j
 import { registerProjectsBlock } from './projects/index.js';
 import { registerWeeklyReviewBlock } from './weekly-review/index.js';
 import { registerDashboardBlock } from './dashboard/index.js';
+import { registerDailyCockpitBlock } from './daily-cockpit/index.js';
 
 export function registerDefaultBlocks(registry) {
-  // Today page MVP blocks
+  // Today page — cockpit + MVP blocks
+  registerDailyCockpitBlock(registry);
   registerDailyOutcomesBlock(registry);
   registerDailyTodosBlock(registry);
   registerInboxBlock(registry);

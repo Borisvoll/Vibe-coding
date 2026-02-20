@@ -1,0 +1,124 @@
+/* ═══════════════════════════════════════════════════════════════
+   Daily Cockpit — compact "what to do now" checklist
+   ═══════════════════════════════════════════════════════════════ */
+
+.daily-cockpit {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--ui-card-radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+}
+
+.daily-cockpit__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.daily-cockpit__title {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+
+.daily-cockpit__pill {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 0.0625rem var(--space-2);
+  border-radius: var(--radius-full);
+  color: var(--mode-accent, var(--color-accent));
+  background: color-mix(in srgb, var(--mode-accent, var(--color-accent)) 12%, transparent);
+  line-height: 1.4;
+}
+
+.daily-cockpit__pill--done {
+  color: var(--color-emerald);
+  background: color-mix(in srgb, var(--color-emerald) 12%, transparent);
+}
+
+/* ── List ──────────────────────────────────────────────────── */
+
+.daily-cockpit__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.daily-cockpit__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.daily-cockpit__item:hover {
+  background: var(--color-surface-hover);
+}
+
+/* ── Check circle ─────────────────────────────────────────── */
+
+.daily-cockpit__check {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  flex-shrink: 0;
+  transition: all var(--duration-fast) var(--ease);
+  color: transparent;
+}
+
+.daily-cockpit__item--done .daily-cockpit__check {
+  border-color: var(--mode-accent, var(--color-accent));
+  background: var(--mode-accent, var(--color-accent));
+  color: white;
+}
+
+/* ── Label ────────────────────────────────────────────────── */
+
+.daily-cockpit__label {
+  flex: 1;
+  font-size: var(--font-md);
+  color: var(--color-text);
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.daily-cockpit__item--done .daily-cockpit__label {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-border);
+}
+
+/* ── "Nu →" action ────────────────────────────────────────── */
+
+.daily-cockpit__go {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--mode-accent, var(--color-accent));
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+  white-space: nowrap;
+}
+
+.daily-cockpit__item:hover .daily-cockpit__go {
+  opacity: 1;
+}
+
+/* On touch devices, always show the "Nu →" */
+@media (hover: none) {
+  .daily-cockpit__go {
+    opacity: 0.7;
+  }
+}

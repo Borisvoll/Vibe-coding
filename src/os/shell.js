@@ -212,6 +212,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <div class="vandaag-header" data-vandaag-header></div>
           <div class="os-host-stack" data-os-host="vandaag-hero"></div>
+          <div class="os-host-stack" data-os-host="vandaag-cockpit"></div>
           <div class="os-host-stack" data-os-host="vandaag-core"></div>
           <div data-vandaag-zone="reflection"></div>
           <div data-vandaag-zone="secondary"></div>

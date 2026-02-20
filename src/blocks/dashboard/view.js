@@ -1,5 +1,6 @@
 import { escapeHTML } from '../../utils.js';
 import { getTodaySnapshot, getWeekFocus, getProjectsPulse, getBPVPulse } from '../../os/dashboardData.js';
+import { getCockpitItems } from '../../os/cockpitData.js';
 import { addInboxItem } from '../../stores/inbox.js';
 
 const EXPLORE_PROMPTS = [
@@ -37,19 +38,31 @@ function renderWidgetSkeleton(id, icon, title, accentVar) {
     </button>`;
 }
 
-function fillTodayWidget(container, data) {
+function fillTodayWidget(container, data, cockpitItems) {
   const el = container.querySelector('[data-widget-content="today"]');
   if (!el) return;
 
-  const outcomeText = data.outcomes.length > 0
-    ? escapeHTML(data.outcomes[0])
-    : '<em>Nog geen outcomes</em>';
+  const openItems = cockpitItems.filter((i) => !i.done);
+  const doneCount = cockpitItems.length - openItems.length;
+
+  if (openItems.length === 0) {
+    el.innerHTML = `
+      <p class="dash-widget__stat dash-widget__stat--done">Alles klaar!</p>
+      <div class="dash-widget__metrics">
+        <span class="dash-widget__metric">${data.tasksDone}/${data.tasksTotal} taken</span>
+      </div>`;
+    return;
+  }
+
+  const openList = openItems.slice(0, 3).map((i) =>
+    `<li class="dash-widget__cockpit-item">○ ${escapeHTML(i.label)}</li>`,
+  ).join('');
 
   el.innerHTML = `
-    <p class="dash-widget__stat">${outcomeText}</p>
+    <p class="dash-widget__stat">Nog ${openItems.length} te doen</p>
+    <ul class="dash-widget__cockpit-list">${openList}</ul>
     <div class="dash-widget__metrics">
-      <span class="dash-widget__metric">${data.tasksDone}/${data.tasksTotal} taken</span>
-      <span class="dash-widget__metric dash-widget__metric--inbox">${data.inboxCount} inbox</span>
+      <span class="dash-widget__metric">${doneCount}/${cockpitItems.length} klaar</span>
     </div>`;
 }
 
@@ -187,14 +200,15 @@ export function renderDashboard(container, context) {
   // Fill widgets with data
   async function loadData() {
     const mode = context.modeManager?.getMode() || 'School';
-    const [today, week, projects, bpv] = await Promise.all([
+    const [today, week, projects, bpv, cockpit] = await Promise.all([
       getTodaySnapshot(mode),
       getWeekFocus(),
       getProjectsPulse(),
       getBPVPulse(),
+      getCockpitItems(mode),
     ]);
 
-    fillTodayWidget(wrapper, today);
+    fillTodayWidget(wrapper, today, cockpit);
     fillWeekWidget(wrapper, week);
     fillProjectsWidget(wrapper, projects);
     fillBPVWidget(wrapper, bpv);

@@ -17,6 +17,7 @@ import { createRouter } from './router.js';
 import { createShell } from './components/shell.js';
 import { initShortcuts } from './shortcuts.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
+import { initTheme } from './core/themeEngine.js';
 import { initAutoSync } from './auto-sync.js';
 import { getFeatureFlag } from './core/featureFlags.js';
 import { createEventBus } from './core/eventBus.js';
@@ -61,11 +62,8 @@ async function applyUserSettings() {
     document.documentElement.setAttribute('data-theme', theme);
   }
 
-  const accentId = await getSetting('accentColor');
-  if (accentId) {
-    const color = ACCENT_COLORS.find((c) => c.id === accentId);
-    if (color) applyAccentColor(color.hex);
-  }
+  // Theme engine handles accent + all derived tokens (backwards-compatible)
+  await initTheme();
 
   const compact = await getSetting('compact');
   if (compact) {

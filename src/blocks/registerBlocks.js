@@ -26,6 +26,7 @@ import './brain-state/styles.css';
 import './worry-dump/styles.css';
 import './conversation-debrief/styles.css';
 import './context-checklist/styles.css';
+import '../ui/theme-studio.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';

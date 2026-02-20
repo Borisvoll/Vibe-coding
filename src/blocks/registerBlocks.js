@@ -16,10 +16,12 @@ import './schedule-placeholder/styles.css';
 import './projects/styles.css';
 import './dashboard/styles.css';
 import './daily-cockpit/styles.css';
+import './lijsten/styles.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
+import { registerSchoolMiniCard } from './school-mini-card/index.js';
 import { registerPersonalDashboardBlock } from './personal-dashboard/index.js';
 import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
 import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
@@ -44,6 +46,7 @@ import { registerProjectsBlock } from './projects/index.js';
 import { registerWeeklyReviewBlock } from './weekly-review/index.js';
 import { registerDashboardBlock } from './dashboard/index.js';
 import { registerDailyCockpitBlock } from './daily-cockpit/index.js';
+import { registerLijstenBlock } from './lijsten/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Today page — cockpit + MVP blocks
@@ -65,6 +68,7 @@ export function registerDefaultBlocks(registry) {
 
   // School mode blocks
   registerSchoolDashboardBlock(registry);
+  registerSchoolMiniCard(registry);
   registerSchoolCurrentProjectBlock(registry);
   registerSchoolMilestonesBlock(registry);
   registerSchoolSkillTrackerBlock(registry);
@@ -78,6 +82,9 @@ export function registerDefaultBlocks(registry) {
   registerPersonalEnergyBlock(registry);
   registerPersonalWeeklyReflectionBlock(registry);
   registerPersonalWeekPlanningBlock(registry);
+
+  // Lijsten (all modes — Todoist-style persistent lists)
+  registerLijstenBlock(registry);
 
   // Weekly review (all modes)
   registerWeeklyReviewBlock(registry);

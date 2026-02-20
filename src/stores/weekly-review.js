@@ -150,34 +150,10 @@ export function isFriday() {
 }
 
 /**
- * Send the weekly review by posting data to the serverless function.
- * Falls back to mailto: if the Netlify function is unavailable (e.g. GitHub Pages).
+ * Send the weekly review by opening the user's email client via mailto:.
  */
 export async function sendWeeklyReview(data) {
-  try {
-    const response = await fetch('/.netlify/functions/send-weekly-review', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => '');
-      // nginx 405 = not on Netlify, use mailto fallback
-      if (response.status === 405 && body.includes('<html')) {
-        return openMailtoFallback(data);
-      }
-      throw new Error(`Failed to send: ${response.status} — ${body}`);
-    }
-
-    return response.json();
-  } catch (err) {
-    // Network error or fetch failed — try mailto
-    if (err.message?.includes('405') || err.name === 'TypeError') {
-      return openMailtoFallback(data);
-    }
-    throw err;
-  }
+  return openMailtoFallback(data);
 }
 
 /**

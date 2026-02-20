@@ -11,15 +11,9 @@ npm test             # Run all tests once (vitest run)
 npm run test:watch   # Watch mode testing
 ```
 
-Netlify deployment:
-```bash
-npm run netlify:dev            # Local Netlify dev
-npm run netlify:deploy:prod    # Deploy to production
-```
-
 ## Tech Stack
 
-Zero-dependency vanilla JavaScript (ES2022) modular monolith. No framework. Only devDeps: Vite 5, Vitest 4, fake-indexeddb 6, netlify-cli.
+Zero-dependency vanilla JavaScript (ES2022) modular monolith. No framework. Only devDeps: Vite 5, Vitest 4, fake-indexeddb 6.
 
 ## Architecture
 
@@ -121,9 +115,6 @@ npm run test:watch
 ## Deployment
 
 - **GitHub Pages**: Auto-deploy on push to main via `.github/workflows/deploy.yml` (Node 20, `npm run build`, base path `/Vibe-coding/`)
-- **Netlify**: Config in `netlify.toml` (build base `/`, Node 20, SPA redirect)
-
-Note: Vite base path differs per target — `/Vibe-coding/` for GitHub Pages (in `vite.config.js`), `/` for Netlify (overridden in `netlify.toml`).
 
 ## Design Philosophy
 

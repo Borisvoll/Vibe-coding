@@ -211,11 +211,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         <section class="os-section" data-os-section="today">
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <div class="vandaag-header" data-vandaag-header></div>
+          <div class="vandaag-search" data-vandaag-search></div>
           <div class="os-host-stack" data-os-host="vandaag-hero"></div>
           <div class="os-host-stack" data-os-host="vandaag-cockpit"></div>
-          <div class="os-host-stack" data-os-host="vandaag-core"></div>
+          <div data-vandaag-zone="tasks"></div>
+          <div data-vandaag-zone="projects"></div>
+          <div data-vandaag-zone="capture"></div>
           <div data-vandaag-zone="reflection"></div>
-          <div data-vandaag-zone="secondary"></div>
+          <div data-vandaag-zone="mode"></div>
+          <div data-vandaag-zone="weekly"></div>
         </section>
         <section class="os-section" data-os-section="inbox" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
@@ -346,48 +350,48 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (shell) shell.setAttribute('data-mode', mode);
   }
 
-  // ── Vandaag page layout with collapsible zones ──────────────
+  // ── Vandaag page layout with collapsible zones (Notion-style) ──
+
+  const VANDAAG_SECTIONS = [
+    { zone: 'tasks',      id: 'vandaag-tasks',      title: 'Taken',                hostName: 'vandaag-tasks' },
+    { zone: 'projects',   id: 'vandaag-projects',   title: 'Projecten & Lijsten',  hostName: 'vandaag-projects' },
+    { zone: 'capture',    id: 'vandaag-capture',     title: 'Inbox',                hostName: 'vandaag-capture' },
+    { zone: 'reflection', id: 'vandaag-reflection',  title: 'Reflectie',            hostName: 'vandaag-reflection' },
+    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode' },
+    { zone: 'weekly',     id: 'vandaag-weekly',      title: 'Weekoverzicht',        hostName: 'vandaag-weekly' },
+  ];
 
   const COLLAPSE_DEFAULTS = {
-    School:   { reflection: false, secondary: false },
-    Personal: { reflection: true,  secondary: false },
-    BPV:      { reflection: false, secondary: true  },
+    School:   { tasks: true, projects: true, capture: true, reflection: false, mode: false, weekly: false },
+    Personal: { tasks: true, projects: true, capture: true, reflection: true,  mode: false, weekly: false },
+    BPV:      { tasks: true, projects: true, capture: true, reflection: false, mode: true,  weekly: false },
   };
 
-  let reflectionSection = null;
-  let secondarySection = null;
+  const vandaagSections = {};
 
   function buildVandaagLayout(mode) {
-    const reflectionZone = app.querySelector('[data-vandaag-zone="reflection"]');
-    const secondaryZone = app.querySelector('[data-vandaag-zone="secondary"]');
-    if (!reflectionZone || !secondaryZone) return;
-
     const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
 
-    reflectionSection = createCollapsibleSection({
-      id: 'vandaag-reflection',
-      title: 'Reflectie',
-      hostName: 'vandaag-reflection',
-      defaultOpen: defaults.reflection,
-      mode,
+    VANDAAG_SECTIONS.forEach((cfg) => {
+      const zoneEl = app.querySelector(`[data-vandaag-zone="${cfg.zone}"]`);
+      if (!zoneEl) return;
+      const section = createCollapsibleSection({
+        id: cfg.id,
+        title: cfg.title,
+        hostName: cfg.hostName,
+        defaultOpen: defaults[cfg.zone] ?? true,
+        mode,
+      });
+      zoneEl.appendChild(section.el);
+      vandaagSections[cfg.zone] = section;
     });
-
-    secondarySection = createCollapsibleSection({
-      id: 'vandaag-secondary',
-      title: 'Overig',
-      hostName: 'vandaag-secondary',
-      defaultOpen: defaults.secondary,
-      mode,
-    });
-
-    reflectionZone.appendChild(reflectionSection.el);
-    secondaryZone.appendChild(secondarySection.el);
   }
 
   function updateVandaagCollapse(mode) {
     const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
-    reflectionSection?.setMode(mode, defaults.reflection);
-    secondarySection?.setMode(mode, defaults.secondary);
+    Object.entries(vandaagSections).forEach(([zone, section]) => {
+      section?.setMode(mode, defaults[zone] ?? true);
+    });
   }
 
   function renderVandaagHeader(mode) {
@@ -410,6 +414,55 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       </div>
       <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum}</span>
     `;
+  }
+
+  // ── Search bar (uses globalSearch from stores/search.js) ────
+  function initSearchBar() {
+    const searchEl = app.querySelector('[data-vandaag-search]');
+    if (!searchEl) return;
+    searchEl.innerHTML = `
+      <div class="vandaag-search__wrap">
+        <svg class="vandaag-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="search" class="vandaag-search__input" placeholder="Zoek in taken, projecten, inbox..." />
+      </div>
+      <div class="vandaag-search__results" hidden></div>
+    `;
+    const input = searchEl.querySelector('.vandaag-search__input');
+    const results = searchEl.querySelector('.vandaag-search__results');
+    let debounceTimer = null;
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const q = input.value.trim();
+      if (q.length < 2) { results.hidden = true; results.innerHTML = ''; return; }
+      debounceTimer = setTimeout(async () => {
+        try {
+          const { globalSearch } = await import('../stores/search.js');
+          const hits = await globalSearch(q);
+          if (hits.length === 0) {
+            results.innerHTML = '<p class="vandaag-search__empty">Geen resultaten</p>';
+          } else {
+            const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            results.innerHTML = hits.slice(0, 8).map(h => {
+              const title = esc(h.title || '');
+              const type = esc(h.type || '');
+              return `<div class="vandaag-search__hit"><span class="vandaag-search__hit-store">${type}</span><span class="vandaag-search__hit-text">${title}</span></div>`;
+            }).join('');
+          }
+          results.hidden = false;
+        } catch { results.hidden = true; }
+      }, 300);
+    });
+
+    input.addEventListener('blur', () => {
+      setTimeout(() => { results.hidden = true; }, 200);
+    });
+
+    input.addEventListener('focus', () => {
+      if (input.value.trim().length >= 2 && results.innerHTML) results.hidden = false;
+    });
   }
 
   // Update section titles with mode label so mode change is unmissable
@@ -677,6 +730,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   updateModeHero(modeManager.getMode());
   buildVandaagLayout(modeManager.getMode());
   renderVandaagHeader(modeManager.getMode());
+  initSearchBar();
   renderHosts();
   setActiveTab(activeTab);
 
@@ -722,8 +776,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();
     unsubscribeInboxOpen?.();
-    reflectionSection?.destroy();
-    secondarySection?.destroy();
+    Object.values(vandaagSections).forEach(s => s?.destroy());
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);

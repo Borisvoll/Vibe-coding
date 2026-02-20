@@ -4,7 +4,7 @@ export function registerSchoolDashboardBlock(registry) {
   registry.register({
     id: 'school-dashboard',
     title: 'School Dashboard',
-    hosts: ['vandaag-secondary'],
+    hosts: ['vandaag-mode'],
     modes: ['School'],
     enabled: true,
     order: 6,

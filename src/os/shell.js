@@ -5,6 +5,8 @@ import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
 import { ACCENT_COLORS, WEEKDAY_FULL, applyAccentColor } from '../constants.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
+import { createCommandPalette } from '../ui/command-palette.js';
+import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'settings'];
 
@@ -249,7 +251,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     </div>
   `;
 
-  function setActiveTab(tab) {
+  function setActiveTab(tab, opts) {
     activeTab = SHELL_TABS.includes(tab) ? tab : 'today';
     app.querySelectorAll('[data-os-section]').forEach((section) => {
       const name = section.getAttribute('data-os-section');
@@ -265,6 +267,13 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     app.querySelectorAll('.os-section__home-link').forEach((link) => {
       link.hidden = activeTab === 'dashboard';
     });
+    // Deep link: update URL hash (skip during initial load if hash already set)
+    const focus = opts?.focus || null;
+    updateHash(activeTab, focus);
+    // Scroll to focus target if specified
+    if (focus) {
+      scrollToFocus(app.querySelector('#new-os-shell'), focus);
+    }
   }
 
   function ensureHostEmptyStates() {
@@ -712,8 +721,27 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setActiveTab('inbox');
   });
 
-  // Global Ctrl+I shortcut to open inbox
+  // ── Command palette (Ctrl+K global search) ─────────────────
+  const cmdPalette = createCommandPalette({
+    onNavigate: ({ tab, focus }) => {
+      setActiveTab(tab, { focus });
+    },
+  });
+  app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
+
+  // Global keyboard shortcuts: Ctrl+K (search), Ctrl+I (inbox)
   function handleGlobalKeydown(e) {
+    // Ctrl+K — open command palette
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      if (cmdPalette.isOpen) {
+        cmdPalette.close();
+      } else {
+        cmdPalette.open();
+      }
+      return;
+    }
+    // Ctrl+I — open inbox
     if (e.ctrlKey && e.key === 'i' && !e.shiftKey && !e.altKey && !e.metaKey) {
       e.preventDefault();
       setActiveTab('inbox');
@@ -742,7 +770,26 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   renderVandaagHeader(modeManager.getMode());
   initSearchBar();
   renderHosts();
-  setActiveTab(activeTab);
+
+  // ── Deep links: restore tab from URL hash on load ─────────
+  const hashState = parseHash();
+  if (hashState.tab) {
+    activeTab = hashState.tab;
+  }
+  if (hashState.mode && ['School', 'Personal', 'BPV'].includes(hashState.mode)) {
+    modeManager.setMode(hashState.mode);
+  }
+  setActiveTab(activeTab, { focus: hashState.focus });
+
+  function handleHashChange() {
+    const h = parseHash();
+    if (h.tab && h.tab !== activeTab) {
+      setActiveTab(h.tab, { focus: h.focus });
+    } else if (h.focus) {
+      scrollToFocus(app.querySelector('#new-os-shell'), h.focus);
+    }
+  }
+  window.addEventListener('hashchange', handleHashChange);
 
   // Show mode picker on first visit so user can set their context
   if (modeManager.isFirstVisit?.()) {
@@ -787,9 +834,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     unsubscribeMode?.();
     unsubscribeInboxOpen?.();
     Object.values(vandaagSections).forEach(s => s?.destroy());
+    cmdPalette.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);
+    window.removeEventListener('hashchange', handleHashChange);
     eventBus.clear();
   }, { once: true });
 }

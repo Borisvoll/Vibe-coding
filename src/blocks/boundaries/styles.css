@@ -1,0 +1,63 @@
+/* ── Boundaries Macroboard ────────────────────────────────── */
+
+.boundaries__title {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 4px);
+}
+
+.boundaries__hint {
+  font-size: var(--font-xs, 0.6875rem);
+  color: var(--color-text-tertiary, #9ca3af);
+  margin: 0 0 var(--space-3, 12px);
+}
+
+.boundaries__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+}
+
+.boundaries__btn {
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-full, 999px);
+  background: var(--color-surface, #fff);
+  font-size: var(--font-xs, 0.6875rem);
+  font-family: inherit;
+  color: var(--color-text, #1f2937);
+  cursor: pointer;
+  transition: all var(--duration-fast, 100ms) var(--ease, ease);
+  white-space: nowrap;
+}
+
+.boundaries__btn:hover {
+  border-color: var(--mode-accent, var(--color-accent));
+  background: var(--mode-accent-light, var(--color-accent-light, #eef2ff));
+}
+
+.boundaries__btn:active {
+  transform: scale(0.97);
+}
+
+.boundaries__toast {
+  position: fixed;
+  bottom: calc(var(--nav-height, 64px) + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  background: var(--color-text, #1f2937);
+  color: #fff;
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 600;
+  border-radius: var(--radius-md, 8px);
+  opacity: 0;
+  transition: opacity 200ms, transform 200ms;
+  z-index: 3000;
+  pointer-events: none;
+}
+
+.boundaries__toast--visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

@@ -1,0 +1,182 @@
+import { getProjects, addProject, updateProject, deleteProject } from '../../stores/projects.js';
+import { getTasksByProject } from '../../stores/tasks.js';
+import { escapeHTML } from '../../utils.js';
+
+const PAGE_SIZE = 3;
+const STATUS_LABELS = { active: 'Actief', paused: 'Gepauzeerd', done: 'Gereed' };
+
+/**
+ * Render the project list (card grid, 3 per page, pagination).
+ * @param {HTMLElement} container
+ * @param {object} context
+ * @param {function} onOpen - called with projectId when a card is clicked
+ * @returns {function} cleanup
+ */
+export function renderProjectList(container, context, onOpen) {
+  const { eventBus, modeManager } = context;
+  let page = 0;
+  let showNewForm = false;
+
+  container.insertAdjacentHTML('beforeend', `
+    <div class="hub-list">
+      <div class="hub-list__header">
+        <h3 class="hub-list__title">Alle projecten</h3>
+        <button type="button" class="btn btn-primary btn-sm hub-list__new-btn">+ Nieuw project</button>
+      </div>
+      <form class="hub-list__new-form" hidden>
+        <input type="text" class="form-input hub-list__new-title" placeholder="Projectnaam..." autocomplete="off" required />
+        <textarea class="form-input hub-list__new-goal" placeholder="Doel (optioneel)" rows="2"></textarea>
+        <div class="hub-list__new-actions">
+          <button type="submit" class="btn btn-primary btn-sm">Aanmaken</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-cancel>Annuleer</button>
+        </div>
+      </form>
+      <div class="hub-list__grid" data-grid></div>
+      <div class="hub-list__pagination" data-pagination hidden></div>
+    </div>
+  `);
+
+  const listEl = container.querySelector('.hub-list');
+  const gridEl = listEl.querySelector('[data-grid]');
+  const paginationEl = listEl.querySelector('[data-pagination]');
+  const newBtn = listEl.querySelector('.hub-list__new-btn');
+  const newForm = listEl.querySelector('.hub-list__new-form');
+  const newTitleInput = listEl.querySelector('.hub-list__new-title');
+
+  newBtn.addEventListener('click', () => {
+    showNewForm = !showNewForm;
+    newForm.hidden = !showNewForm;
+    if (showNewForm) newTitleInput.focus();
+  });
+
+  listEl.querySelector('[data-cancel]').addEventListener('click', () => {
+    showNewForm = false;
+    newForm.hidden = true;
+    newForm.reset();
+  });
+
+  newForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = newTitleInput.value.trim();
+    if (!title) return;
+    const goal = listEl.querySelector('.hub-list__new-goal').value.trim();
+    const mode = modeManager.getMode();
+    await addProject(title, goal, mode);
+    showNewForm = false;
+    newForm.hidden = true;
+    newForm.reset();
+    eventBus.emit('projects:changed');
+    await render();
+  });
+
+  async function render() {
+    const mode = modeManager.getMode();
+    const projects = await getProjects(mode);
+    const total = projects.length;
+    const totalPages = Math.ceil(total / PAGE_SIZE);
+
+    if (page >= totalPages && totalPages > 0) page = totalPages - 1;
+
+    const slice = projects.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+
+    if (total === 0) {
+      gridEl.innerHTML = `
+        <div class="hub-list__empty">
+          <p>Geen projecten — maak je eerste project aan.</p>
+        </div>
+      `;
+      paginationEl.hidden = true;
+      return;
+    }
+
+    // Load task counts for each project in the slice
+    const cards = await Promise.all(slice.map(async (project) => {
+      const tasks = await getTasksByProject(project.id);
+      const total_tasks = tasks.length;
+      const done_tasks = tasks.filter((t) => t.status === 'done').length;
+      const pct = total_tasks > 0 ? Math.round((done_tasks / total_tasks) * 100) : 0;
+
+      const coverStyle = project.cover
+        ? `background-image: url('${project.cover}'); background-size: cover; background-position: center;`
+        : '';
+      const accentColor = project.accentColor || 'var(--color-accent)';
+      const statusLabel = STATUS_LABELS[project.status] || project.status;
+
+      // SVG progress ring: r=20, circumference ≈ 125.7
+      const r = 20;
+      const circ = 2 * Math.PI * r;
+      const dash = ((pct / 100) * circ).toFixed(2);
+
+      return `
+        <article class="hub-card" data-project-id="${project.id}"
+          style="--project-accent: ${accentColor}"
+          role="button" tabindex="0" aria-label="Open project ${escapeHTML(project.title)}">
+          <div class="hub-card__cover" style="${coverStyle}">
+            ${!project.cover ? `<span class="hub-card__cover-placeholder">${escapeHTML(project.title.slice(0, 2).toUpperCase())}</span>` : ''}
+          </div>
+          <div class="hub-card__body">
+            <div class="hub-card__meta">
+              <span class="hub-card__status hub-card__status--${project.status}">${statusLabel}</span>
+              <div class="hub-card__ring" title="${done_tasks}/${total_tasks} taken gereed">
+                <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
+                  <circle cx="24" cy="24" r="${r}" fill="none" stroke="var(--color-border)" stroke-width="4"/>
+                  <circle cx="24" cy="24" r="${r}" fill="none" stroke="${accentColor}" stroke-width="4"
+                    stroke-dasharray="${dash} ${circ.toFixed(2)}"
+                    stroke-dashoffset="${(circ / 4).toFixed(2)}"
+                    stroke-linecap="round"/>
+                  <text x="24" y="28" text-anchor="middle" font-size="10" fill="currentColor">${pct}%</text>
+                </svg>
+              </div>
+            </div>
+            <h4 class="hub-card__title">${escapeHTML(project.title)}</h4>
+            ${project.goal ? `<p class="hub-card__goal">${escapeHTML(project.goal.slice(0, 80))}${project.goal.length > 80 ? '…' : ''}</p>` : ''}
+          </div>
+        </article>
+      `;
+    }));
+
+    gridEl.innerHTML = cards.join('');
+
+    // Bind card clicks
+    gridEl.querySelectorAll('.hub-card').forEach((card) => {
+      const projectId = card.dataset.projectId;
+      card.addEventListener('click', () => onOpen(projectId));
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(projectId);
+        }
+      });
+    });
+
+    // Pagination
+    if (totalPages > 1) {
+      paginationEl.hidden = false;
+      paginationEl.innerHTML = `
+        <button type="button" class="hub-list__page-btn" data-page-prev ${page === 0 ? 'disabled' : ''}>‹</button>
+        <span class="hub-list__page-info">${page + 1} / ${totalPages}</span>
+        <button type="button" class="hub-list__page-btn" data-page-next ${page >= totalPages - 1 ? 'disabled' : ''}>›</button>
+      `;
+
+      paginationEl.querySelector('[data-page-prev]')?.addEventListener('click', () => {
+        if (page > 0) { page--; render(); }
+      });
+      paginationEl.querySelector('[data-page-next]')?.addEventListener('click', () => {
+        if (page < totalPages - 1) { page++; render(); }
+      });
+    } else {
+      paginationEl.hidden = true;
+    }
+  }
+
+  const unsubMode = eventBus.on('mode:changed', () => { page = 0; render(); });
+  const unsubProjects = eventBus.on('projects:changed', () => render());
+
+  render();
+
+  return function cleanup() {
+    unsubMode?.();
+    unsubProjects?.();
+    listEl?.remove();
+  };
+}

@@ -27,14 +27,18 @@ Tracking: incremental refactor, app works on every commit, tests green.
 - [x] Delete: src/components/shell.js, old src/router.js, src/shortcuts.js
 - [x] Tests pass — 495 across 29 files
 
-## Phase 3 — Project module MVP
-- [ ] Add top-level sidebar item: Projecten (always accessible)
-- [ ] Projects route: max 3 active projects (pinned first, else most recent)
-- [ ] Accent color per project (stored in project model)
-- [ ] Project Detail route (`#projects/:id`) with Notion-like header
-- [ ] Cover upload (image or PDF preview)
-- [ ] Tasks tab using existing list/task primitives (NO duplication)
-- [ ] Tests pass
+## Phase 3 — Project module MVP ✅
+- [x] Projecten sidebar item + `projects-hub` host (already in index.html)
+- [x] Projects route: 3 cards per page, pinned first (existing project-hub/list.js)
+- [x] Accent color per project (stored in `os_projects`, rendered on cards + detail)
+- [x] Project Detail route (`#projects/:id`) via template cloning + project-detail-view block
+- [x] Notion-like header: hero cover/placeholder, title, goal, pin button, 5 tabs
+- [x] Cover upload: image + PDF (existing banner tab in project-hub/detail.js)
+- [x] Tasks tab using existing tasks.js store (NO duplication)
+- [x] Card clicks navigate via `window.location.hash = '#projects/:id'`
+- [x] `projects:open` event handled in shell.js → `setActiveTab('projects', { params: { id } })`
+- [x] `params` added to block context so project-detail-view can read `context.params.id`
+- [x] Tests pass — 495 across 29 files
 
 ## Phase 4 — Timeline + mini agenda
 - [ ] Timeline default WEEK view; toggle MONTH

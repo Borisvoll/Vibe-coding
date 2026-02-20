@@ -55,6 +55,7 @@ import { registerConversationDebriefBlock } from './conversation-debrief/index.j
 import { registerContextChecklistBlock } from './context-checklist/index.js';
 import { registerProjectDetailBlock } from './project-detail/index.js';
 import { registerProjectHubBlock } from './project-hub/index.js';
+import { registerProjectDetailViewBlock } from './project-detail-view/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
@@ -95,6 +96,9 @@ export function registerDefaultBlocks(registry) {
 
   // Projects tab — full project hub 2.0
   registerProjectHubBlock(registry);
+
+  // Projects detail route (#projects/:id)
+  registerProjectDetailViewBlock(registry);
 
   // Main dashboard (synopsis widgets — max 3 cards: dashboard + inbox + lijsten)
   registerDashboardBlock(registry);

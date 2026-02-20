@@ -162,7 +162,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   function renderHosts() {
     unmountAll();
     const mode = modeManager.getMode();
-    const context = { mode, eventBus, modeManager };
+    const context = { mode, eventBus, modeManager, params: routeParams };
     const eligibleBlocks = blockRegistry.getEnabled().filter((block) => {
       if (!Array.isArray(block.modes) || block.modes.length === 0) return true;
       return block.modes.includes(mode);
@@ -602,6 +602,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setActiveTab('inbox');
   });
 
+  // projects:open event — navigate to project detail route
+  const unsubscribeProjectsOpen = eventBus.on('projects:open', ({ projectId }) => {
+    setActiveTab('projects', { params: { id: projectId } });
+  });
+
   // ── Command palette ───────────────────────────────────────
   const cmdPalette = createCommandPalette({
     onNavigate: ({ tab, focus }) => {
@@ -703,6 +708,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();
     unsubscribeInboxOpen?.();
+    unsubscribeProjectsOpen?.();
     Object.values(vandaagSections).forEach(s => s?.destroy());
     cmdPalette.destroy();
     focusOverlay.destroy();

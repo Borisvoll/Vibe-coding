@@ -43,3 +43,19 @@
 - `getLocalModeManager()` fallback kept in settings-panel.js (defensive, no cost)
 
 **What's next:** Phase 3 — Project module MVP
+
+## Phase 3 — Project module MVP (2026-02-20)
+**What was done:**
+- `src/os/shell.js`: Added `params: routeParams` to block context (so blocks know current route params). Added `projects:open` eventBus handler → `setActiveTab('projects', { params: { id } })`
+- `src/blocks/project-hub/view.js`: Simplified from list↔detail internal router to list-only. Card clicks now navigate via `window.location.hash = '#projects/:id'`
+- New `src/blocks/project-detail-view/index.js`: Block for `project-detail-view` host. Reads `context.params.id`, wraps existing `renderProjectDetail()` from project-hub/detail.js
+- `src/blocks/registerBlocks.js`: Registered `project-detail-view` block
+- All existing infrastructure reused: project-hub/list.js (card grid), project-hub/detail.js (tabs), tabs/banner.js (cover + accent), tabs/tasks.js, tabs/timeline.js, tabs/mindmap.js, tabs/files.js
+- 495 tests pass, build succeeds
+
+**Decisions made:**
+- Reused existing project-hub blocks 100% — no duplication
+- Back button: detail.js internal button + shell-level `.os-section__home-link` both navigate to #projects
+- Double-unmount on back-then-route-change is benign (el?.remove() is idempotent)
+
+**What's next:** Phase 4 — Timeline + mini agenda (or ask user about open questions first)

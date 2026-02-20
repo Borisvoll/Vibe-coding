@@ -748,6 +748,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     onNavigate: ({ tab, focus }) => {
       setActiveTab(tab, { focus });
     },
+    eventBus,
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
 

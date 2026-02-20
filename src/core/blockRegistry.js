@@ -1,4 +1,5 @@
 import { getBlockFlag } from './featureFlags.js';
+import { isBlockDisabled } from './modulePresets.js';
 
 export function createBlockRegistry() {
   const blocks = new Map();
@@ -24,6 +25,8 @@ export function createBlockRegistry() {
 
   function getEnabled() {
     return getAll().filter((block) => {
+      // User/preset can disable any block
+      if (isBlockDisabled(block.id)) return false;
       if (typeof block.enabled === 'boolean') return block.enabled;
       return getBlockFlag(block.id);
     });

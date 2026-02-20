@@ -19,6 +19,13 @@ import './dashboard/styles.css';
 import './daily-cockpit/styles.css';
 import './lijsten/styles.css';
 import './lijsten-screen/styles.css';
+import './two-min-launcher/styles.css';
+import './done-list/styles.css';
+import './boundaries/styles.css';
+import './brain-state/styles.css';
+import './worry-dump/styles.css';
+import './conversation-debrief/styles.css';
+import './context-checklist/styles.css';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
@@ -50,6 +57,13 @@ import { registerDashboardBlock } from './dashboard/index.js';
 import { registerDailyCockpitBlock } from './daily-cockpit/index.js';
 import { registerLijstenBlock } from './lijsten/index.js';
 import { registerLijstenScreenBlock } from './lijsten-screen/index.js';
+import { registerTwoMinLauncherBlock } from './two-min-launcher/index.js';
+import { registerDoneListBlock } from './done-list/index.js';
+import { registerBoundariesBlock } from './boundaries/index.js';
+import { registerBrainStateBlock } from './brain-state/index.js';
+import { registerWorryDumpBlock } from './worry-dump/index.js';
+import { registerConversationDebriefBlock } from './conversation-debrief/index.js';
+import { registerContextChecklistBlock } from './context-checklist/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Today page — cockpit + MVP blocks
@@ -98,4 +112,13 @@ export function registerDefaultBlocks(registry) {
 
   // Main dashboard (synopsis widgets)
   registerDashboardBlock(registry);
+
+  // Personality-driven blocks
+  registerTwoMinLauncherBlock(registry);
+  registerDoneListBlock(registry);
+  registerBoundariesBlock(registry);
+  registerBrainStateBlock(registry);
+  registerWorryDumpBlock(registry);
+  registerConversationDebriefBlock(registry);
+  registerContextChecklistBlock(registry);
 }

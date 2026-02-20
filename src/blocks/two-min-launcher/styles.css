@@ -1,0 +1,77 @@
+/* ── 2-Minute Launcher ────────────────────────────────────── */
+
+.two-min-launcher__header {
+  margin-bottom: var(--space-3, 12px);
+}
+
+.two-min-launcher__title {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 4px);
+}
+
+.two-min-launcher__hint {
+  font-size: var(--font-xs, 0.6875rem);
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.two-min-launcher__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2, 8px);
+}
+
+@media (min-width: 600px) {
+  .two-min-launcher__grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.two-min-launcher__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3, 12px) var(--space-2, 8px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: all var(--duration-fast, 100ms) var(--ease, ease);
+  min-height: 72px;
+}
+
+.two-min-launcher__btn:hover {
+  border-color: var(--mode-accent, var(--color-accent));
+  background: var(--mode-accent-light, var(--color-accent-light, #eef2ff));
+}
+
+.two-min-launcher__btn--active {
+  border-color: var(--mode-accent, var(--color-accent));
+  background: var(--mode-accent-light, var(--color-accent-light, #eef2ff));
+  box-shadow: 0 0 0 2px var(--mode-accent, var(--color-accent));
+}
+
+.two-min-launcher__btn--done {
+  border-color: var(--color-emerald, #10b981);
+  background: var(--color-emerald-light, #d1fae5);
+}
+
+.two-min-launcher__emoji {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.two-min-launcher__label {
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 500;
+  color: var(--color-text, #1f2937);
+}
+
+.two-min-launcher__timer {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--mode-accent, var(--color-accent));
+}

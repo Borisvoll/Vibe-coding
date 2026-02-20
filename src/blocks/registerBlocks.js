@@ -1,4 +1,5 @@
 import './styles.css';
+import '../ui/collapsible-section.css';
 import './inbox/styles.css';
 import './inbox-screen/styles.css';
 import './tasks/styles.css';

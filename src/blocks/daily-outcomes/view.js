@@ -32,7 +32,7 @@ export function renderDailyOutcomes(container, context) {
     const outcomes = entry?.outcomes || ['', '', ''];
 
     // Update header with mode accent
-    titleEl.textContent = `Top 3 vandaag ${meta.emoji}`;
+    titleEl.textContent = 'Top 3 vandaag';
     titleEl.style.color = meta.color;
 
     const placeholders = [

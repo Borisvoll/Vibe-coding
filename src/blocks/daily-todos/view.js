@@ -42,7 +42,7 @@ export function renderDailyTodos(container, context) {
 
     const done = todos.filter((t) => t.done).length;
 
-    titleEl.textContent = `Taken ${meta.emoji}`;
+    titleEl.textContent = 'Taken vandaag';
     titleEl.style.color = meta.color;
     countEl.textContent = todos.length > 0 ? `${done}/${todos.length}` : '';
     countEl.style.color = done === todos.length && todos.length > 0

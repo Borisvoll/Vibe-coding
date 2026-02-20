@@ -448,6 +448,131 @@
   opacity: 0.6;
 }
 
+/* ── Drag handle ───────────────────────────────────────────── */
+
+.lijsten-screen__drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  flex-shrink: 0;
+  cursor: grab;
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  font-size: var(--font-sm);
+  user-select: none;
+  transition: opacity var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+
+.lijsten-screen__item:hover .lijsten-screen__drag-handle {
+  opacity: 0.6;
+}
+
+.lijsten-screen__drag-handle:hover {
+  opacity: 1 !important;
+  color: var(--color-text-secondary);
+}
+
+.lijsten-screen__drag-handle:active {
+  cursor: grabbing;
+}
+
+/* ── Drag state ────────────────────────────────────────────── */
+
+.lijsten-screen__item--dragging {
+  opacity: 0.4;
+  background: var(--color-surface-hover);
+}
+
+.lijsten-screen__item--drag-over {
+  border-top: 2px solid var(--mode-accent, var(--color-accent));
+}
+
+/* ── Subtask add button ────────────────────────────────────── */
+
+.lijsten-screen__subtask-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  opacity: 0;
+  flex-shrink: 0;
+  padding: 0;
+  transition: opacity var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+
+.lijsten-screen__item:hover .lijsten-screen__subtask-add {
+  opacity: 1;
+}
+
+.lijsten-screen__subtask-add:hover {
+  color: var(--mode-accent, var(--color-accent));
+}
+
+/* ── Subtask inline form ───────────────────────────────────── */
+
+.lijsten-screen__subtask-form {
+  width: 100%;
+  padding: var(--space-2) 0 0 calc(16px + var(--space-3) + 20px + var(--space-3));
+}
+
+.lijsten-screen__subtask-input {
+  width: 100%;
+  font-size: var(--font-sm);
+  padding: var(--space-2) var(--space-3) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+/* ── Subtask list ──────────────────────────────────────────── */
+
+.lijsten-screen__subtasks {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 calc(16px + var(--space-3) + 20px + var(--space-3));
+  border-left: 2px solid var(--color-border-light, var(--color-border));
+  margin-left: calc(8px + var(--space-2));
+}
+
+.lijsten-screen__item--subtask {
+  padding: var(--space-2) var(--space-2);
+  gap: var(--space-2);
+  border-bottom-color: var(--color-border-light, var(--color-border));
+}
+
+.lijsten-screen__item--subtask .lijsten-screen__item-text {
+  font-size: var(--font-sm);
+}
+
+/* ── Smaller check for subtasks ────────────────────────────── */
+
+.lijsten-screen__check--sm {
+  width: 16px;
+  height: 16px;
+  border-width: 1.5px;
+}
+
+/* ── Subtask count badge ───────────────────────────────────── */
+
+.lijsten-screen__item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lijsten-screen__item-subtask-count {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Touch-friendly on mobile ──────────────────────────────── */
 
 @media (pointer: coarse) {
@@ -465,5 +590,13 @@
     opacity: 1;
     width: 32px;
     height: 32px;
+  }
+
+  .lijsten-screen__drag-handle {
+    opacity: 0.4;
+  }
+
+  .lijsten-screen__subtask-add {
+    opacity: 1;
   }
 }

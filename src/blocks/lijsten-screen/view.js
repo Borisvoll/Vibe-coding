@@ -1,6 +1,8 @@
 import {
   getLists, addList, updateList, deleteList,
-  getItemsByList, addItem, toggleItem, updateItem, deleteItem, getItemCount,
+  getItemsByList, addItem, addSubtask, getSubtasks,
+  toggleItem, updateItem, deleteItem, getItemCount,
+  reorderItems,
 } from '../../stores/lists.js';
 import { escapeHTML } from '../../utils.js';
 
@@ -20,6 +22,8 @@ export function mountLijstenScreen(container, context) {
   const mountId = crypto.randomUUID();
   const { eventBus } = context;
   let selectedListId = null;
+  // Drag state
+  let dragItemId = null;
 
   container.insertAdjacentHTML('beforeend', `
     <div class="lijsten-screen" data-mount-id="${mountId}">
@@ -152,6 +156,12 @@ export function mountLijstenScreen(container, context) {
       return (a.position ?? 999) - (b.position ?? 999);
     });
 
+    // Load subtasks for all items
+    const subtaskMap = {};
+    for (const item of [...activeItems, ...doneItems]) {
+      subtaskMap[item.id] = await getSubtasks(item.id);
+    }
+
     mainEl.innerHTML = `
       <div class="lijsten-screen__header">
         <div class="lijsten-screen__header-left">
@@ -175,14 +185,14 @@ export function mountLijstenScreen(container, context) {
       </div>
 
       <ul class="lijsten-screen__items">
-        ${activeItems.map((item) => renderItem(item)).join('')}
+        ${activeItems.map((item) => renderItemWithSubtasks(item, subtaskMap[item.id] || [])).join('')}
       </ul>
 
       ${doneItems.length > 0 ? `
         <details class="lijsten-screen__done-section">
           <summary class="lijsten-screen__done-toggle">Afgerond (${doneItems.length})</summary>
           <ul class="lijsten-screen__items lijsten-screen__items--done">
-            ${doneItems.map((item) => renderItem(item)).join('')}
+            ${doneItems.map((item) => renderItemWithSubtasks(item, subtaskMap[item.id] || [])).join('')}
           </ul>
         </details>
       ` : ''}
@@ -197,7 +207,6 @@ export function mountLijstenScreen(container, context) {
     let currentPriority = 4;
 
     priorityBtn.addEventListener('click', () => {
-      // Cycle through priorities: 4 → 1 → 2 → 3 → 4
       currentPriority = currentPriority === 4 ? 1 : currentPriority + 1;
       priorityBtn.dataset.currentPriority = currentPriority;
       const meta = PRIORITY_META.find((p) => p.value === currentPriority);
@@ -211,7 +220,6 @@ export function mountLijstenScreen(container, context) {
         const text = addInput.value.trim();
         if (!text) return;
         const item = await addItem(selectedListId, text);
-        // Add priority and due date if set
         const changes = {};
         if (currentPriority !== 4) changes.priority = currentPriority;
         if (dateInput.value) changes.dueDate = dateInput.value;
@@ -227,7 +235,7 @@ export function mountLijstenScreen(container, context) {
       }
     });
 
-    // Toggle items
+    // Toggle items (top-level + subtasks)
     mainEl.querySelectorAll('.lijsten-screen__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const itemId = btn.closest('[data-item-id]').dataset.itemId;
@@ -256,6 +264,41 @@ export function mountLijstenScreen(container, context) {
       });
     });
 
+    // Add subtask — show inline input
+    mainEl.querySelectorAll('.lijsten-screen__subtask-add').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const itemEl = btn.closest('[data-item-id]');
+        const parentId = itemEl.dataset.itemId;
+        // Toggle subtask input
+        const existing = itemEl.querySelector('.lijsten-screen__subtask-form');
+        if (existing) {
+          existing.remove();
+          return;
+        }
+        const form = document.createElement('div');
+        form.className = 'lijsten-screen__subtask-form';
+        form.innerHTML = `<input type="text" class="form-input lijsten-screen__subtask-input" placeholder="Subtaak..." maxlength="200" autocomplete="off" />`;
+        itemEl.appendChild(form);
+        const input = form.querySelector('input');
+        input.focus();
+        input.addEventListener('keydown', async (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text) return;
+            await addSubtask(parentId, text);
+            eventBus.emit('lists:changed');
+          }
+          if (e.key === 'Escape') {
+            form.remove();
+          }
+        });
+      });
+    });
+
+    // Drag-to-reorder on active top-level items
+    setupDragReorder(mainEl);
+
     // Rename list
     mainEl.querySelector('.lijsten-screen__rename-btn')?.addEventListener('click', async () => {
       const newName = prompt('Nieuwe naam:', list.name);
@@ -278,7 +321,89 @@ export function mountLijstenScreen(container, context) {
     setTimeout(() => addInput?.focus(), 50);
   }
 
-  function renderItem(item) {
+  // ── Drag-to-reorder ─────────────────────────────────────────
+
+  function setupDragReorder(root) {
+    const itemList = root.querySelector('.lijsten-screen__items:not(.lijsten-screen__items--done)');
+    if (!itemList) return;
+
+    const draggableItems = itemList.querySelectorAll(':scope > .lijsten-screen__item:not(.lijsten-screen__item--done)');
+    draggableItems.forEach((itemEl) => {
+      const handle = itemEl.querySelector('.lijsten-screen__drag-handle');
+      if (!handle) return;
+
+      handle.addEventListener('mousedown', () => { itemEl.draggable = true; });
+      handle.addEventListener('touchstart', () => { itemEl.draggable = true; }, { passive: true });
+
+      itemEl.addEventListener('dragstart', (e) => {
+        dragItemId = itemEl.dataset.itemId;
+        itemEl.classList.add('lijsten-screen__item--dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      itemEl.addEventListener('dragend', () => {
+        itemEl.draggable = false;
+        itemEl.classList.remove('lijsten-screen__item--dragging');
+        dragItemId = null;
+        // Remove all drag-over indicators
+        itemList.querySelectorAll('.lijsten-screen__item--drag-over').forEach((el) => {
+          el.classList.remove('lijsten-screen__item--drag-over');
+        });
+      });
+
+      itemEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        if (itemEl.dataset.itemId !== dragItemId) {
+          itemEl.classList.add('lijsten-screen__item--drag-over');
+        }
+      });
+
+      itemEl.addEventListener('dragleave', () => {
+        itemEl.classList.remove('lijsten-screen__item--drag-over');
+      });
+
+      itemEl.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        itemEl.classList.remove('lijsten-screen__item--drag-over');
+        if (!dragItemId || dragItemId === itemEl.dataset.itemId) return;
+
+        // Collect current order, then move dragItemId before drop target
+        const currentOrder = Array.from(
+          itemList.querySelectorAll(':scope > .lijsten-screen__item:not(.lijsten-screen__item--done)')
+        ).map((el) => el.dataset.itemId);
+
+        const fromIdx = currentOrder.indexOf(dragItemId);
+        const toIdx = currentOrder.indexOf(itemEl.dataset.itemId);
+        if (fromIdx === -1 || toIdx === -1) return;
+
+        currentOrder.splice(fromIdx, 1);
+        currentOrder.splice(toIdx, 0, dragItemId);
+
+        await reorderItems(currentOrder);
+        eventBus.emit('lists:changed');
+      });
+    });
+  }
+
+  // ── Render helpers ──────────────────────────────────────────
+
+  function renderItemWithSubtasks(item, subtasks) {
+    const subtaskCount = subtasks.length;
+    const subtaskDone = subtasks.filter((s) => s.done).length;
+    const hasSubtasks = subtaskCount > 0;
+
+    return `
+      ${renderItem(item, hasSubtasks, subtaskCount, subtaskDone)}
+      ${hasSubtasks ? `
+        <ul class="lijsten-screen__subtasks">
+          ${subtasks.map((sub) => renderSubtaskItem(sub)).join('')}
+        </ul>
+      ` : ''}
+    `;
+  }
+
+  function renderItem(item, hasSubtasks = false, subtaskCount = 0, subtaskDone = 0) {
     const priority = item.priority ?? 4;
     const meta = PRIORITY_META.find((p) => p.value === priority);
     const priorityClass = meta ? `lijsten-screen__item--${meta.className}` : '';
@@ -286,23 +411,50 @@ export function mountLijstenScreen(container, context) {
     const dueDateStr = item.dueDate || '';
     const isOverdue = dueDateStr && !item.done && dueDateStr < new Date().toISOString().slice(0, 10);
     const dueLabel = dueDateStr ? formatDueDate(dueDateStr) : '';
+    const subtaskLabel = hasSubtasks ? `${subtaskDone}/${subtaskCount}` : '';
 
     return `
       <li class="lijsten-screen__item ${doneClass} ${priorityClass}" data-item-id="${item.id}">
+        ${!item.done ? `<span class="lijsten-screen__drag-handle" title="Versleep" aria-label="Versleep item">⠿</span>` : ''}
         <button type="button" class="lijsten-screen__check" aria-label="${item.done ? 'Markeer ongedaan' : 'Markeer gedaan'}">
           ${item.done ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8L6.5 11.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
         </button>
         <div class="lijsten-screen__item-content">
           <span class="lijsten-screen__item-text">${escapeHTML(item.text)}</span>
-          ${dueLabel ? `<span class="lijsten-screen__item-due ${isOverdue ? 'lijsten-screen__item-due--overdue' : ''}">${escapeHTML(dueLabel)}</span>` : ''}
+          <span class="lijsten-screen__item-meta">
+            ${dueLabel ? `<span class="lijsten-screen__item-due ${isOverdue ? 'lijsten-screen__item-due--overdue' : ''}">${escapeHTML(dueLabel)}</span>` : ''}
+            ${subtaskLabel ? `<span class="lijsten-screen__item-subtask-count">${subtaskLabel}</span>` : ''}
+          </span>
         </div>
         ${priority < 4 && !item.done ? `
           <button type="button" class="lijsten-screen__item-priority" data-priority="${priority}" title="${meta.label}" style="color:${meta.color}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 14V3L8 6L14 3V14"/></svg>
           </button>
         ` : ''}
+        ${!item.done ? `
+          <button type="button" class="lijsten-screen__subtask-add" aria-label="Subtaak toevoegen" title="Subtaak toevoegen">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="6" y1="2" x2="6" y2="10"/><line x1="2" y1="6" x2="10" y2="6"/></svg>
+          </button>
+        ` : ''}
         <button type="button" class="lijsten-screen__item-delete" aria-label="Verwijder">
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </li>
+    `;
+  }
+
+  function renderSubtaskItem(item) {
+    const doneClass = item.done ? 'lijsten-screen__item--done' : '';
+    return `
+      <li class="lijsten-screen__item lijsten-screen__item--subtask ${doneClass}" data-item-id="${item.id}">
+        <button type="button" class="lijsten-screen__check lijsten-screen__check--sm" aria-label="${item.done ? 'Markeer ongedaan' : 'Markeer gedaan'}">
+          ${item.done ? '<svg width="10" height="10" viewBox="0 0 16 16" fill="none"><path d="M3 8L6.5 11.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
+        </button>
+        <div class="lijsten-screen__item-content">
+          <span class="lijsten-screen__item-text">${escapeHTML(item.text)}</span>
+        </div>
+        <button type="button" class="lijsten-screen__item-delete" aria-label="Verwijder">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 2L10 10M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
       </li>
     `;

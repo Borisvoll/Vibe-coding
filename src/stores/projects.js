@@ -83,6 +83,39 @@ export async function removeMilestone(projectId, milestoneId) {
   return updateProject(projectId, { milestones });
 }
 
+// --- Cover & accent color ---
+
+export async function setCover(projectId, dataUrl) {
+  return updateProject(projectId, { cover: dataUrl });
+}
+
+export async function setAccentColor(projectId, color) {
+  return updateProject(projectId, { accentColor: color });
+}
+
+// --- Mindmap ---
+
+export async function updateMindmap(projectId, nodes) {
+  return updateProject(projectId, { mindmap: nodes });
+}
+
+// --- File attachments ---
+
+export async function addFile(projectId, fileEntry) {
+  const project = await getByKey(STORE, projectId);
+  if (!project) return null;
+  const files = project.files || [];
+  files.push(fileEntry);
+  return updateProject(projectId, { files });
+}
+
+export async function removeFile(projectId, fileId) {
+  const project = await getByKey(STORE, projectId);
+  if (!project) return null;
+  const files = (project.files || []).filter((f) => f.id !== fileId);
+  return updateProject(projectId, { files });
+}
+
 // --- Phases ---
 
 export async function addPhase(projectId, title, startDate, endDate, color = 'var(--color-accent)') {

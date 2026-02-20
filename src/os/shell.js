@@ -9,7 +9,7 @@ import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'settings'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
 // Mode order: School & Personal first, BPV secondary (Rams: match user's primary context)
 const MODE_META = {
@@ -101,6 +101,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <button class="os-sidebar__item" type="button" data-os-tab="planning">
             <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             <span class="os-sidebar__label">Planning</span>
+          </button>
+          <button class="os-sidebar__item" type="button" data-os-tab="projects" data-tooltip="Projects (Alt+G)" data-tooltip-pos="right">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            <span class="os-sidebar__label">Projects 🚀</span>
           </button>
         </nav>
 
@@ -207,6 +211,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           </button>
           <button class="os-nav__button" type="button" data-os-tab="lijsten">Lijsten</button>
           <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
+          <button class="os-nav__button" type="button" data-os-tab="projects">Projects 🚀</button>
           <button class="os-nav__button" type="button" data-os-tab="settings">Instellingen</button>
         </div>
       </nav>
@@ -253,6 +258,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <h2 class="os-section__title">Planning</h2>
           <div class="os-host-stack" data-os-host="planning-main"></div>
+        </section>
+        <section class="os-section" data-os-section="projects" hidden>
+          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
+          <h2 class="os-section__title">Projects 🚀</h2>
+          <div class="os-host-stack" data-os-host="projects-hub"></div>
         </section>
         <section class="os-section" data-os-section="settings" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
@@ -761,6 +771,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         const input = app.querySelector('.inbox-screen__capture-input');
         input?.focus();
       }, 50);
+    }
+    // Alt+G — open Projects hub
+    if (e.altKey && e.key === 'g' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      setActiveTab('projects');
     }
   }
   document.addEventListener('keydown', handleGlobalKeydown);

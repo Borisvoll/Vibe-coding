@@ -31,6 +31,12 @@
   --ui-accent:        var(--mode-accent, var(--color-accent));
   --ui-accent-light:  var(--mode-accent-light, var(--color-accent-light));
 
+  /* ── Accent derived (set by themeEngine.js) ──────────────── */
+  --accent-soft:      color-mix(in srgb, var(--color-accent) 10%, transparent);
+  --accent-soft-2:    color-mix(in srgb, var(--color-accent) 5%, transparent);
+  --accent-border:    color-mix(in srgb, var(--color-accent) 20%, transparent);
+  --accent-shadow:    0 2px 12px color-mix(in srgb, var(--color-accent) 10%, transparent);
+
   /* ── Semantic ─────────────────────────────────────────────── */
   --ui-danger:        var(--color-error);
   --ui-warning:       var(--color-warning);
@@ -40,4 +46,34 @@
   --ui-icon-sm:       20px;
   --ui-icon-md:       40px;
   --ui-progress-h:    6px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Accent Intensity Classes — apply to cards/blocks
+   ─────────────────────────────────────────────────────────────
+   .accent-neutral   → no accent tint (default)
+   .accent-soft      → faint tint + border hint
+   .accent-highlight → accent stripe + stronger tint (for Today/important)
+   ═══════════════════════════════════════════════════════════════ */
+
+.accent-soft {
+  background: linear-gradient(135deg, var(--accent-soft-2), var(--ui-surface));
+  border-color: var(--accent-border);
+  box-shadow: var(--accent-shadow);
+}
+
+.accent-highlight {
+  background: linear-gradient(135deg, var(--accent-soft), var(--ui-surface));
+  border-color: var(--accent-border);
+  border-left: 3px solid var(--color-accent);
+  box-shadow: var(--accent-shadow);
+}
+
+/* Hover states for intensity classes */
+.accent-soft:hover {
+  box-shadow: var(--accent-shadow), var(--shadow-sm);
+}
+
+.accent-highlight:hover {
+  box-shadow: var(--accent-shadow), var(--shadow-sm);
 }

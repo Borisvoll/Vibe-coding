@@ -3,7 +3,8 @@ import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
-import { ACCENT_COLORS, WEEKDAY_FULL, applyAccentColor } from '../constants.js';
+import { ACCENT_COLORS, WEEKDAY_FULL } from '../constants.js';
+import { setTheme } from '../core/themeEngine.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
@@ -648,7 +649,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     osAccentPicker?.querySelectorAll('.os-topbar__accent-dot').forEach(d => {
       d.classList.toggle('os-topbar__accent-dot--active', d.dataset.color === colorId);
     });
-    applyAccentColor(hex);
+    await setTheme({ accent: hex });
     await setSetting('accentColor', colorId);
   }
 

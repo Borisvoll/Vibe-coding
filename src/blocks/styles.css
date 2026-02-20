@@ -1029,11 +1029,37 @@
   animation: block-enter var(--duration-slow) var(--ease-out) both;
   animation-delay: var(--stagger, 0ms);
   transition: border-color 400ms var(--ease),
-              box-shadow var(--duration-fast) var(--ease);
+              box-shadow var(--duration-fast) var(--ease),
+              background 400ms var(--ease);
 }
 
 .os-mini-card:hover {
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--accent-shadow, var(--shadow-sm));
+}
+
+/* ── Accent intensity: soft — faint tint + accent border hint ─ */
+.os-mini-card.accent-soft {
+  background: linear-gradient(135deg, var(--accent-soft-2), var(--ui-surface));
+  border-color: var(--accent-border);
+}
+
+/* ── Accent intensity: highlight — accent stripe + stronger tint ─ */
+.os-mini-card.accent-highlight {
+  background: linear-gradient(135deg, var(--accent-soft), var(--ui-surface));
+  border-left: 3px solid var(--color-accent);
+  border-color: var(--accent-border);
+}
+
+/* Daily outcomes — highlight card (Today's top priorities) */
+.daily-outcomes.os-mini-card {
+  background: linear-gradient(135deg, var(--accent-soft), var(--ui-surface));
+  border-left: 3px solid var(--color-accent);
+  border-color: var(--accent-border);
+}
+
+/* Daily cockpit stats — soft accent tint */
+.daily-cockpit {
+  border-color: var(--accent-border, var(--color-border));
 }
 
 /* Block entrance — used by os-mini-card and host children after mode switch */

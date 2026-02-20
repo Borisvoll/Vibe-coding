@@ -9,7 +9,15 @@ npm run dev          # Vite dev server on port 3000
 npm run build        # Production build to dist/
 npm test             # Run all tests once (vitest run)
 npm run test:watch   # Watch mode testing
+
+# Run a single test file
+npx vitest run tests/stores/tasks.test.js
+
+# Run tests matching a pattern
+npx vitest run -t "should add a task"
 ```
+
+**Important:** Always run `npm test` before committing. Tests must pass (298 tests across 21 files).
 
 ## Tech Stack
 
@@ -17,7 +25,7 @@ Zero-dependency vanilla JavaScript (ES2022) modular monolith. No framework. Only
 
 ## Architecture
 
-**BORIS** is a local-first personal OS / second brain for students. Single IndexedDB database (`bpv-tracker`, v6, 29 object stores), single build, single deploy.
+**BORIS** is a local-first personal OS / second brain for students. Single IndexedDB database (`bpv-tracker`, v8, 31 object stores), single build, single deploy to GitHub Pages.
 
 ### Kernel (`src/core/`)
 
@@ -26,7 +34,7 @@ Every module receives `{ db, eventBus, modeManager, blockRegistry }`:
 - **ModeManager** (`modeManager.js`) — 3-mode lens: BPV (blue), School (purple), Personal (green). Stored in `localStorage` as `boris_mode`. Broadcasts `mode:changed`.
 - **BlockRegistry** (`blockRegistry.js`) — Discovers and mounts UI blocks into host slots.
 - **FeatureFlags** (`featureFlags.js`) — `localStorage`-backed. `enableNewOS` toggles legacy vs BORIS OS path.
-- **MigrationManager** (`migrationManager.js`) — Append-only schema versioning (v1→v6).
+- **MigrationManager** (`migrationManager.js`) — Append-only schema versioning (v1→v8).
 - **ModeCaps** (`modeCaps.js`) — Task capacity limits per mode (BPV=3, School=3, Personal=5).
 
 ### Dual Architecture
@@ -35,11 +43,32 @@ Feature flag `enableNewOS` (default: true) controls UI path in `src/main.js`:
 - **BORIS OS** (new): `createOSShell()` → tab navigation + block system + 3-mode lens
 - **Legacy**: `createShell()` + `createRouter()` → sidebar + 18 hash-routed pages
 
-Both paths share the same IndexedDB. Legacy pages accessible from OS blocks via hash routes.
+Both paths share the same IndexedDB. Legacy pages accessible from OS via sidebar "Legacy" button.
+
+### OS Shell (`src/os/shell.js`)
+
+5 tabs: Dashboard / Vandaag / Inbox / Planning / Instellingen.
+
+The **Vandaag** tab uses a Notion-style layout with 6 collapsible sections, each backed by a host slot:
+
+| Section | Host Slot | Blocks | Default State |
+|---------|-----------|--------|---------------|
+| Taken | `vandaag-tasks` | daily-todos | Open |
+| Projecten & Lijsten | `vandaag-projects` | projects, lijsten | Open |
+| Inbox | `vandaag-capture` | inbox | Open |
+| Reflectie | `vandaag-reflection` | daily-reflection | Varies by mode |
+| Context | `vandaag-mode` | mode-specific dashboards, tasks, schedule, BPV tools | Varies by mode |
+| Weekoverzicht | `vandaag-weekly` | weekly-review | Closed |
+
+Plus two non-collapsible areas: `vandaag-hero` (daily outcomes/Top 3) and `vandaag-cockpit` (stats).
+
+Other host slots: `dashboard-cards` (dashboard grid), `inbox-screen` (full-page inbox processing).
+
+Collapsible section state persists per mode in localStorage via `src/ui/collapsible-section.js`.
 
 ### Block System (`src/blocks/`)
 
-Self-contained UI components mounted into host slots (`today-sections`, `dashboard-cards`, `vandaag-widgets`, `inbox-screen`).
+31 registered blocks. Self-contained UI components mounted into host slots.
 
 Block contract:
 1. Export `register*Block(registry)` function
@@ -51,36 +80,26 @@ Block contract:
 
 ### Store Adapters (`src/stores/`)
 
-Wrap `db.js` CRUD helpers with domain validation and business logic. Key stores:
-- `tasks.js` — Mode-aware task CRUD (`os_tasks` store)
-- `inbox.js` — Inbox capture + processing (`os_inbox` store)
-- `projects.js` — Projects with one-next-action constraint (`os_projects` store)
+13 store adapters wrap `db.js` CRUD helpers with domain validation:
+- `tasks.js` — Mode-aware task CRUD (`os_tasks`)
+- `inbox.js` — Inbox capture + processing (`os_inbox`)
+- `projects.js` — Projects with one-next-action constraint (`os_projects`)
+- `lists.js` — Todoist-style persistent lists (`os_lists`, `os_list_items`)
+- `daily.js` — Daily plans, outcomes, todos, notes (`dailyPlans`)
 - `bpv.js` — Hours/logbook tracking (BPV-specific stores)
-- `validate.js` — Shared validation functions, throw `ValidationError` with field + reason
+- `personal.js` — Wellbeing, habits, creative sparks
+- `tracker.js` — Hours and logbook entry helpers
+- `search.js` — Cross-store global search (lazy-loaded in Vandaag search bar)
+- `tags.js` — Tagging system (built, UI integration pending)
+- `backup.js` — Export/import bundles
+- `weekly-review.js` — Weekly review aggregation + mailto sending
+- `validate.js` — Shared validation, throws `ValidationError` with field + reason
 
 ### Database (`src/db.js`)
 
 IndexedDB CRUD layer. Key exports: `initDB()`, `getAll(store)`, `getByKey(store, id)`, `getByIndex(store, index, value)`, `put(store, record)`, `remove(store, id)`, `softDelete(store, id)`, `getSetting(key)`, `setSetting(key, value)`, `exportAllData()`, `importAll(data)`.
 
 Soft-delete pattern: deletions go to `deleted` store for undo. All `os_*` stores have `updated_at` index for future sync.
-
-### OS Shell (`src/os/shell.js`)
-
-Tab-based navigation: Dashboard / Vandaag / Inbox / Planning / Reflectie / Archief. Manages host slot rendering, mode switching, and block mounting.
-
-### Settings & Mode Management
-
-Mode switching works in both legacy and BORIS OS paths:
-- **BORIS OS** (`src/os/shell.js`): Uses `modeManager` instance + eventBus for reactive updates
-- **Legacy** (`src/components/shell.js`): Uses localStorage fallback (`boris_mode` key) with direct DOM updates
-- **Settings Panel** (`src/blocks/settings-panel.js`): Dual-path support via fallback mode manager
-
-Mode pills appear in:
-1. Settings page (Instellingen section) — all three paths
-2. Legacy hamburger menu (top-right) — before theme switcher
-3. BORIS OS mode picker dialog (header button)
-
-All three keep themselves in sync via `mode:changed` event (OS) or localStorage (legacy).
 
 ### Key Events
 
@@ -92,29 +111,17 @@ All three keep themselves in sync via `mode:changed` event (OS) or localStorage 
 | `inbox:open` | Switch to inbox tab |
 | `projects:changed` | Project modified |
 
-## Testing
+### Settings & Mode Management
 
-Tests use Vitest + `fake-indexeddb`. Setup in `tests/setup.js` resets the DB before each test (234 tests covering store adapters, migrations, validation, mode switching). Tests are store-level (no browser needed).
+Mode switching works in both paths:
+- **BORIS OS**: `modeManager` instance + eventBus for reactive updates
+- **Legacy**: localStorage fallback (`boris_mode` key) with direct DOM updates
 
-```bash
-# Run all tests once
-npm test
-
-# Run a single test file
-npx vitest run tests/stores/tasks.test.js
-
-# Run tests matching a pattern
-npx vitest run -t "should add a task"
-
-# Watch mode (re-run on file changes)
-npm run test:watch
-```
-
-**Important:** Always run `npm test` before committing to ensure no regressions. Tests must pass in any PR.
+Default mode is `School` (not BPV) for new users. All mode UIs stay in sync via `mode:changed` event (OS) or localStorage (legacy).
 
 ## Deployment
 
-- **GitHub Pages**: Auto-deploy on push to main via `.github/workflows/deploy.yml` (Node 20, `npm run build`, base path `/Vibe-coding/`)
+- **GitHub Pages** only: Auto-deploy on push to main via `.github/workflows/deploy.yml` (Node 20, `npm run build`, base path `/Vibe-coding/`)
 
 ## Design Philosophy
 
@@ -127,7 +134,7 @@ Inspired by Dieter Rams, Jony Ive, Steve Jobs, Brian Eno. Key rules:
 
 ## Common Patterns & Gotchas
 
-**Click handlers on new buttons:** Use direct click listeners, not event delegation on parent containers, for maximum reliability. Example:
+**Click handlers on new buttons:** Use direct click listeners, not event delegation on parent containers:
 ```javascript
 container.querySelectorAll('.my-button').forEach(btn => {
   btn.addEventListener('click', () => { /* handler */ });
@@ -136,31 +143,20 @@ container.querySelectorAll('.my-button').forEach(btn => {
 
 **XSS prevention:** Always use `escapeHTML()` from `src/utils.js` when rendering user content:
 ```javascript
-host.innerHTML = `<p>${escapeHTML(userText)}</p>`; // ✓ Safe
-host.innerHTML = `<p>${userText}</p>`;             // ✗ Unsafe
+host.innerHTML = `<p>${escapeHTML(userText)}</p>`; // Safe
+host.innerHTML = `<p>${userText}</p>`;             // Unsafe
 ```
 
-**Pointer events with overlays:** Fixed position overlays can block clicks on elements below. Use `pointer-events: none` as default, only enable when needed:
-```css
-.overlay {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;  /* Allow clicks through */
-}
-.overlay.active {
-  pointer-events: auto;  /* Intercept clicks when visible */
-}
-```
+**Pointer events with overlays:** Fixed position overlays can block clicks. Use `pointer-events: none` as default, `pointer-events: auto` only when active.
 
-**Mode persistence:** Use `localStorage.getItem('boris_mode')` in legacy path, `modeManager.getMode()` in OS path. Both store the same key. Default mode is `School` (not BPV) for new users.
+**Mode persistence:** Use `localStorage.getItem('boris_mode')` in legacy path, `modeManager.getMode()` in OS path. Both store the same key.
 
-## Documentation
-
-Detailed docs in `docs/`: `architecture.md` (system design), `design-principles.md` (UI rules), `storage.md` (IndexedDB schemas), `current-state.md` (feature inventory), `future.md` (roadmap).
+**Block host assignment:** When adding blocks to the Vandaag page, use one of the 6 collapsible host slots (`vandaag-tasks`, `vandaag-projects`, `vandaag-capture`, `vandaag-reflection`, `vandaag-mode`, `vandaag-weekly`) or the non-collapsible slots (`vandaag-hero`, `vandaag-cockpit`).
 
 ## Debugging Tips
 
-- **Test failures:** Run `npm test` before each commit. Check `tests/setup.js` for DB reset logic.
+- **Test failures:** Check `tests/setup.js` for DB reset logic.
 - **Mode not changing:** Verify `localStorage` isn't throwing errors (private browsing). Check that `setMode()` is called before re-rendering.
-- **Styles not applying:** Block styles are imported in `src/blocks/registerBlocks.js` (both OS and legacy paths). Component styles in `src/styles/base.css`.
+- **Styles not applying:** Block styles are imported in `src/blocks/registerBlocks.js`. Component styles in `src/styles/base.css`.
 - **EventBus not firing:** Check that handlers are subscribed *before* events are emitted. Unsubscribe on cleanup to avoid memory leaks.
+- **Blocks not mounting:** Verify the block's `hosts` array matches an existing host slot and `modes` includes the current mode (or is empty for all modes).

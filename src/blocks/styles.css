@@ -377,47 +377,47 @@
   --mode-card-border: var(--color-blue);
 }
 
-/* ── Background tint: whole content area follows mode ──────── */
+/* ── Background tint: whole content area follows mode (subtle) */
 #new-os-shell[data-mode] .os-shell__content {
-  background: var(--mode-bg-tint, var(--color-bg));
+  background: var(--color-bg);
   transition: background 400ms var(--ease), opacity 300ms var(--ease);
 }
 
-/* ── Mode hero banner — compact mode indicator ────────────── */
+/* ── Mode hero — subtle inline indicator ──────────────────── */
 .os-mode-hero {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
-  background: var(--mode-accent-light, var(--color-accent-light));
-  border-left: 3px solid var(--mode-accent, var(--color-accent));
-  margin-bottom: var(--space-3);
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--mode-accent, var(--color-accent)) 25%, var(--color-border));
+  margin-bottom: var(--space-4);
   animation: hero-enter 400ms var(--ease-out) both;
-  transition: background 400ms var(--ease), border-color 400ms var(--ease);
+  transition: border-color 400ms var(--ease);
 }
 
 .os-mode-hero__emoji {
-  font-size: 1.25rem;
+  font-size: 0.875rem;
   line-height: 1;
 }
 
 .os-mode-hero__text {
   display: flex;
-  flex-direction: column;
-  gap: 0;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .os-mode-hero__label {
-  font-size: var(--font-md);
-  font-weight: 700;
+  font-size: var(--font-sm);
+  font-weight: 600;
   color: var(--mode-accent, var(--color-accent));
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .os-mode-hero__desc {
   font-size: var(--font-xs);
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
 }
 
 @keyframes hero-enter {
@@ -825,15 +825,15 @@
 }
 .os-nav--mobile::-webkit-scrollbar { display: none; }
 
-/* Mode accent line under mobile nav */
+/* Mode accent line under mobile nav — subtle hint */
 .os-nav--mobile::after {
   content: '';
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: var(--mode-accent, var(--color-accent));
+  height: 2px;
+  background: color-mix(in srgb, var(--mode-accent, var(--color-accent)) 40%, var(--color-border));
   transition: background 300ms var(--ease);
 }
 
@@ -907,8 +907,13 @@
 /* ── Content area ──────────────────────────────────────────── */
 .os-shell__content {
   flex: 1;
-  padding: var(--space-4);
+  padding: var(--space-5) var(--space-4);
   transition: opacity 300ms var(--ease);
+}
+
+/* Centered content container — prevent overly wide layouts */
+.os-section {
+  max-width: 1100px;
 }
 
 /* Content crossfade during mode switch */
@@ -922,7 +927,7 @@
 }
 
 .os-section__title {
-  margin: 0 0 var(--space-4);
+  margin: 0 0 var(--space-6);
   font-size: var(--font-xl);
   font-weight: 600;
   display: flex;
@@ -946,13 +951,13 @@
 .os-host-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .os-host-stack {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 /* Block entrance for all host children (covers non-card blocks too) */
@@ -974,18 +979,23 @@
 /* ── Tablet (sidebar visible at 768px+) ───────────────────── */
 @media (min-width: 768px) {
   .os-shell__content {
-    padding: var(--space-5) var(--space-6);
+    padding: var(--space-6) var(--space-8);
   }
 
   .os-host-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+
+  .os-host-stack {
+    gap: var(--space-6);
   }
 }
 
 /* ── Desktop ──────────────────────────────────────────────── */
 @media (min-width: 1024px) {
   .os-shell__content {
-    padding: var(--space-6) var(--space-8);
+    padding: var(--space-8) var(--space-10);
   }
 
   .os-host-grid {
@@ -996,7 +1006,7 @@
 /* ── Wide desktop ─────────────────────────────────────────── */
 @media (min-width: 1440px) {
   .os-shell__content {
-    padding: var(--space-8) var(--space-10);
+    padding: var(--space-10) var(--space-12);
   }
 }
 
@@ -1006,7 +1016,7 @@
   border-left: 3px solid var(--mode-card-border, var(--color-border));
   border-radius: var(--ui-card-radius);
   background: var(--ui-surface);
-  padding: var(--ui-card-padding);
+  padding: var(--space-5) var(--space-6);
   font-size: var(--font-lg);
   color: var(--ui-text);
   animation: block-enter var(--duration-slow) var(--ease-out) both;
@@ -1368,7 +1378,7 @@
 /* ── Vandaag context header ──────────────────────────────────── */
 
 .vandaag-header {
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
 .vandaag-header__top {

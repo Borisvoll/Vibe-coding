@@ -11,9 +11,9 @@
 | Language | Vanilla JS (ES2022) | Zero framework, zero runtime deps |
 | Build | Vite 5.4 | Dev server on :3000, target ES2022 |
 | Storage | IndexedDB v5 | 28 object stores, offline-first |
-| Hosting | Netlify (configured) | `netlify-cli` in devDeps, deploy scripts in package.json |
+| Hosting | GitHub Pages | Auto-deploy via GitHub Actions on push to main |
 | PWA | Service worker + manifest | Cache-first strategy, versioned cache names |
-| Dependencies | **2 devDeps only** | `vite` + `netlify-cli` — nothing else |
+| Dependencies | **3 devDeps only** | `vite` + `vitest` + `fake-indexeddb` |
 
 **Base path:** `/Vibe-coding/` (GitHub Pages compatible via `vite.config.js`)
 

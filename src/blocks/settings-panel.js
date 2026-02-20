@@ -1,8 +1,10 @@
 import { APP_VERSION } from '../version.js';
-import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
+import { ACCENT_COLORS } from '../constants.js';
+import { setTheme } from '../core/themeEngine.js';
 import { getSetting, setSetting } from '../db.js';
 import { getFeatureFlag, setFeatureFlag } from '../core/featureFlags.js';
 import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } from '../core/tutorial.js';
+import { createThemeStudio } from '../ui/theme-studio.js';
 
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
 
@@ -144,6 +146,15 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         <div class="settings-desc">v${APP_VERSION}</div>
       </div>
     </section>
+    <section class="settings-block card" style="margin-top:var(--space-5)">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Theme Studio</div>
+          <div class="settings-desc">Pas kleuren, accenten en visuele stijl aan</div>
+        </div>
+      </div>
+      <div data-theme-studio-mount></div>
+    </section>
   `;
 
   // ── Mode switcher ──────────────────────────────────────────
@@ -238,7 +249,7 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
     container.querySelectorAll('.accent-dot').forEach((node) => node.classList.remove('active'));
     dot.classList.add('active');
     await setSetting('accentColor', colorId);
-    applyAccentColor(hex);
+    await setTheme({ accent: hex });
     onChange?.({ key: 'accentColor', value: colorId });
   });
 
@@ -257,4 +268,11 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
       onChange?.({ key: 'compact', value: compactMode });
     });
   });
+
+  // ── Theme Studio ────────────────────────────────────────────
+  const themeStudioMount = container.querySelector('[data-theme-studio-mount]');
+  if (themeStudioMount) {
+    const studio = createThemeStudio();
+    themeStudioMount.appendChild(studio.el);
+  }
 }

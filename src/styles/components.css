@@ -25,9 +25,9 @@
   border-radius: var(--radius-lg); padding: var(--space-5);
   transition: all var(--duration) var(--ease);
 }
-.card-hover:hover { box-shadow: var(--shadow-md); }
+.card-hover:hover { box-shadow: var(--accent-shadow, var(--shadow-md)); }
 .card-clickable { cursor: pointer; }
-.card-clickable:hover { box-shadow: var(--shadow-md); border-color: var(--color-accent); }
+.card-clickable:hover { box-shadow: var(--accent-shadow, var(--shadow-md)); border-color: var(--accent-border, var(--color-accent)); }
 .card-color-top { border-top: 3px solid var(--card-color, var(--color-accent)); }
 .card-color-left { border-left: 3px solid var(--card-color, var(--color-accent)); }
 

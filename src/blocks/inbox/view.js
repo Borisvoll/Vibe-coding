@@ -95,8 +95,8 @@ export function renderInbox(container, context) {
           ${item.mode ? `<span class="badge badge-default">${escapeHTML(item.mode)}</span>` : ''}
         </div>
         <div class="inbox-block__item-actions">
-          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="promote" title="Promoveer naar taak" aria-label="Promoveer naar taak">&#x2191;</button>
-          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="archive" title="Archiveer" aria-label="Archiveer">&#x2713;</button>
+          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="promote" aria-label="Promoveer naar taak" data-tooltip="Naar taak">&#x2191;</button>
+          <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="archive" aria-label="Archiveer" data-tooltip="Archiveer">&#x2713;</button>
         </div>
       </div>
     `).join('');

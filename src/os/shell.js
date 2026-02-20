@@ -52,9 +52,18 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // Route container — templates get cloned into here
   const routeContainer = app.querySelector('[data-route-container]');
 
+  // Current route params (e.g. { id: 'abc123' } for #projects/abc123)
+  let routeParams = {};
+
   // ── Route mounting (template cloning) ─────────────────────
-  function mountRoute(tab) {
-    const template = document.querySelector(`template[data-route="${tab}"]`);
+  function mountRoute(tab, params = {}) {
+    // Determine which template to use
+    let templateName = tab;
+    if (tab === 'projects' && params.id) {
+      templateName = 'project-detail';
+    }
+
+    const template = document.querySelector(`template[data-route="${templateName}"]`);
     if (!template) return;
 
     const clone = template.content.cloneNode(true);
@@ -83,11 +92,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       });
     }
 
-    // Breadcrumb (← Dashboard) visibility + handler
+    // Breadcrumb visibility + handler
     const homeLink = routeContainer.querySelector('.os-section__home-link');
     if (homeLink) {
       homeLink.hidden = tab === 'dashboard';
-      homeLink.addEventListener('click', () => setActiveTab('dashboard'));
+      if (templateName === 'project-detail') {
+        homeLink.addEventListener('click', () => setActiveTab('projects'));
+      } else {
+        homeLink.addEventListener('click', () => setActiveTab('dashboard'));
+      }
     }
 
     renderHosts();
@@ -106,14 +119,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   function setActiveTab(tab, opts) {
     const prevTab = activeTab;
     activeTab = SHELL_TABS.includes(tab) ? tab : 'today';
+    routeParams = opts?.params || {};
 
     // Unmount previous route (skip if nothing mounted yet)
     if (routeContainer.firstChild) {
       unmountRoute(prevTab);
     }
 
-    // Mount new route
-    mountRoute(activeTab);
+    // Mount new route with params
+    mountRoute(activeTab, routeParams);
 
     // Update all nav buttons (both sidebar and mobile nav)
     app.querySelectorAll('[data-os-tab]').forEach((button) => {
@@ -124,7 +138,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
     // Deep link: update URL hash
     const focus = opts?.focus || null;
-    updateHash(activeTab, focus);
+    updateHash(activeTab, focus, routeParams);
     if (focus) {
       scrollToFocus(routeContainer, focus);
     }
@@ -548,15 +562,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     }
   })();
 
-  // Legacy switch button
-  app.querySelector('#legacy-switch-btn')?.addEventListener('click', () => {
-    import('../core/featureFlags.js').then(({ setFeatureFlag }) => {
-      setFeatureFlag('enableNewOS', false);
-      window.location.hash = '';
-      window.location.reload();
-    });
-  });
-
   // ── Mode change handler ───────────────────────────────────
   let modeTransitionTimer = null;
 
@@ -642,13 +647,14 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   // Mount initial route (this calls renderHosts internally)
-  setActiveTab(activeTab, { focus: hashState.focus });
+  setActiveTab(activeTab, { focus: hashState.focus, params: hashState.params || {} });
 
   // Hash change listener
   function handleHashChange() {
     const h = parseHash();
-    if (h.tab && h.tab !== activeTab) {
-      setActiveTab(h.tab, { focus: h.focus });
+    const paramsChanged = JSON.stringify(h.params || {}) !== JSON.stringify(routeParams);
+    if (h.tab && (h.tab !== activeTab || paramsChanged)) {
+      setActiveTab(h.tab, { focus: h.focus, params: h.params || {} });
     } else if (h.focus) {
       scrollToFocus(routeContainer, h.focus);
     }

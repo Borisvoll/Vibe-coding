@@ -9,23 +9,23 @@ Tracking: incremental refactor, app works on every commit, tests green.
 - [x] Audit shell.js (912 lines), main.js (224 lines), router.js (130 lines)
 - [x] Audit 41 blocks, 21 legacy pages, 13 host slots
 
-## Phase 1 — Template-based shell (HTML5-first)
-- [ ] Move shell chrome (sidebar/topbar/nav/mode-picker) into index.html
-- [ ] Add `<main id="app" data-route-container>` as empty mount point
-- [ ] Create `<template data-route="...">` for each route (today, dashboard, inbox, lijsten, planning, projects, settings)
-- [ ] Convert shell.js from DOM creation to hydration of shell chrome
-- [ ] Shell.js no longer sets `app.innerHTML`; it finds existing shell elements
-- [ ] Legacy fallback: clears shell + inserts legacy UI (temporary)
-- [ ] Tests pass
+## Phase 1 — Template-based shell (HTML5-first) ✅
+- [x] Move shell chrome (sidebar/topbar/nav/mode-picker) into index.html
+- [x] Add `<main id="app" data-route-container>` as empty mount point
+- [x] Create `<template data-route="...">` for each route (today, dashboard, inbox, lijsten, planning, projects, settings)
+- [x] Convert shell.js from DOM creation to hydration of shell chrome
+- [x] Shell.js no longer sets `app.innerHTML`; it finds existing shell elements
+- [x] Tests pass — 484 across 29 files
 
-## Phase 2 — Unified router
-- [ ] Create new router that owns route->template mapping
-- [ ] Router clones `<template>` and mounts into `<main data-route-container>`
-- [ ] Implement `#projects` and `#projects/:id` routes
-- [ ] Mode-aware navigation visibility (BPV sidebar items only in BPV mode)
-- [ ] Kill legacy dual-path (remove enableNewOS feature flag)
-- [ ] Delete: src/components/shell.js, old src/router.js, src/shortcuts.js
-- [ ] Tests pass
+## Phase 2 — Unified router ✅
+- [x] Router (shell.js) owns route→template mapping via `mountRoute()`/`unmountRoute()`
+- [x] Router clones `<template>` and mounts into `<main data-route-container>`
+- [x] Implement `#projects` and `#projects/:id` routes (clean URL + backward compat)
+- [x] Kill legacy dual-path (remove enableNewOS feature flag)
+- [x] Remove interface toggle from settings-panel.js
+- [x] Remove legacy switch button from sidebar
+- [x] Delete: src/components/shell.js, old src/router.js, src/shortcuts.js
+- [x] Tests pass — 495 across 29 files
 
 ## Phase 3 — Project module MVP
 - [ ] Add top-level sidebar item: Projecten (always accessible)

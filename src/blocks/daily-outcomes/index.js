@@ -4,7 +4,7 @@ export function registerDailyOutcomesBlock(registry) {
   registry.register({
     id: 'daily-outcomes',
     title: 'Top 3 Vandaag',
-    hosts: ['today-sections'],
+    hosts: ['vandaag-hero'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,
     order: 5,

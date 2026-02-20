@@ -143,10 +143,33 @@
   color: var(--color-text-tertiary);
 }
 
+.dash-widget__stat--done {
+  color: var(--color-success);
+}
+
 .dash-widget__empty {
   margin: 0;
   font-size: var(--font-base);
   color: var(--color-text-secondary);
+}
+
+/* ── Cockpit items list (Today widget) ───────────────────── */
+.dash-widget__cockpit-list {
+  list-style: none;
+  margin: 0 0 var(--space-1);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dash-widget__cockpit-item {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ── Progress bar ─────────────────────────────────────────── */

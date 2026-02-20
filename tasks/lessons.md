@@ -69,3 +69,9 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** The horizontal tab bar felt unstable because it mixed content-level concepts (Reflectie, Archief) with navigation concepts. Users couldn't tell what changed on mode switch because the nav itself was identical but content was insufficient.
 
 **Prevention:** Navigation structure (sidebar/tabs) must be fixed and mode-independent. Mode only affects *content* inside sections, never the nav items themselves. Use mode accent color on the active indicator to subtly communicate current mode without changing structure. Dashboard is always "home" — reachable from everywhere.
+
+## 12. Audit all block hosts after renaming host slots (2026-02-20)
+
+**Issue:** When restructuring the Vandaag page from a single `today-sections` host to hierarchical zones (`vandaag-hero`, `vandaag-core`, etc.), 6 blocks were missed and still referenced the deleted `today-sections` or non-existent `vandaag-widgets` hosts. These blocks became completely invisible — no errors, no warnings, just silently unrendered.
+
+**Prevention:** After renaming or deleting any host slot, run `grep -r "hosts:" src/blocks/` and verify every block's `hosts` array references a host that exists in the shell HTML. The block registry silently skips unmatched hosts, so orphaned blocks produce zero runtime errors. Create a checklist of all registered blocks before and after a host migration.

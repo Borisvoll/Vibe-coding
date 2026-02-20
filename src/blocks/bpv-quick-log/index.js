@@ -4,7 +4,7 @@ export function registerBPVQuickLogBlock(registry) {
   registry.register({
     id: 'bpv-quick-log',
     title: 'Snel loggen',
-    hosts: ['today-sections'],
+    hosts: ['vandaag-secondary'],
     modes: ['BPV'],
     enabled: true,
     order: 8,

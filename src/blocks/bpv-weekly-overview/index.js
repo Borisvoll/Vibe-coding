@@ -4,7 +4,7 @@ export function registerBPVWeeklyOverviewBlock(registry) {
   registry.register({
     id: 'bpv-weekly-overview',
     title: 'Weekoverzicht BPV',
-    hosts: ['today-sections'],
+    hosts: ['vandaag-secondary'],
     modes: ['BPV'],
     enabled: true,
     order: 14,

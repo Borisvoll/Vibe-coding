@@ -4,7 +4,7 @@ export function registerBPVMiniCard(registry) {
   registry.register({
     id: 'bpv-mini-card',
     title: 'BPV Mini Card',
-    hosts: ['dashboard-cards', 'vandaag-widgets'],
+    hosts: ['dashboard-cards'],
     modes: ['BPV'],
     enabled: true,
     mount(container, context) {

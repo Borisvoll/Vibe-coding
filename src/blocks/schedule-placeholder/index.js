@@ -4,7 +4,7 @@ export function registerSchedulePlaceholderBlock(registry) {
   registry.register({
     id: 'schedule-placeholder',
     title: 'Agenda',
-    hosts: ['vandaag-secondary'],
+    hosts: ['vandaag-mode'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,
     order: 25,

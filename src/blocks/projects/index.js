@@ -4,7 +4,7 @@ export function registerProjectsBlock(registry) {
   registry.register({
     id: 'projects',
     title: 'Projecten',
-    hosts: ['vandaag-core'],
+    hosts: ['vandaag-projects'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,
     order: 12,

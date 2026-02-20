@@ -1,8 +1,9 @@
 import {
   getProjects, addProject, updateProject,
   setNextAction, clearNextAction, deleteProject,
+  getPinnedProject, unpinProject,
 } from '../../stores/projects.js';
-import { addTask } from '../../stores/tasks.js';
+import { addTask, getTasksByProject } from '../../stores/tasks.js';
 import { getByKey } from '../../db.js';
 import { escapeHTML } from '../../utils.js';
 
@@ -78,6 +79,38 @@ export function renderProjects(container, context) {
       return;
     }
 
+    // Focus strip for pinned project
+    const pinned = await getPinnedProject(mode);
+    let focusStripHtml = '';
+    if (pinned) {
+      let nextActionTask = null;
+      if (pinned.nextActionId) {
+        nextActionTask = await getByKey('os_tasks', pinned.nextActionId);
+      }
+      const tasks = await getTasksByProject(pinned.id);
+      const totalTasks = tasks.length;
+      const doneTasks = tasks.filter((t) => t.status === 'done').length;
+      const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+      const accent = pinned.accentColor || 'var(--color-accent)';
+
+      focusStripHtml = `
+        <div class="projects-block__focus-strip" style="--strip-accent:${accent}">
+          <div class="projects-block__focus-header">
+            <span class="projects-block__focus-pin">\u{1F4CC}</span>
+            <span class="projects-block__focus-title">${escapeHTML(pinned.title)}</span>
+            <button type="button" class="btn btn-ghost btn-sm projects-block__focus-unpin" data-unpin="${pinned.id}">Lospinnen</button>
+          </div>
+          <div class="projects-block__focus-next">
+            \u{2192} ${nextActionTask ? escapeHTML(nextActionTask.text) : '<em>Geen volgende actie</em>'}
+          </div>
+          <div class="projects-block__focus-progress">
+            <div class="projects-block__focus-bar" style="width:${pct}%;background:${accent}"></div>
+          </div>
+          <span class="projects-block__focus-pct">${pct}%</span>
+        </div>
+      `;
+    }
+
     const rows = await Promise.all(projects.map(async (project) => {
       const isExpanded = project.id === expandedId;
       let nextActionTask = null;
@@ -108,8 +141,16 @@ export function renderProjects(container, context) {
       `;
     }));
 
-    listEl.innerHTML = rows.join('');
+    listEl.innerHTML = focusStripHtml + rows.join('');
     bindEvents(projects);
+
+    // Unpin handler
+    listEl.querySelector('[data-unpin]')?.addEventListener('click', async (e) => {
+      const projectId = e.currentTarget.dataset.unpin;
+      await unpinProject(projectId);
+      eventBus.emit('projects:changed');
+      await render();
+    });
   }
 
   function renderDetail(project, nextActionTask) {

@@ -1,4 +1,4 @@
-import { getProjects, addProject, updateProject, deleteProject } from '../../stores/projects.js';
+import { getProjects, addProject, getPinnedProject } from '../../stores/projects.js';
 import { getTasksByProject } from '../../stores/tasks.js';
 import { escapeHTML } from '../../utils.js';
 
@@ -89,53 +89,74 @@ export function renderProjectList(container, context, onOpen) {
       return;
     }
 
-    // Load task counts for each project in the slice
-    const cards = await Promise.all(slice.map(async (project) => {
-      const tasks = await getTasksByProject(project.id);
-      const total_tasks = tasks.length;
-      const done_tasks = tasks.filter((t) => t.status === 'done').length;
-      const pct = total_tasks > 0 ? Math.round((done_tasks / total_tasks) * 100) : 0;
+    // Load task counts + pin state
+    const pinned = await getPinnedProject(mode);
+    const pinnedId = pinned?.id || null;
 
-      const coverStyle = project.cover
-        ? `background-image: url('${project.cover}'); background-size: cover; background-position: center;`
-        : '';
+    const cardData = await Promise.all(slice.map(async (project, idx) => {
+      const tasks = await getTasksByProject(project.id);
+      const totalTasks = tasks.length;
+      const doneTasks = tasks.filter((t) => t.status === 'done').length;
+      const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
       const accentColor = project.accentColor || 'var(--color-accent)';
       const statusLabel = STATUS_LABELS[project.status] || project.status;
-
-      // SVG progress ring: r=20, circumference ≈ 125.7
-      const r = 20;
+      const isCardPinned = project.id === pinnedId;
+      // SVG progress ring: r=18, circ ~ 113.1
+      const r = 18;
       const circ = 2 * Math.PI * r;
       const dash = ((pct / 100) * circ).toFixed(2);
+      const stagger = idx * 60;
 
-      return `
-        <article class="hub-card" data-project-id="${project.id}"
-          style="--project-accent: ${accentColor}"
-          role="button" tabindex="0" aria-label="Open project ${escapeHTML(project.title)}">
-          <div class="hub-card__cover" style="${coverStyle}">
-            ${!project.cover ? `<span class="hub-card__cover-placeholder">${escapeHTML(project.title.slice(0, 2).toUpperCase())}</span>` : ''}
-          </div>
-          <div class="hub-card__body">
-            <div class="hub-card__meta">
-              <span class="hub-card__status hub-card__status--${project.status}">${statusLabel}</span>
-              <div class="hub-card__ring" title="${done_tasks}/${total_tasks} taken gereed">
-                <svg width="48" height="48" viewBox="0 0 48 48" aria-hidden="true">
-                  <circle cx="24" cy="24" r="${r}" fill="none" stroke="var(--color-border)" stroke-width="4"/>
-                  <circle cx="24" cy="24" r="${r}" fill="none" stroke="${accentColor}" stroke-width="4"
-                    stroke-dasharray="${dash} ${circ.toFixed(2)}"
-                    stroke-dashoffset="${(circ / 4).toFixed(2)}"
-                    stroke-linecap="round"/>
-                  <text x="24" y="28" text-anchor="middle" font-size="10" fill="currentColor">${pct}%</text>
-                </svg>
-              </div>
+      return {
+        project,
+        html: `
+          <article class="hub-card ${isCardPinned ? 'hub-card--pinned' : ''}" data-project-id="${project.id}"
+            style="--project-accent: ${accentColor}; --card-stagger: ${stagger}ms"
+            role="button" tabindex="0" aria-label="Open project ${escapeHTML(project.title)}">
+            ${isCardPinned ? `<span class="hub-card__pin-indicator" aria-label="Vastgepind">\u{1F4CC}</span>` : ''}
+            <div class="hub-card__cover" data-cover-target>
+              ${!project.cover ? `<span class="hub-card__cover-placeholder" aria-hidden="true">${escapeHTML(project.title.slice(0, 2).toUpperCase())}</span>` : ''}
             </div>
-            <h4 class="hub-card__title">${escapeHTML(project.title)}</h4>
-            ${project.goal ? `<p class="hub-card__goal">${escapeHTML(project.goal.slice(0, 80))}${project.goal.length > 80 ? '…' : ''}</p>` : ''}
-          </div>
-        </article>
-      `;
+            <div class="hub-card__body">
+              <div class="hub-card__meta">
+                <span class="hub-card__status hub-card__status--${project.status || 'active'}"
+                  aria-label="Status: ${statusLabel}">${statusLabel}</span>
+                <div class="hub-card__ring" role="img" aria-label="${doneTasks} van ${totalTasks} taken gereed (${pct}%)">
+                  <svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true">
+                    <circle cx="22" cy="22" r="${r}" fill="none" stroke="var(--color-border)" stroke-width="3.5"/>
+                    <circle cx="22" cy="22" r="${r}" fill="none" stroke="${accentColor}" stroke-width="3.5"
+                      stroke-dasharray="${dash} ${circ.toFixed(2)}"
+                      stroke-dashoffset="${(circ / 4).toFixed(2)}"
+                      stroke-linecap="round"
+                      style="transition: stroke-dasharray 400ms var(--ease-out)"/>
+                    <text x="22" y="26" text-anchor="middle" font-size="9" fill="currentColor"
+                      font-family="var(--font-sans)" font-weight="600">${pct}%</text>
+                  </svg>
+                </div>
+              </div>
+              <h4 class="hub-card__title">${escapeHTML(project.title)}</h4>
+              ${project.goal ? `<p class="hub-card__goal">${escapeHTML(project.goal.slice(0, 90))}${project.goal.length > 90 ? '…' : ''}</p>` : ''}
+            </div>
+          </article>
+        `,
+        cover: project.cover || null,
+      };
     }));
 
-    gridEl.innerHTML = cards.join('');
+    gridEl.innerHTML = cardData.map((d) => d.html).join('');
+
+    // Apply cover images via JS (avoids embedding large base64 in HTML attributes)
+    gridEl.querySelectorAll('.hub-card').forEach((card, idx) => {
+      const cover = cardData[idx]?.cover;
+      if (cover) {
+        const coverEl = card.querySelector('[data-cover-target]');
+        if (coverEl) {
+          coverEl.style.backgroundImage = `url('${cover}')`;
+          coverEl.style.backgroundSize = 'cover';
+          coverEl.style.backgroundPosition = 'center';
+        }
+      }
+    });
 
     // Bind card clicks
     gridEl.querySelectorAll('.hub-card').forEach((card) => {
@@ -153,9 +174,11 @@ export function renderProjectList(container, context, onOpen) {
     if (totalPages > 1) {
       paginationEl.hidden = false;
       paginationEl.innerHTML = `
-        <button type="button" class="hub-list__page-btn" data-page-prev ${page === 0 ? 'disabled' : ''}>‹</button>
-        <span class="hub-list__page-info">${page + 1} / ${totalPages}</span>
-        <button type="button" class="hub-list__page-btn" data-page-next ${page >= totalPages - 1 ? 'disabled' : ''}>›</button>
+        <button type="button" class="hub-list__page-btn" data-page-prev
+          aria-label="Vorige pagina" ${page === 0 ? 'disabled aria-disabled="true"' : ''}>‹</button>
+        <span class="hub-list__page-info" aria-live="polite">${page + 1} / ${totalPages}</span>
+        <button type="button" class="hub-list__page-btn" data-page-next
+          aria-label="Volgende pagina" ${page >= totalPages - 1 ? 'disabled aria-disabled="true"' : ''}>›</button>
       `;
 
       paginationEl.querySelector('[data-page-prev]')?.addEventListener('click', () => {

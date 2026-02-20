@@ -8,6 +8,7 @@ import { setTheme } from '../core/themeEngine.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
+import { createFocusOverlay } from '../ui/focus-overlay.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
@@ -170,6 +171,17 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
               <div class="os-topbar__accent-picker" id="os-accent-picker">
                 ${ACCENT_COLORS.map(c => `
                   <div class="os-topbar__accent-dot" data-color="${c.id}" data-hex="${c.hex}" data-tooltip="${c.label}" style="background:${c.hex}"></div>
+                `).join('')}
+              </div>
+              <div class="os-topbar__menu-divider"></div>
+              <div class="os-topbar__menu-label">Modus</div>
+              <div role="radiogroup" class="os-topbar__mode-radio" id="topbar-mode-radio" aria-label="Kies modus">
+                ${Object.entries(MODE_META).map(([key, m]) => `
+                  <label class="os-topbar__mode-opt" data-mode="${key}">
+                    <input type="radio" class="sr-only" name="topbar-mode" value="${key}" aria-label="${m.label}" ${modeManager.getMode() === key ? 'checked' : ''}>
+                    <span class="os-topbar__mode-opt-dot" style="background:${m.color}"></span>
+                    <span class="os-topbar__mode-opt-text">${m.emoji} ${m.label}</span>
+                  </label>
                 `).join('')}
               </div>
               <div class="os-topbar__menu-divider"></div>
@@ -684,6 +696,30 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setActiveTab('settings');
   });
 
+  // Mode radiogroup in gear menu — instant switch without modal
+  const topbarModeRadio = app.querySelector('#topbar-mode-radio');
+
+  function updateTopbarModeRadio(mode) {
+    topbarModeRadio?.querySelectorAll('input[name="topbar-mode"]').forEach((input) => {
+      input.checked = input.value === mode;
+      input.closest('.os-topbar__mode-opt')?.classList.toggle('os-topbar__mode-opt--active', input.value === mode);
+    });
+  }
+
+  topbarModeRadio?.addEventListener('change', (e) => {
+    const mode = e.target.value;
+    if (mode) {
+      modeManager.setMode(mode);
+      gearMenu.classList.remove('os-topbar__menu--open');
+    }
+  });
+
+  updateTopbarModeRadio(modeManager.getMode());
+
+  // ── Focus overlay (post-switch next-actions) ────────────────
+  const focusOverlay = createFocusOverlay();
+  app.querySelector('#new-os-shell')?.appendChild(focusOverlay.el);
+
   // Load saved theme + accent into gear menu
   (async () => {
     const savedTheme = await getSetting('theme') || 'system';
@@ -718,10 +754,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setShellMode(mode);
     triggerModeWash(mode);
     updateModeBtn();
+    updateTopbarModeRadio(mode);
     updateSectionTitles(mode);
     updateModeHero(mode);
     renderVandaagHeader(mode);
     updateVandaagCollapse(mode);
+    focusOverlay.showFor(mode, MODE_META[mode]);
 
     // Content crossfade: brief fade-out, remount blocks, fade-in
     const content = app.querySelector('.os-shell__content');
@@ -748,6 +786,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     onNavigate: ({ tab, focus }) => {
       setActiveTab(tab, { focus });
     },
+    eventBus,
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
 
@@ -862,6 +901,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     unsubscribeInboxOpen?.();
     Object.values(vandaagSections).forEach(s => s?.destroy());
     cmdPalette.destroy();
+    focusOverlay.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);

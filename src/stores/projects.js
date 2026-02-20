@@ -83,6 +83,28 @@ export async function removeMilestone(projectId, milestoneId) {
   return updateProject(projectId, { milestones });
 }
 
+// --- Pin to Today (one per mode) ---
+
+export async function setPinned(projectId, mode) {
+  const all = await getAll(STORE);
+  // Clear any existing pin in this mode
+  for (const p of all) {
+    if (p.pinnedForMode === mode && p.id !== projectId) {
+      await put(STORE, { ...p, pinnedForMode: null, updated_at: new Date().toISOString() });
+    }
+  }
+  return updateProject(projectId, { pinnedForMode: mode });
+}
+
+export async function unpinProject(projectId) {
+  return updateProject(projectId, { pinnedForMode: null });
+}
+
+export async function getPinnedProject(mode) {
+  const all = await getAll(STORE);
+  return all.find((p) => p.pinnedForMode === mode) || null;
+}
+
 // --- Cover & accent color ---
 
 export async function setCover(projectId, dataUrl) {

@@ -2260,3 +2260,102 @@ This audit is complete. No code changes have been made.
 2. Is removing `tasks` block from vandaag-mode acceptable (mode-specific "today" blocks take over)?
 3. Is the dashboard 4-card budget acceptable?
 4. Any other constraints or priorities?
+
+---
+
+## PHASE 3: LIFE DASHBOARD & MODULAR BLOCK SYSTEM (2026-02-20)
+
+> Branch: `claude/boris-os-clutter-audit-VnCb5`
+> Status: **IMPLEMENTED**
+> Philosophy: Dieter Rams (reduction), Steve Jobs (focus), Jony Ive (spatial harmony), Brian Eno (calm system)
+> Test: "Would this feel frictionless at 08:00 in the morning?"
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **400 passed**, 0 failed (26 files) |
+| Build | **Clean** |
+| Dashboard blocks | 3 (main-dashboard + inbox + lijsten) |
+
+---
+
+### Design: 3-Layer Life Dashboard
+
+#### Layer 1 — Intent & Focus
+- Time-aware greeting (Goedemorgen/Goedemiddag/Goedenavond)
+- Date display (dag + datum)
+- Mode badge (emoji + label with mode color)
+- Top 3 outcomes (read-only summary from dailyPlans)
+- If no outcomes set: single CTA "Stel je Top 3 in voor vandaag" → navigates to Vandaag
+
+#### Layer 2 — Snapshot Overview
+- 3-4 compact pulse rows, each navigational:
+  - Vandaag: task progress + cockpit steps
+  - Projecten: active count + at-risk count
+  - Inbox: item count (warn if >5)
+  - BPV uren: hours + percentage (only in BPV mode or if hours logged)
+- Each pulse row is a button → navigates to relevant tab/section
+- No forms, no inputs — read-only
+
+#### Layer 3 — Collapsible Depth (closed by default)
+- "Meer details" toggle → expandable section
+- Week stats: tasks done, habits, reflection days
+- Project list: top 3 with risk indicators
+- BPV progress bar (when relevant)
+- Lazy-loaded on first open
+
+### Changes Made
+
+#### Files Modified
+- `src/blocks/dashboard/view.js` — Complete rewrite from 6-widget grid to 3-layer Life Dashboard
+- `src/blocks/dashboard/styles.css` — Complete rewrite with `.life-dash__*` classes
+- `src/os/shell.js` — Dashboard section: `os-host-grid` → `os-host-stack`
+- `src/blocks/inbox/index.js` — Removed `dashboard-cards` from hosts
+- `src/blocks/lijsten/index.js` — Removed `dashboard-cards` from hosts
+- `tasks/lessons.md` — Added lesson #15 (dashboard read-only principle)
+
+#### What Was Removed
+- 6-widget grid layout (Vandaag, Week, Projecten, BPV, Verken, Snel vastleggen)
+- Capture form on dashboard (was duplicating inbox)
+- Explore prompts widget (was noise, not actionable)
+- Inbox and Lijsten blocks mounting on dashboard (were duplicating Vandaag content)
+
+#### What Was Added
+- Time-aware greeting
+- Mode badge with accent color
+- Top 3 outcomes read-only display
+- Navigational pulse rows (3-4)
+- Collapsible details section (lazy-loaded)
+- `daily:changed` event subscription for live outcome updates
+
+#### Design Constraints Verified
+- ✅ Dashboard has exactly 1 block (main-dashboard)
+- ✅ No `<input>`, `<form>`, or `<textarea>` on dashboard
+- ✅ Max 5 interactive elements (1 CTA + 3-4 pulse nav + 1 toggle) — all navigational
+- ✅ No data duplication — summaries only, editing in Vandaag/Inbox
+
+### After
+
+| Metric | Value |
+|--------|-------|
+| Tests | **400 passed**, 0 failed (26 files) |
+| Build | **Clean** |
+| Dashboard blocks | **1** (was 3: main-dashboard + inbox + lijsten) |
+| Files modified | 6 |
+| New files | 0 |
+
+### Acceptance Criteria
+
+- [x] Dashboard shows time-aware greeting + date
+- [x] Mode badge shows current mode with accent color
+- [x] Top 3 outcomes displayed (or CTA to set them)
+- [x] 3-4 navigational pulse rows with live data
+- [x] Collapsible "Meer details" section (closed by default)
+- [x] No forms/inputs on dashboard (read-only)
+- [x] Max 3-4 primary visible actions
+- [x] No duplicate task systems
+- [x] No visual competition between Dashboard and Vandaag
+- [x] All 400 tests green
+- [x] Build clean
+- [x] Frictionless at 08:00 ✓

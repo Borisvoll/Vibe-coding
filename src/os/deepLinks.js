@@ -1,45 +1,69 @@
 /**
- * Deep link manager — reflects OS tab + focus in URL hash.
+ * Deep link manager — reflects OS route in URL hash.
  *
- * URL format: #tab=vandaag&focus=tasks
- * Supports: tab (any SHELL_TAB), focus (section zone id), mode
+ * New format: #today, #projects/abc123, #today?focus=tasks
+ * Legacy format (backward compat): #tab=today&focus=tasks
  */
 
-const VALID_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
+const VALID_ROUTES = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
 /**
- * Parse the current URL hash into structured params.
- * @returns {{ tab: string|null, focus: string|null, mode: string|null }}
+ * Parse the current URL hash into structured route info.
+ * @returns {{ tab: string|null, params: Record<string,string>, focus: string|null, mode: string|null }}
  */
 export function parseHash() {
   const hash = window.location.hash.replace(/^#/, '');
-  if (!hash) return { tab: null, focus: null, mode: null };
+  if (!hash) return { tab: null, params: {}, focus: null, mode: null };
 
-  const params = new URLSearchParams(hash);
-  const tab = params.get('tab');
-  const focus = params.get('focus');
-  const mode = params.get('mode');
+  // Backward compat: detect old format (has "tab=" prefix)
+  if (hash.includes('tab=')) {
+    const sp = new URLSearchParams(hash);
+    const tab = sp.get('tab');
+    return {
+      tab: tab && VALID_ROUTES.includes(tab) ? tab : null,
+      params: {},
+      focus: sp.get('focus') || null,
+      mode: sp.get('mode') || null,
+    };
+  }
+
+  // New format: #route/param?focus=x&mode=y
+  const [path, query] = hash.split('?');
+  const qs = new URLSearchParams(query || '');
+  const segments = path.split('/').filter(Boolean);
+  const route = segments[0] || null;
+  const params = {};
+
+  if (route === 'projects' && segments[1]) {
+    params.id = segments[1];
+  }
 
   return {
-    tab: tab && VALID_TABS.includes(tab) ? tab : null,
-    focus: focus || null,
-    mode: mode || null,
+    tab: route && VALID_ROUTES.includes(route) ? route : null,
+    params,
+    focus: qs.get('focus') || null,
+    mode: qs.get('mode') || null,
   };
 }
 
 /**
  * Update URL hash without triggering navigation.
- * @param {string} tab - Active tab id
+ * @param {string} tab - Active route id
  * @param {string|null} [focus] - Optional focus zone
+ * @param {Record<string,string>} [params] - Route params (e.g. { id: 'abc' })
  */
-export function updateHash(tab, focus) {
-  if (!tab || !VALID_TABS.includes(tab)) return;
+export function updateHash(tab, focus, params = {}) {
+  if (!tab || !VALID_ROUTES.includes(tab)) return;
 
-  const params = new URLSearchParams();
-  params.set('tab', tab);
-  if (focus) params.set('focus', focus);
+  let path = tab;
+  if (params.id) path += `/${params.id}`;
 
-  const newHash = `#${params.toString()}`;
+  const qs = new URLSearchParams();
+  if (focus) qs.set('focus', focus);
+
+  const suffix = qs.toString();
+  const newHash = suffix ? `#${path}?${suffix}` : `#${path}`;
+
   if (window.location.hash !== newHash) {
     history.replaceState(null, '', newHash);
   }
@@ -47,8 +71,6 @@ export function updateHash(tab, focus) {
 
 /**
  * Scroll a focus target into view within the OS shell.
- * Looks for: [data-vandaag-zone="<focus>"], [data-os-host="<focus>"], or [id="<focus>"]
- *
  * @param {HTMLElement} root - The shell root element
  * @param {string} focus - Zone/section id to scroll to
  */
@@ -66,7 +88,6 @@ export function scrollToFocus(root, focus) {
     try {
       const el = root.querySelector(sel);
       if (el) {
-        // Small delay to ensure blocks are mounted
         setTimeout(() => {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 200);
@@ -77,15 +98,21 @@ export function scrollToFocus(root, focus) {
 }
 
 /**
- * Generate a deep link URL for a tab + focus combination.
+ * Generate a deep link URL for a route + focus combination.
  * @param {string} tab
  * @param {string|null} [focus]
+ * @param {Record<string,string>} [params]
  * @returns {string} Full URL with hash
  */
-export function buildDeepLink(tab, focus) {
-  const params = new URLSearchParams();
-  params.set('tab', tab);
-  if (focus) params.set('focus', focus);
+export function buildDeepLink(tab, focus, params = {}) {
+  let path = tab;
+  if (params.id) path += `/${params.id}`;
+
+  const qs = new URLSearchParams();
+  if (focus) qs.set('focus', focus);
+
+  const suffix = qs.toString();
+  const hashPart = suffix ? `${path}?${suffix}` : path;
   const base = window.location.origin + window.location.pathname;
-  return `${base}#${params.toString()}`;
+  return `${base}#${hashPart}`;
 }

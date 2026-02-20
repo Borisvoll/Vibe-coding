@@ -4,7 +4,7 @@ export function registerBPVTodayBlock(registry) {
   registry.register({
     id: 'bpv-today',
     title: 'BPV Vandaag',
-    hosts: ['today-sections', 'vandaag-widgets'],
+    hosts: ['vandaag-secondary'],
     modes: ['BPV'],
     enabled: true,
     order: 40,

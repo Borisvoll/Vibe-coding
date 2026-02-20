@@ -91,7 +91,7 @@ export const ASSIGNMENT_TYPES = {
 };
 
 export const WEEKDAYS = ['ma', 'di', 'wo', 'do', 'vr'];
-export const WEEKDAY_FULL = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag'];
+export const WEEKDAY_FULL = ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag'];
 export const MONTHS_NL = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
 export const ACCENT_COLORS = [

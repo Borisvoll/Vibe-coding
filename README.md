@@ -71,15 +71,6 @@ npm run build    # production build → dist/
 ### GitHub Pages (already configured)
 A GitHub Actions workflow at `.github/workflows/deploy.yml` builds and deploys automatically on every merge to `main`. No setup needed — just merge your PR.
 
-### Netlify (optional alternative)
-A `netlify.toml` is included in the repo root. To activate:
-1. Go to [netlify.com](https://netlify.com) → "Add new site" → "Import from Git"
-2. Connect this repository
-3. Build command: `npm run build`, Publish directory: `dist`
-4. Deploy — done. Netlify will deploy on every push to main automatically.
-
-Both options are free. GitHub Pages is already wired up and recommended.
-
 ---
 
 ## Project Structure

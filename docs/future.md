@@ -108,7 +108,7 @@ Package BORIS OS as an installable Progressive Web App with offline support, pus
 Add opt-in AI-powered features: weekly summary generation, journal prompts, pattern recognition in habits/moods.
 
 ### Approach
-- **Claude API** via Netlify Function (same pattern as weekly email)
+- **Claude API** via serverless function (e.g. GitHub Actions, Cloudflare Workers)
 - Client sends aggregated data (never raw journal text without consent) to serverless function
 - Function calls Claude API, returns structured response
 - Features:
@@ -129,11 +129,11 @@ Add opt-in AI-powered features: weekly summary generation, journal prompts, patt
 - Clear consent dialog before first use: "Je gegevens worden naar Anthropic gestuurd voor verwerking"
 - No data stored on AI provider side (use ephemeral API calls)
 - User can disable at any time from Settings
-- API key stored in Netlify env vars, never in client code
+- API key stored in server-side env vars, never in client code
 - Option to use local/on-device models when available (future)
 
 ### Modular Plan
-1. Create `netlify/functions/ai-summary.mjs` (Netlify Function, Claude API)
+1. Create serverless function for Claude API calls
 2. Create `src/stores/ai.js` (opt-in state, request queue, response cache)
 3. Create `src/blocks/ai-insights/` block (order 95, today-sections, opt-in only)
 4. Add "AI Inzichten" toggle in Settings with consent dialog

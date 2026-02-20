@@ -4,7 +4,7 @@ export function registerDailyTodosBlock(registry) {
   registry.register({
     id: 'daily-todos',
     title: 'Taken Vandaag',
-    hosts: ['vandaag-core'],
+    hosts: ['vandaag-tasks'],
     modes: [],
     enabled: true,
     order: 6,

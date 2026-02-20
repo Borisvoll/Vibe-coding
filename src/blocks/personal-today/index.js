@@ -4,7 +4,7 @@ export function registerPersonalTodayBlock(registry) {
   registry.register({
     id: 'personal-today-block',
     title: 'Personal Today',
-    hosts: ['vandaag-secondary'],
+    hosts: ['vandaag-mode'],
     modes: ['Personal'],
     enabled: true,
     order: 40,

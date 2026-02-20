@@ -4,7 +4,7 @@ export function registerTasksBlock(registry) {
   registry.register({
     id: 'tasks',
     title: 'Taken',
-    hosts: ['vandaag-secondary'],
+    hosts: ['vandaag-mode'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,
     order: 20,

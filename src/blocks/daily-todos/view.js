@@ -21,7 +21,7 @@ export function renderDailyTodos(container, context) {
       <div class="daily-todos__add-row">
         <input type="text" class="form-input daily-todos__input"
           placeholder="Taak toevoegen..." maxlength="200" />
-        <button type="button" class="btn btn-ghost btn-sm daily-todos__add-btn" aria-label="Taak toevoegen">+</button>
+        <button type="button" class="btn btn-ghost btn-sm daily-todos__add-btn" aria-label="Taak toevoegen" data-tooltip="Taak toevoegen">+</button>
       </div>
       <ul class="daily-todos__list"></ul>
     </article>

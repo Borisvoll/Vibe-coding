@@ -129,14 +129,14 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       <!-- Desktop top bar (hidden on mobile via CSS) -->
       <header class="os-shell__topbar">
         <div class="os-shell__topbar-inner">
-          <button id="sidebar-toggle-btn" type="button" class="os-topbar__hamburger" aria-label="Menu">
+          <button id="sidebar-toggle-btn" type="button" class="os-topbar__hamburger" aria-label="Menu" data-tooltip="Menu" data-tooltip-pos="bottom">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
           </button>
           <span class="os-topbar__spacer"></span>
           <div class="os-topbar__gear-wrap">
-            <button id="topbar-settings-btn" type="button" class="os-topbar__gear" aria-label="Instellingen" aria-haspopup="true">
+            <button id="topbar-settings-btn" type="button" class="os-topbar__gear" aria-label="Instellingen" aria-haspopup="true" data-tooltip="Instellingen" data-tooltip-pos="bottom">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="3"/>
                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
@@ -162,7 +162,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
               <div class="os-topbar__menu-label">Accentkleur</div>
               <div class="os-topbar__accent-picker" id="os-accent-picker">
                 ${ACCENT_COLORS.map(c => `
-                  <div class="os-topbar__accent-dot" data-color="${c.id}" data-hex="${c.hex}" title="${c.label}" style="background:${c.hex}"></div>
+                  <div class="os-topbar__accent-dot" data-color="${c.id}" data-hex="${c.hex}" data-tooltip="${c.label}" style="background:${c.hex}"></div>
                 `).join('')}
               </div>
               <div class="os-topbar__menu-divider"></div>

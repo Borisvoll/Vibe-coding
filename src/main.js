@@ -5,6 +5,8 @@ import './ui/card.css';
 import './ui/typography.css';
 import './ui/layout.css';
 import './ui/balatro.css';
+import './ui/tooltip.css';
+import './ui/modal.css';
 import './styles/base.css';
 import './styles/components.css';
 import './styles/pages.css';

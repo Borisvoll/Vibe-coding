@@ -1,0 +1,105 @@
+/* ═══════════════════════════════════════════════════════════════
+   Tooltip — Pure CSS tooltips via [data-tooltip] attribute
+
+   Usage:
+     <button data-tooltip="Verwijder item">🗑</button>
+     <button data-tooltip="Nieuwe taak" data-tooltip-pos="bottom">+</button>
+
+   Positions: top (default), bottom, left, right
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  z-index: 10000;
+  pointer-events: none;
+
+  /* Visual */
+  background: var(--color-text);
+  color: var(--color-surface);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  /* Animation */
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity var(--duration-fast) var(--ease),
+              transform var(--duration-fast) var(--ease);
+
+  /* Default position: top */
+  bottom: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+}
+
+/* Show on hover + focus (keyboard accessible) */
+[data-tooltip]:hover::after,
+[data-tooltip]:focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Don't show empty tooltips */
+[data-tooltip=""]::after {
+  display: none;
+}
+
+/* ── Position: bottom ──────────────────────────────────────── */
+[data-tooltip-pos="bottom"]::after {
+  bottom: auto;
+  top: calc(100% + 6px);
+  transform: translateY(-2px);
+}
+
+[data-tooltip-pos="bottom"]:hover::after,
+[data-tooltip-pos="bottom"]:focus-visible::after {
+  transform: translateY(0);
+}
+
+/* ── Position: left ────────────────────────────────────────── */
+[data-tooltip-pos="left"]::after {
+  bottom: auto;
+  left: auto;
+  right: calc(100% + 6px);
+  top: 50%;
+  translate: 0 -50%;
+  transform: translateX(2px);
+}
+
+[data-tooltip-pos="left"]:hover::after,
+[data-tooltip-pos="left"]:focus-visible::after {
+  transform: translateX(0);
+}
+
+/* ── Position: right ───────────────────────────────────────── */
+[data-tooltip-pos="right"]::after {
+  bottom: auto;
+  left: calc(100% + 6px);
+  top: 50%;
+  translate: 0 -50%;
+  transform: translateX(-2px);
+}
+
+[data-tooltip-pos="right"]:hover::after,
+[data-tooltip-pos="right"]:focus-visible::after {
+  transform: translateX(0);
+}
+
+/* ── Touch devices: don't show tooltips on hover ───────────── */
+@media (pointer: coarse) {
+  [data-tooltip]::after {
+    display: none;
+  }
+}

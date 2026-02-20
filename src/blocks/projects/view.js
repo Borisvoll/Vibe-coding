@@ -125,7 +125,7 @@ export function renderProjects(container, context) {
             <div class="projects-block__current-action">
               <span class="projects-block__action-text">${escapeHTML(nextActionTask.text)}</span>
               <button type="button" class="btn btn-ghost btn-sm"
-                data-clear-next-action title="Verwijder volgende actie" aria-label="Verwijder volgende actie">×</button>
+                data-clear-next-action aria-label="Verwijder volgende actie" data-tooltip="Verwijder actie">×</button>
             </div>
           ` : `
             <p class="projects-block__action-empty">Geen volgende actie ingesteld</p>

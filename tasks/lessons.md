@@ -87,3 +87,9 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** Each mode accumulated dashboard-only cards incrementally (mini-cards, milestones, skill-tracker, concept-vault, energy, week-planning, weekly-reflection). School mode ended up with 8 dashboard cards. No budget was enforced, creating visual clutter.
 
 **Prevention:** Set a dashboard card budget per mode (max 4). New dashboard blocks must justify their existence by replacing an existing card or merging into the main-dashboard widget grid. Run `grep -c "dashboard-cards" src/blocks/*/index.js` to count current card count before adding new ones.
+
+## 15. Dashboard must be read-only and navigational (2026-02-20)
+
+**Issue:** The original dashboard (6-widget grid) included a "Snel vastleggen" capture form — an input field that duplicated the inbox capture on the Vandaag page. Users didn't know which capture to use. The capture form also had to be carefully managed (one-time setup outside loadData) to avoid losing user input during event-driven refreshes.
+
+**Prevention:** Dashboard is a read-only synopsis layer. It shows summaries and navigates to the relevant section for interaction. No `<input>`, `<form>`, or `<textarea>` on the dashboard. All editing happens in Vandaag/Inbox/Lijsten tabs. Apply the "3 layers" principle: Layer 1 = Intent (greeting + Top 3), Layer 2 = Snapshot (navigational pulse rows), Layer 3 = Collapsible depth (closed by default).

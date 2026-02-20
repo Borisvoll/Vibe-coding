@@ -4,7 +4,7 @@ export function registerInboxBlock(registry) {
   registry.register({
     id: 'inbox',
     title: 'Inbox',
-    hosts: ['vandaag-capture', 'dashboard-cards'],
+    hosts: ['vandaag-capture'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,
     order: 10,

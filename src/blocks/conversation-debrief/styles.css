@@ -1,0 +1,132 @@
+/* ── Conversation Debrief ─────────────────────────────────── */
+
+.conv-debrief__title {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 4px);
+}
+
+.conv-debrief__hint {
+  font-size: var(--font-xs, 0.6875rem);
+  color: var(--color-text-tertiary, #9ca3af);
+  margin: 0 0 var(--space-3, 12px);
+}
+
+.conv-debrief__buttons {
+  display: flex;
+  gap: var(--space-2, 8px);
+}
+
+.conv-debrief__btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3, 12px);
+  border: 2px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: all var(--duration-fast, 100ms) var(--ease, ease);
+}
+
+.conv-debrief__btn:hover {
+  border-color: var(--rate-color);
+  background: var(--rate-light);
+}
+
+.conv-debrief__emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.conv-debrief__label {
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.conv-debrief__form {
+  display: flex;
+  gap: var(--space-2, 8px);
+}
+
+.conv-debrief__input {
+  flex: 1;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-sm, 0.8125rem);
+  font-family: inherit;
+  color: var(--color-text, #1f2937);
+  background: var(--color-surface, #fff);
+  outline: none;
+}
+
+.conv-debrief__input:focus {
+  border-color: var(--mode-accent, var(--color-accent));
+}
+
+.conv-debrief__save {
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: var(--mode-accent, var(--color-accent));
+  color: #fff;
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.conv-debrief__done {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3, 12px);
+}
+
+.conv-debrief__done-check {
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 600;
+  color: var(--color-emerald, #10b981);
+}
+
+.conv-debrief__reset {
+  padding: var(--space-1, 4px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-full, 999px);
+  background: transparent;
+  font-size: var(--font-xs, 0.6875rem);
+  font-family: inherit;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+}
+
+.conv-debrief__history {
+  border-top: 1px solid var(--color-border-light, #f0f0f0);
+  padding-top: var(--space-2, 8px);
+}
+
+.conv-debrief__history-title {
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 600;
+  color: var(--color-text-tertiary, #9ca3af);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 var(--space-2, 8px);
+}
+
+.conv-debrief__log {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: var(--space-1, 4px) 0;
+  font-size: var(--font-xs, 0.6875rem);
+  color: var(--color-text-secondary, #6b7280);
+}
+
+.conv-debrief__log-emoji {
+  font-size: 0.875rem;
+}

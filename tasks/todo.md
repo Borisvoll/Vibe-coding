@@ -1751,3 +1751,174 @@ Mode accent colors (existing CSS vars):
 - [ ] Implement IndexedDB ↔ D1 sync protocol (last-write-wins)
 - [ ] Cloudflare R2 for photo/file sync
 - [ ] Offline queue with retry on reconnect
+
+---
+
+## Personality-Driven Apps Sprint (2026-02-20)
+
+> Branch: `claude/netlify-cli-setup-KOPE6`
+> Goal: Module presets + 10 personality-driven apps, stap voor stap
+> Design: anti-procrastinatie, geen schaamte, minimaal, actiegericht
+
+### Baseline
+
+| Metric | Value |
+|--------|-------|
+| Tests | **343 passed**, 0 failed (23 files) |
+| Build | **Clean** |
+| DB version | 8 (31 stores) |
+| Blocks | 31 registered |
+
+---
+
+### Architecture Decision: Keep It Simple
+
+**Niet doen:** nieuw module-registry systeem bouwen.
+**Wel doen:** bestaande blockRegistry uitbreiden met metadata + presets.
+
+Reden: blockRegistry IS al een module-registry. Blokken zijn al:
+- Self-contained (mount/unmount)
+- Mode-aware (modes array)
+- Orderable (order property)
+- Toggleable (featureFlags)
+
+Wat ontbreekt: categorie, omschrijving, icon → toevoegen als metadata.
+Presets: gewoon arrays van block-IDs per context.
+
+### Data Mapping: Geen Nieuwe Stores Nodig
+
+| App | Bestaande Store | Verandering |
+|-----|----------------|-------------|
+| 2-Minute Launcher | Geen (pure timer UI) | Nul — alleen block |
+| Done List | `os_tasks` (status='done') | Nul — reverse view |
+| Traffic Light Brain | `os_personal_wellbeing` | +`brainState` veld |
+| Worry Dump | `os_inbox` (type='worry') | +`worry` type support |
+| One-Sentence Capture | `os_inbox` | Al gebouwd! |
+| Moodboard Vault | `vault` + `vaultFiles` | Al gebouwd! |
+| 3-Card Day | `dailyPlans` (outcomes) | Al gebouwd! = Top 3 |
+| Auto-Checklist | `os_lists` + `os_list_items` | Template-vlag toevoegen |
+| Conversation Debrief | `os_personal_wellbeing` | +`socialLog` array |
+| Boundaries Macroboard | `settings` KV store | Snippets als JSON |
+
+**Conclusie: 0 nieuwe stores. 0 DB migraties. Alleen velden toevoegen aan bestaande entries.**
+
+---
+
+### Sprint A — Module Presets + Settings UI
+
+- [ ] A1. `src/core/modulePresets.js` — preset definities:
+  - Minimaal: daily-outcomes, daily-todos, inbox, tasks
+  - School: + school-dashboard, projects, schedule-placeholder
+  - BPV: + bpv-quick-log, bpv-weekly-overview, bpv-log-summary
+  - Persoonlijk: + personal-dashboard, daily-reflection
+  - Alles aan: alle 31+ blokken
+- [ ] A2. Block metadata uitbreiden in registraties: `{ category, description }`
+  - Categories: 'kern', 'school', 'bpv', 'persoonlijk', 'welzijn', 'productiviteit'
+- [ ] A3. Settings panel: "Modules" sectie met preset knoppen + individuele toggles
+- [ ] A4. Feature flags per block: `block_{id}` in localStorage
+- [ ] A5. `renderHosts()` respecteert block feature flags
+
+### Sprint B — Quick-Win Blocks (Geen Store Changes)
+
+- [ ] B1. **2-Minute Launcher** block (`two-min-launcher`)
+  - Host: `vandaag-hero`, modes: [], order: 3
+  - 6 knoppen: Opruimen, Mail, Logboek, Inventor, Workout, Admin
+  - Click → start 2-minuten timer (countdown), klaar → markeer als "gedaan" (toast)
+  - Geen persistentie, puur activatie-drempel verlagen
+  - Anti-procrastinatie: "Je hoeft maar 2 minuten"
+
+- [ ] B2. **Done List** block (`done-list`)
+  - Host: `vandaag-cockpit`, modes: [], order: 4
+  - Toont os_tasks met status='done' van vandaag, sorted by doneAt
+  - Invoerveld: "Wat heb je gedaan?" → maakt task met status='done' direct
+  - Geen to-do stress, alleen registreren wat je WEL hebt gedaan
+  - Dopamine-boost door tegels die groeien
+
+- [ ] B3. **Boundaries Macroboard** block (`boundaries`)
+  - Host: `vandaag-mode`, modes: ['Personal'], order: 80
+  - 4-6 voorgeprogrammeerde zinnen: "Kan ik hier later op terugkomen?", "Ik heb even pauze nodig", etc.
+  - Click → kopieert naar clipboard (navigator.clipboard.writeText)
+  - Customizable via settings (JSON in settings store)
+
+### Sprint C — Wellbeing Blocks (Minimale Store Extensions)
+
+- [ ] C1. **Traffic Light Brain** block (`brain-state`)
+  - Host: `vandaag-hero`, modes: ['Personal'], order: 2
+  - 3 knoppen: Groen / Oranje / Rood
+  - Click → sla `brainState` op in os_personal_wellbeing vandaag-entry
+  - Per state 1 actie-suggestie:
+    - Groen: "Top! Pak je belangrijkste taak"
+    - Oranje: "Even ademhalen. Kleine taak eerst."
+    - Rood: "10 min weg. Oorkappen. Simpele handeling."
+  - Sluit aan op Balanskaart-afspraken
+
+- [ ] C2. **Worry Dump** block (`worry-dump`)
+  - Host: `vandaag-capture`, modes: ['Personal'], order: 35
+  - Textarea: "Waar maak je je zorgen over?"
+  - Submit → Dwingt keuze: "Is dit vandaag oplosbaar?"
+    - Ja → maak microstap-taak (1 zin, direct in os_tasks)
+    - Nee → "parkeren" als inbox item met reminder-datum
+  - Inbox items krijgen type='worry' voor filtering
+
+- [ ] C3. **Conversation Debrief** block (`conversation-debrief`)
+  - Host: `vandaag-reflection`, modes: ['Personal'], order: 55
+  - Na een gesprek: 3 knoppen (Goed / Neutraal / Kostte veel)
+  - + 1 reden (korte tekst)
+  - Opslaan in os_personal_wellbeing: `socialLog: [{ rating, reason, timestamp }]`
+  - Na 2 weken: patronen zichtbaar (welke gesprekken kosten meest)
+
+### Sprint D — Context-Aware Block
+
+- [ ] D1. **Auto-Checklist** block (`context-checklist`)
+  - Host: `vandaag-tasks`, modes: [], order: 7
+  - Gebruikt mode als context:
+    - BPV mode → toont: PBM check, logboek, uren, 1 learning
+    - School mode → toont: huiswerk, deadlines, projectwerk
+    - Personal mode → toont: water, bewegen, opruimen, eten
+  - Template-gebaseerd: checklists opgeslagen als os_list met `isTemplate: true`
+  - Elke dag reset (niet persistent, puur activatie)
+
+### Sprint E — Tests + Verificatie
+
+- [ ] E1. Tests voor modulePresets.js (preset shapes, block IDs geldig)
+- [ ] E2. Tests voor Traffic Light (brainState persist/load)
+- [ ] E3. Tests voor Done List (create done task, filter today)
+- [ ] E4. Tests voor Worry Dump (worry type in inbox, triage flow)
+- [ ] E5. Tests voor Conversation Debrief (socialLog shape, rating values)
+- [ ] E6. Run full suite — alle tests groen
+- [ ] E7. Run build — clean
+
+### Sprint F — Documentatie
+
+- [ ] F1. Update CLAUDE.md met nieuwe blocks + host mapping
+- [ ] F2. Update tasks/todo.md met sprint notes
+- [ ] F3. Update tasks/lessons.md indien corrections
+
+---
+
+### Acceptance Criteria
+
+- [ ] Preset knoppen werken in Settings (Minimaal/School/BPV/Persoonlijk/Alles)
+- [ ] Blokken respecteren enabled/disabled state
+- [ ] 2-Minute Launcher start timer, toont countdown, geeft toast
+- [ ] Done List toont voltooide taken, laat nieuwe "done" items toevoegen
+- [ ] Traffic Light slaat brainState op, toont actie-suggestie
+- [ ] Worry Dump dwingt triage af (oplosbaar? → microstap/parkeren)
+- [ ] Conversation Debrief: 3 knoppen + reden, opslaan in wellbeing
+- [ ] Boundaries Macroboard kopieert naar clipboard
+- [ ] Auto-Checklist toont mode-specifieke checklist
+- [ ] Geen nieuwe stores, geen DB migraties
+- [ ] Alle tests groen, build clean
+- [ ] UI blijft calm en niet clutter (Rams/Ive/Jobs)
+
+---
+
+### Risks + Mitigations
+
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Te veel blokken op Vandaag | Overload | Presets: default minimaal, user kiest meer |
+| Feature flags localStorage vol | Breaks | Max 50 flags, cleanup on reset |
+| Timer in 2-min-launcher leaks | Memory | clearInterval in unmount |
+| Clipboard API niet beschikbaar | Macroboard fails | Fallback: select + "Kopieer handmatig" |
+| socialLog array groeit eindeloos | Performance | Cap op 100 entries, FIFO |

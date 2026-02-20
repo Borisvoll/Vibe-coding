@@ -1,0 +1,66 @@
+/* ── Brain State (Traffic Light) ──────────────────────────── */
+
+.brain-state__header {
+  margin-bottom: var(--space-3, 12px);
+}
+
+.brain-state__title {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 600;
+  margin: 0;
+}
+
+.brain-state__buttons {
+  display: flex;
+  gap: var(--space-2, 8px);
+  margin-bottom: var(--space-3, 12px);
+}
+
+.brain-state__btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3, 12px) var(--space-2, 8px);
+  border: 2px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  cursor: pointer;
+  transition: all var(--duration-fast, 100ms) var(--ease, ease);
+}
+
+.brain-state__btn:hover {
+  border-color: var(--state-color);
+  background: var(--state-light);
+}
+
+.brain-state__btn--active {
+  border-color: var(--state-color);
+  background: var(--state-light);
+  box-shadow: 0 0 0 1px var(--state-color);
+}
+
+.brain-state__emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.brain-state__label {
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.brain-state__action {
+  padding: var(--space-3, 12px);
+  border-radius: var(--radius-md, 8px);
+  background: var(--action-light);
+  border-left: 3px solid var(--action-color);
+}
+
+.brain-state__action-text {
+  font-size: var(--font-sm, 0.8125rem);
+  color: var(--color-text, #1f2937);
+  font-weight: 500;
+}

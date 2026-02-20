@@ -1,0 +1,137 @@
+/* ── Worry Dump ───────────────────────────────────────────── */
+
+.worry-dump__title {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 4px);
+}
+
+.worry-dump__hint,
+.worry-dump__question {
+  font-size: var(--font-xs, 0.6875rem);
+  color: var(--color-text-tertiary, #9ca3af);
+  margin: 0 0 var(--space-3, 12px);
+}
+
+.worry-dump__question {
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 600;
+  color: var(--color-text, #1f2937);
+}
+
+.worry-dump__worry {
+  padding: var(--space-3, 12px);
+  background: var(--color-bg, #f9fafb);
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-sm, 0.8125rem);
+  font-style: italic;
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0 0 var(--space-3, 12px);
+}
+
+.worry-dump__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+}
+
+.worry-dump__textarea {
+  width: 100%;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  font-size: var(--font-sm, 0.8125rem);
+  font-family: inherit;
+  color: var(--color-text, #1f2937);
+  background: var(--color-surface, #fff);
+  resize: vertical;
+  outline: none;
+  transition: border-color var(--duration-fast, 100ms);
+  box-sizing: border-box;
+}
+
+.worry-dump__textarea:focus {
+  border-color: var(--mode-accent, var(--color-accent));
+}
+
+.worry-dump__submit {
+  align-self: flex-end;
+  padding: var(--space-2, 8px) var(--space-4, 16px);
+  border: none;
+  border-radius: var(--radius-md, 8px);
+  background: var(--mode-accent, var(--color-accent));
+  color: #fff;
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity var(--duration-fast, 100ms);
+}
+
+.worry-dump__submit:hover {
+  opacity: 0.85;
+}
+
+.worry-dump__choices {
+  display: flex;
+  gap: var(--space-2, 8px);
+}
+
+.worry-dump__choice {
+  flex: 1;
+  padding: var(--space-3, 12px);
+  border: 2px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  font-size: var(--font-sm, 0.8125rem);
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--duration-fast, 100ms);
+  text-align: center;
+}
+
+.worry-dump__choice--yes:hover {
+  border-color: var(--color-emerald, #10b981);
+  background: var(--color-emerald-light, #d1fae5);
+}
+
+.worry-dump__choice--no:hover {
+  border-color: var(--color-amber, #f59e0b);
+  background: #fef3c7;
+}
+
+.worry-dump__done {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  padding: var(--space-4, 16px);
+  text-align: center;
+}
+
+.worry-dump__done-check {
+  font-size: 1.5rem;
+  color: var(--color-emerald, #10b981);
+}
+
+.worry-dump__done-text {
+  font-size: var(--font-sm, 0.8125rem);
+  color: var(--color-text-secondary, #6b7280);
+  margin: 0;
+}
+
+.worry-dump__reset {
+  padding: var(--space-1, 4px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-full, 999px);
+  background: transparent;
+  font-size: var(--font-xs, 0.6875rem);
+  font-family: inherit;
+  color: var(--color-text-secondary, #6b7280);
+  cursor: pointer;
+}
+
+.worry-dump__reset:hover {
+  background: var(--color-bg, #f9fafb);
+}

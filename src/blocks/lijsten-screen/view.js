@@ -5,6 +5,7 @@ import {
   reorderItems,
 } from '../../stores/lists.js';
 import { escapeHTML } from '../../utils.js';
+import { showConfirm, showPrompt } from '../../ui/modal.js';
 
 const PRIORITY_META = [
   { value: 1, label: 'P1', color: 'var(--color-danger, #e53e3e)', className: 'p1' },
@@ -30,7 +31,7 @@ export function mountLijstenScreen(container, context) {
       <div class="lijsten-screen__sidebar">
         <div class="lijsten-screen__sidebar-header">
           <h3 class="lijsten-screen__sidebar-title">Mijn lijsten</h3>
-          <button type="button" class="lijsten-screen__add-btn" aria-label="Nieuwe lijst">
+          <button type="button" class="lijsten-screen__add-btn" aria-label="Nieuwe lijst" data-tooltip="Nieuwe lijst">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg>
           </button>
         </div>
@@ -169,18 +170,18 @@ export function mountLijstenScreen(container, context) {
           <h2 class="lijsten-screen__title">${escapeHTML(list.name)}</h2>
         </div>
         <div class="lijsten-screen__header-actions">
-          <button type="button" class="btn btn-ghost btn-sm lijsten-screen__rename-btn">Hernoem</button>
-          <button type="button" class="btn btn-ghost btn-sm lijsten-screen__delete-btn">Verwijder</button>
+          <button type="button" class="btn btn-ghost btn-sm lijsten-screen__rename-btn" data-tooltip="Naam wijzigen">Hernoem</button>
+          <button type="button" class="btn btn-ghost btn-sm lijsten-screen__delete-btn" data-tooltip="Lijst verwijderen">Verwijder</button>
         </div>
       </div>
 
       <div class="lijsten-screen__quick-add">
         <input type="text" class="form-input lijsten-screen__add-input" placeholder="Voeg een taak toe..." autocomplete="off" maxlength="200" />
         <div class="lijsten-screen__add-options">
-          <button type="button" class="lijsten-screen__priority-btn" data-current-priority="4" title="Prioriteit instellen">
+          <button type="button" class="lijsten-screen__priority-btn" data-current-priority="4" data-tooltip="Prioriteit">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 14V3L8 6L14 3V14"/></svg>
           </button>
-          <input type="date" class="lijsten-screen__date-input" title="Deadline instellen" />
+          <input type="date" class="lijsten-screen__date-input" data-tooltip="Deadline" />
         </div>
       </div>
 
@@ -301,7 +302,7 @@ export function mountLijstenScreen(container, context) {
 
     // Rename list
     mainEl.querySelector('.lijsten-screen__rename-btn')?.addEventListener('click', async () => {
-      const newName = prompt('Nieuwe naam:', list.name);
+      const newName = await showPrompt('Nieuwe naam:', list.name);
       if (newName?.trim()) {
         await updateList(list.id, { name: newName.trim() });
         eventBus.emit('lists:changed');
@@ -310,7 +311,8 @@ export function mountLijstenScreen(container, context) {
 
     // Delete list
     mainEl.querySelector('.lijsten-screen__delete-btn')?.addEventListener('click', async () => {
-      if (confirm(`"${list.name}" verwijderen? Alle items worden verwijderd.`)) {
+      const ok = await showConfirm(`"${list.name}" verwijderen? Alle items worden verwijderd.`, { danger: true });
+      if (ok) {
         await deleteList(list.id);
         selectedListId = null;
         eventBus.emit('lists:changed');
@@ -415,7 +417,7 @@ export function mountLijstenScreen(container, context) {
 
     return `
       <li class="lijsten-screen__item ${doneClass} ${priorityClass}" data-item-id="${item.id}">
-        ${!item.done ? `<span class="lijsten-screen__drag-handle" title="Versleep" aria-label="Versleep item">⠿</span>` : ''}
+        ${!item.done ? `<span class="lijsten-screen__drag-handle" aria-label="Versleep item" data-tooltip="Versleep">⠿</span>` : ''}
         <button type="button" class="lijsten-screen__check" aria-label="${item.done ? 'Markeer ongedaan' : 'Markeer gedaan'}">
           ${item.done ? '<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8L6.5 11.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
         </button>
@@ -427,12 +429,12 @@ export function mountLijstenScreen(container, context) {
           </span>
         </div>
         ${priority < 4 && !item.done ? `
-          <button type="button" class="lijsten-screen__item-priority" data-priority="${priority}" title="${meta.label}" style="color:${meta.color}">
+          <button type="button" class="lijsten-screen__item-priority" data-priority="${priority}" data-tooltip="${meta.label}" style="color:${meta.color}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 14V3L8 6L14 3V14"/></svg>
           </button>
         ` : ''}
         ${!item.done ? `
-          <button type="button" class="lijsten-screen__subtask-add" aria-label="Subtaak toevoegen" title="Subtaak toevoegen">
+          <button type="button" class="lijsten-screen__subtask-add" aria-label="Subtaak toevoegen" data-tooltip="Subtaak">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="6" y1="2" x2="6" y2="10"/><line x1="2" y1="6" x2="10" y2="6"/></svg>
           </button>
         ` : ''}

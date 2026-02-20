@@ -39,7 +39,7 @@ describe('Module presets — definitions', () => {
     expect(blocks).toContain('daily-outcomes');
     expect(blocks).toContain('daily-todos');
     expect(blocks).toContain('inbox');
-    expect(blocks).toContain('tasks');
+    expect(blocks).toContain('dashboard');
   });
 
   it('alles preset has null blocks (enable all)', () => {
@@ -95,7 +95,7 @@ describe('Module presets — isBlockDisabled', () => {
   it('returns false for blocks in minimaal preset', () => {
     setActivePreset('minimaal');
     expect(isBlockDisabled('daily-todos')).toBe(false);
-    expect(isBlockDisabled('tasks')).toBe(false);
+    expect(isBlockDisabled('dashboard')).toBe(false);
   });
 
   it('individual override takes precedence', () => {
@@ -111,11 +111,11 @@ describe('Module presets — isBlockDisabled', () => {
 describe('Module presets — clearBlockOverrides', () => {
   it('removes individual overrides', () => {
     setBlockDisabled('brain-state', false);
-    setBlockDisabled('tasks', true);
+    setBlockDisabled('dashboard', true);
     clearBlockOverrides();
     // After clear, preset rules apply again
     setActivePreset('minimaal');
     expect(isBlockDisabled('brain-state')).toBe(true); // not in minimaal
-    expect(isBlockDisabled('tasks')).toBe(false); // in minimaal
+    expect(isBlockDisabled('dashboard')).toBe(false); // in minimaal
   });
 });

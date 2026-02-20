@@ -1,8 +1,9 @@
-import { getAll, getByKey, getSetting, put, remove, setSetting } from '../../db.js';
-import { generateId, getToday } from '../../utils.js';
+import { getByKey, getSetting, setSetting } from '../../db.js';
+import { getToday } from '../../utils.js';
+import { addTask, getTasksForToday, deleteTask } from '../../stores/tasks.js';
 import { getTaskCap } from '../../core/modeCaps.js';
 
-const TASK_STORE = 'os_school_milestones';
+const MODE = 'School';
 const PROJECT_STORE = 'os_school_projects';
 
 function dayKey() {
@@ -10,19 +11,19 @@ function dayKey() {
 }
 
 export async function listFocusTasks() {
-  const all = await getAll(TASK_STORE).catch(() => []);
-  return all.slice(0, getTaskCap('School'));
+  const tasks = await getTasksForToday(MODE);
+  return tasks.filter((t) => t.status !== 'done').slice(0, getTaskCap(MODE));
 }
 
 export async function addFocusTask(title) {
   const list = await listFocusTasks();
-  if (list.length >= getTaskCap('School')) return false;
-  await put(TASK_STORE, { id: generateId(), title, dueDate: getToday(), updated_at: new Date().toISOString() });
+  if (list.length >= getTaskCap(MODE)) return false;
+  await addTask(title, MODE);
   return true;
 }
 
 export async function removeFocusTask(id) {
-  await remove(TASK_STORE, id);
+  await deleteTask(id);
 }
 
 export async function getCurrentProjectPointer() {

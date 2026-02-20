@@ -199,20 +199,24 @@ export function renderDashboard(container, context) {
 
   // Fill widgets with data
   async function loadData() {
-    const mode = context.modeManager?.getMode() || 'School';
-    const [today, week, projects, bpv, cockpit] = await Promise.all([
-      getTodaySnapshot(mode),
-      getWeekFocus(),
-      getProjectsPulse(),
-      getBPVPulse(),
-      getCockpitItems(mode),
-    ]);
+    try {
+      const mode = context.modeManager?.getMode() || 'School';
+      const [today, week, projects, bpv, cockpit] = await Promise.all([
+        getTodaySnapshot(mode),
+        getWeekFocus(),
+        getProjectsPulse(),
+        getBPVPulse(),
+        getCockpitItems(mode).catch(() => []),
+      ]);
 
-    fillTodayWidget(wrapper, today, cockpit);
-    fillWeekWidget(wrapper, week);
-    fillProjectsWidget(wrapper, projects);
-    fillBPVWidget(wrapper, bpv);
-    fillExploreWidget(wrapper);
+      fillTodayWidget(wrapper, today, cockpit);
+      fillWeekWidget(wrapper, week);
+      fillProjectsWidget(wrapper, projects);
+      fillBPVWidget(wrapper, bpv);
+      fillExploreWidget(wrapper);
+    } catch (err) {
+      console.error('[dashboard] Failed to load data:', err);
+    }
   }
 
   loadData();

@@ -68,7 +68,7 @@ export async function getCockpitItems(mode) {
     project: activeProjects.some((p) => p.nextAction),
     reflect: notes.trim().length > 0,
     hours: hoursEntry != null,
-    logbook: logbookEntries != null,
+    logbook: Array.isArray(logbookEntries) ? logbookEntries.length > 0 : logbookEntries != null,
   };
 
   const template = MODE_ITEMS[mode] || MODE_ITEMS.School;

@@ -1,0 +1,130 @@
+import { getActiveProjects, getProjectById } from '../../stores/projects.js';
+import { escapeHTML } from '../../utils.js';
+import { renderMonthGrid } from './agenda.js';
+import { renderProjectTasks } from './task-list.js';
+import { renderTimeline } from './timeline.js';
+import './styles.css';
+
+export function renderProjectDetail(container, context) {
+  const mountId = `project-detail-${crypto.randomUUID()}`;
+  const { eventBus, modeManager } = context;
+
+  let selectedProjectId = null;
+  let subCleanups = [];
+
+  container.insertAdjacentHTML('beforeend', `
+    <article class="project-detail" data-mount-id="${mountId}">
+      <div class="project-detail__picker"></div>
+      <div class="project-detail__content"></div>
+    </article>
+  `);
+
+  const el = container.querySelector(`[data-mount-id="${mountId}"]`);
+  const pickerEl = el.querySelector('.project-detail__picker');
+  const contentEl = el.querySelector('.project-detail__content');
+
+  async function render() {
+    const mode = modeManager.getMode();
+    const projects = await getActiveProjects(mode);
+
+    // Auto-select first project if none selected or selected is gone
+    if (!selectedProjectId || !projects.find((p) => p.id === selectedProjectId)) {
+      selectedProjectId = projects.length > 0 ? projects[0].id : null;
+    }
+
+    renderPicker(projects);
+    await renderContent();
+  }
+
+  function renderPicker(projects) {
+    if (projects.length === 0) {
+      pickerEl.innerHTML = `
+        <p class="project-detail__empty">
+          Geen actieve projecten. Maak een project aan via Vandaag → Projecten.
+        </p>`;
+      return;
+    }
+
+    pickerEl.innerHTML = `
+      <div class="project-detail__tabs">
+        ${projects.map((p) => `
+          <button type="button"
+            class="project-detail__tab ${p.id === selectedProjectId ? 'project-detail__tab--active' : ''}"
+            data-project-tab="${p.id}">
+            ${escapeHTML(p.title)}
+          </button>
+        `).join('')}
+      </div>
+    `;
+
+    pickerEl.querySelectorAll('[data-project-tab]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedProjectId = btn.dataset.projectTab;
+        render();
+      });
+    });
+  }
+
+  async function renderContent() {
+    // Cleanup previous sub-components
+    subCleanups.forEach((fn) => fn());
+    subCleanups = [];
+    contentEl.innerHTML = '';
+
+    if (!selectedProjectId) return;
+
+    const project = await getProjectById(selectedProjectId);
+    if (!project) return;
+
+    contentEl.innerHTML = `
+      <div class="project-detail__header">
+        <h3 class="project-detail__title">${escapeHTML(project.title)}</h3>
+        ${project.goal ? `<p class="project-detail__goal">${escapeHTML(project.goal)}</p>` : ''}
+      </div>
+      <div class="project-detail__agenda" data-section="agenda"></div>
+      <div class="project-detail__tasks" data-section="tasks"></div>
+      <div class="project-detail__timeline" data-section="timeline"></div>
+    `;
+
+    const agendaHost = contentEl.querySelector('[data-section="agenda"]');
+    const tasksHost = contentEl.querySelector('[data-section="tasks"]');
+    const timelineHost = contentEl.querySelector('[data-section="timeline"]');
+
+    const agendaCleanup = renderMonthGrid(agendaHost, project, context);
+    const tasksCleanup = renderProjectTasks(tasksHost, project, context);
+    const timelineCleanup = renderTimeline(timelineHost, project, context);
+
+    subCleanups.push(
+      agendaCleanup?.unmount || (() => {}),
+      tasksCleanup?.unmount || (() => {}),
+      timelineCleanup?.unmount || (() => {}),
+    );
+  }
+
+  // Check for deep-link project selection from URL hash
+  function checkDeepLink() {
+    const hash = window.location.hash;
+    const match = hash.match(/planning\/([a-f0-9-]+)/);
+    if (match) {
+      selectedProjectId = match[1];
+    }
+  }
+
+  checkDeepLink();
+
+  const unsubMode = eventBus.on('mode:changed', () => render());
+  const unsubProjects = eventBus.on('projects:changed', () => render());
+  const unsubTasks = eventBus.on('tasks:changed', () => render());
+
+  render();
+
+  return {
+    unmount() {
+      unsubMode?.();
+      unsubProjects?.();
+      unsubTasks?.();
+      subCleanups.forEach((fn) => fn());
+      el?.remove();
+    },
+  };
+}

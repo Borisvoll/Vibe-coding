@@ -1,0 +1,629 @@
+/* ============================
+   Project Detail — Planning Tab
+   ============================ */
+
+.project-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* --- Project Picker (Tabs) --- */
+
+.project-detail__picker {
+  margin-bottom: var(--space-2);
+}
+
+.project-detail__tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  -webkit-overflow-scrolling: touch;
+}
+
+.project-detail__tab {
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 999px);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.project-detail__tab:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.project-detail__tab--active {
+  background: var(--color-accent);
+  color: white;
+  border-color: var(--color-accent);
+}
+
+.project-detail__empty {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-md);
+  font-style: italic;
+}
+
+/* --- Project Header --- */
+
+.project-detail__header {
+  margin-bottom: var(--space-2);
+}
+
+.project-detail__title {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.project-detail__goal {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-md);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* --- Content Sections --- */
+
+.project-detail__agenda,
+.project-detail__tasks,
+.project-detail__timeline {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* ============================
+   Agenda — Month Grid
+   ============================ */
+
+.agenda-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.agenda-grid__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.agenda-grid__month-label {
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.agenda-grid__header {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.agenda-grid__day-name {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-1) 0;
+}
+
+.agenda-grid__body {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.agenda-grid__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-1);
+  min-height: 36px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  font-size: var(--font-sm);
+  color: var(--color-text);
+}
+
+.agenda-grid__cell--empty {
+  cursor: default;
+}
+
+.agenda-grid__cell:hover:not(.agenda-grid__cell--empty) {
+  background: var(--color-surface-hover);
+}
+
+.agenda-grid__cell--today {
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.agenda-grid__cell--today::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.agenda-grid__cell--selected {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+
+.agenda-grid__cell--has-tasks {
+  font-weight: 600;
+}
+
+.agenda-grid__day-num {
+  font-size: var(--font-sm);
+  line-height: 1;
+}
+
+.agenda-grid__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  margin-top: 2px;
+}
+
+.agenda-grid__dot--done {
+  background: var(--color-success, #22c55e);
+}
+
+/* Day detail (expanded day) */
+
+.agenda-grid__day-detail {
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.agenda-grid__day-label {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.agenda-grid__day-tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.agenda-grid__task-item {
+  font-size: var(--font-md);
+  padding: var(--space-1) 0;
+}
+
+.agenda-grid__task-item--done {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+
+.agenda-grid__no-tasks {
+  margin: 0;
+  font-size: var(--font-md);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+/* Milestones in month view */
+
+.agenda-grid__milestones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.agenda-grid__milestone {
+  font-size: var(--font-xs);
+  color: var(--color-accent);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-accent-light);
+  border-radius: var(--radius-sm);
+}
+
+/* ============================
+   Project Tasks
+   ============================ */
+
+.project-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.project-tasks__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-tasks__title {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.project-tasks__count {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+}
+
+.project-tasks__add-form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.project-tasks__input {
+  flex: 1;
+  min-width: 150px;
+  font-size: var(--font-md);
+}
+
+.project-tasks__date {
+  width: auto;
+  font-size: var(--font-sm);
+}
+
+.project-tasks__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.project-tasks__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.project-tasks__item:hover {
+  background: var(--color-surface-hover);
+}
+
+.project-tasks__item--done {
+  opacity: 0.6;
+}
+
+.project-tasks__check {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.project-tasks__item--done .project-tasks__check {
+  background: var(--color-success, #22c55e);
+  border-color: var(--color-success, #22c55e);
+  color: white;
+}
+
+.project-tasks__text {
+  flex: 1;
+  font-size: var(--font-md);
+}
+
+.project-tasks__item--done .project-tasks__text {
+  text-decoration: line-through;
+}
+
+.project-tasks__task-date {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.project-tasks__date-edit {
+  width: auto;
+  font-size: var(--font-xs);
+  padding: 2px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.project-tasks__delete {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.project-tasks__item:hover .project-tasks__delete {
+  opacity: 1;
+}
+
+.project-tasks__delete:hover {
+  color: var(--color-danger, #ef4444);
+}
+
+/* Done section */
+
+.project-tasks__done-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+}
+
+.project-tasks__done-toggle {
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.project-tasks__list--done {
+  margin-top: var(--space-2);
+}
+
+/* ============================
+   Visual Timeline
+   ============================ */
+
+.project-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.project-timeline__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.project-timeline__title {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.project-timeline__actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.project-timeline__empty {
+  margin: 0;
+  font-size: var(--font-md);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+}
+
+/* Add forms */
+
+.project-timeline__form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.project-timeline__form .form-input {
+  font-size: var(--font-sm);
+  width: auto;
+}
+
+.project-timeline__date-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Scroll container */
+
+.project-timeline__scroll {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-2) 0;
+}
+
+.project-timeline__track {
+  position: relative;
+  height: 120px;
+  min-width: 100%;
+}
+
+.project-timeline__axis {
+  position: absolute;
+  top: 60px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-border);
+}
+
+/* Month labels */
+
+.project-timeline__month-label {
+  position: absolute;
+  top: 100px;
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+/* Phases (bars) */
+
+.project-timeline__phases {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  right: 0;
+  height: 24px;
+}
+
+.project-timeline__phase {
+  position: absolute;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  opacity: 0.3;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2);
+  overflow: hidden;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.project-timeline__phase:hover {
+  opacity: 0.6;
+}
+
+.project-timeline__phase-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Milestones (diamonds) */
+
+.project-timeline__milestones {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+}
+
+.project-timeline__milestone {
+  position: absolute;
+  top: 48px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: default;
+}
+
+.project-timeline__diamond {
+  font-size: 14px;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.project-timeline__milestone-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Remove buttons on timeline items */
+
+.project-timeline__remove {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-danger, #ef4444);
+  color: white;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-timeline__phase:hover .project-timeline__remove,
+.project-timeline__milestone:hover .project-timeline__remove {
+  opacity: 1;
+}
+
+/* Today marker */
+
+.project-timeline__today {
+  position: absolute;
+  top: 20px;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+
+.project-timeline__today-line {
+  width: 2px;
+  height: 80px;
+  background: var(--color-danger, #ef4444);
+  margin: 0 auto;
+}
+
+.project-timeline__today-label {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--color-danger, #ef4444);
+  white-space: nowrap;
+}

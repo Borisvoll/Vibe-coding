@@ -11,7 +11,7 @@ export const PRESETS = {
     emoji: '🎯',
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection',
-      'inbox', 'inbox-screen', 'tasks', 'dashboard', 'daily-cockpit',
+      'inbox', 'inbox-screen', 'dashboard', 'daily-cockpit',
     ],
   },
   school: {
@@ -20,11 +20,9 @@ export const PRESETS = {
     emoji: '📚',
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
-      'inbox', 'inbox-screen', 'tasks', 'projects', 'dashboard',
-      'school-dashboard', 'school-mini-card', 'school-today',
-      'school-current-project', 'school-milestones', 'school-skill-tracker',
-      'school-concept-vault', 'schedule-placeholder', 'weekly-review',
-      'lijsten', 'lijsten-screen',
+      'inbox', 'inbox-screen', 'projects', 'dashboard',
+      'school-dashboard', 'school-today',
+      'weekly-review', 'lijsten', 'lijsten-screen',
     ],
   },
   bpv: {
@@ -33,9 +31,9 @@ export const PRESETS = {
     emoji: '🏢',
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
-      'inbox', 'inbox-screen', 'tasks', 'projects', 'dashboard',
-      'bpv-today', 'bpv-mini-card', 'bpv-quick-log', 'bpv-weekly-overview',
-      'bpv-log-summary', 'schedule-placeholder', 'weekly-review',
+      'inbox', 'inbox-screen', 'projects', 'dashboard',
+      'bpv-today', 'bpv-quick-log', 'bpv-weekly-overview',
+      'bpv-log-summary', 'weekly-review',
       'lijsten', 'lijsten-screen',
     ],
   },
@@ -45,9 +43,8 @@ export const PRESETS = {
     emoji: '🌱',
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
-      'inbox', 'inbox-screen', 'tasks', 'projects', 'dashboard',
-      'personal-dashboard', 'personal-mini-card', 'personal-today',
-      'personal-energy', 'personal-weekly-reflection', 'personal-week-planning',
+      'inbox', 'inbox-screen', 'projects', 'dashboard',
+      'personal-dashboard', 'personal-today',
       'weekly-review', 'lijsten', 'lijsten-screen',
       // Personality-driven blocks
       'brain-state', 'worry-dump', 'conversation-debrief', 'boundaries',

@@ -214,20 +214,31 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       <main id="new-os-content" class="os-shell__content">
         <section class="os-section" data-os-section="dashboard" hidden>
           <h2 class="os-section__title">Dashboard</h2>
-          <div class="os-host-grid" data-os-host="dashboard-cards"></div>
+          <div class="os-host-stack" data-os-host="dashboard-cards"></div>
         </section>
         <section class="os-section" data-os-section="today">
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <div class="vandaag-header" data-vandaag-header></div>
           <div class="vandaag-search" data-vandaag-search></div>
-          <div class="os-host-stack" data-os-host="vandaag-hero"></div>
-          <div class="os-host-stack" data-os-host="vandaag-cockpit"></div>
-          <div data-vandaag-zone="tasks"></div>
-          <div data-vandaag-zone="projects"></div>
-          <div data-vandaag-zone="capture"></div>
-          <div data-vandaag-zone="reflection"></div>
-          <div data-vandaag-zone="mode"></div>
-          <div data-vandaag-zone="weekly"></div>
+          <!-- Level 1 — Focus (Today) -->
+          <div class="vandaag-level vandaag-level--focus" data-vandaag-level="1">
+            <div class="os-host-stack" data-os-host="vandaag-hero"></div>
+            <div class="os-host-stack" data-os-host="vandaag-cockpit"></div>
+            <div data-vandaag-zone="tasks"></div>
+          </div>
+          <hr class="vandaag-level-divider" aria-hidden="true">
+          <!-- Level 2 — Projects & Lists -->
+          <div class="vandaag-level vandaag-level--projects" data-vandaag-level="2">
+            <div data-vandaag-zone="projects"></div>
+            <div data-vandaag-zone="capture"></div>
+          </div>
+          <hr class="vandaag-level-divider" aria-hidden="true">
+          <!-- Level 3 — Context & Review -->
+          <div class="vandaag-level vandaag-level--review" data-vandaag-level="3">
+            <div data-vandaag-zone="reflection"></div>
+            <div data-vandaag-zone="mode"></div>
+            <div data-vandaag-zone="weekly"></div>
+          </div>
         </section>
         <section class="os-section" data-os-section="inbox" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>

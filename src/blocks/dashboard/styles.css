@@ -1,124 +1,246 @@
 /* ═══════════════════════════════════════════════════════════════
-   Dashboard Widgets — Colorful but Clean (Rams + Ive + color)
+   Life Dashboard — Calm, layered overview (Rams + Ive + Eno)
+   3 layers: Intent → Snapshot → Depth
    ═══════════════════════════════════════════════════════════════ */
 
-.dash-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
-  width: 100%;
-  /* Span full width when inside os-host-grid */
-  grid-column: 1 / -1;
-}
-
-@media (min-width: 600px) {
-  .dash-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .dash-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* ── Widget card ──────────────────────────────────────────── */
-.dash-widget {
+.life-dash {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+  animation: block-enter var(--duration-slow) var(--ease-out) both;
+}
+
+/* ── Layer structure ──────────────────────────────────────── */
+.life-dash__layer {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
+}
+
+.life-dash__layer--intent {
+  padding: var(--space-5);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
+}
+
+.life-dash__layer--snapshot {
+  /* No container — pulse buttons are the visual elements */
+}
+
+.life-dash__layer--depth {
+  /* Collapsed by default — toggle + hidden details */
+}
+
+/* ── Layer 1: Greeting + Top 3 ────────────────────────────── */
+.life-dash__greeting {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0);
+}
+
+.life-dash__hello {
+  margin: 0;
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.life-dash__date {
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
+  text-transform: capitalize;
+}
+
+.life-dash__mode-badge {
+  display: flex;
+}
+
+.life-dash__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--badge-color-light, var(--color-accent-light));
+  color: var(--badge-color, var(--color-accent));
+  font-size: var(--font-sm);
+  font-weight: 600;
+}
+
+.life-dash__outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.life-dash__outcome {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.life-dash__outcome-num {
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  font-weight: 700;
+  min-width: 1rem;
+  text-align: center;
+}
+
+.life-dash__outcome-text {
+  font-size: var(--font-md);
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.life-dash__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease),
+              color var(--duration-fast) var(--ease);
+}
+
+.life-dash__cta:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ── Layer 2: Pulse rows ──────────────────────────────────── */
+.life-dash__pulses {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.life-dash__pulse {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
   cursor: pointer;
   text-align: left;
+  font-family: inherit;
   transition: border-color var(--duration-fast) var(--ease),
-              box-shadow var(--duration-fast) var(--ease),
-              transform 120ms var(--ease);
+              background var(--duration-fast) var(--ease);
   animation: block-enter var(--duration-slow) var(--ease-out) both;
   animation-delay: var(--stagger, 0ms);
 }
 
-.dash-widget:hover {
-  border-color: var(--widget-accent, var(--color-accent));
-  box-shadow: 0 2px 12px color-mix(in srgb, var(--widget-accent, var(--color-accent)) 12%, transparent);
+.life-dash__pulse:hover {
+  border-color: var(--color-accent);
+  background: var(--color-surface-hover);
 }
 
-.dash-widget:active {
-  transform: scale(0.985);
+.life-dash__pulse:active {
+  transform: scale(0.99);
 }
 
-.dash-widget--capture {
-  cursor: default;
-}
-.dash-widget--capture:hover {
-  border-color: var(--color-border);
-  box-shadow: none;
-}
-.dash-widget--capture:active {
-  transform: none;
-}
-
-/* ── Icon circle ──────────────────────────────────────────── */
-.dash-widget__icon {
+.life-dash__pulse-emoji {
   flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-xl);
-  border-radius: var(--radius-md);
-  background: var(--widget-accent-light, var(--color-accent-light));
-  color: var(--widget-accent, var(--color-accent));
-  transition: background var(--duration-fast) var(--ease);
+  font-size: var(--font-lg);
+  width: 1.5rem;
+  text-align: center;
 }
 
-/* ── Body ─────────────────────────────────────────────────── */
-.dash-widget__body {
-  flex: 1;
-  min-width: 0;
-}
-
-.dash-widget__title {
-  margin: 0 0 var(--space-1);
+.life-dash__pulse-label {
+  flex-shrink: 0;
   font-size: var(--font-sm);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   color: var(--color-text-secondary);
+  min-width: 5rem;
 }
 
-.dash-widget__content {
-  font-size: var(--font-md);
-  color: var(--color-text);
-}
-
-.dash-widget__loading {
-  color: var(--color-text-tertiary);
+.life-dash__pulse-value {
+  flex: 1;
   font-size: var(--font-base);
-}
-
-/* ── Stats + metrics ──────────────────────────────────────── */
-.dash-widget__stat {
-  margin: 0 0 var(--space-1);
-  font-size: var(--font-md);
-  font-weight: 500;
-  line-height: 1.4;
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.dash-widget__metrics {
+.life-dash__pulse-value--warn {
+  color: var(--color-warning);
+  font-weight: 500;
+}
+
+/* ── Layer 3: Collapsible depth ───────────────────────────── */
+.life-dash__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.life-dash__toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+.life-dash__toggle-icon {
+  transition: transform var(--duration-fast) var(--ease);
+}
+
+.life-dash__toggle[aria-expanded="true"] .life-dash__toggle-icon {
+  transform: rotate(180deg);
+}
+
+.life-dash__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  animation: block-enter var(--duration-normal) var(--ease-out) both;
+}
+
+.life-dash__detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.life-dash__detail-title {
+  margin: 0;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+
+.life-dash__detail-metrics {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-1);
 }
 
-.dash-widget__metric {
+.life-dash__metric {
   font-size: var(--font-sm);
   font-weight: 500;
   color: var(--color-text-secondary);
@@ -127,74 +249,38 @@
   border-radius: var(--radius-sm);
 }
 
-.dash-widget__metric--inbox {
-  background: var(--color-amber-light);
-  color: var(--color-amber);
-}
-
-.dash-widget__metric--warn {
-  background: var(--color-error-light);
-  color: var(--color-error);
-}
-
-.dash-widget__hint {
-  margin: 0;
+.life-dash__meta {
   font-size: var(--font-xs);
   color: var(--color-text-tertiary);
 }
 
-.dash-widget__stat--done {
-  color: var(--color-success);
-}
-
-.dash-widget__empty {
-  margin: 0;
+/* ── Shared elements ──────────────────────────────────────── */
+.life-dash__loading {
   font-size: var(--font-base);
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
+  margin: 0;
 }
 
-/* ── Cockpit items list (Today widget) ───────────────────── */
-.dash-widget__cockpit-list {
-  list-style: none;
-  margin: 0 0 var(--space-1);
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.dash-widget__cockpit-item {
-  font-size: var(--font-sm);
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ── Progress bar ─────────────────────────────────────────── */
-.dash-widget__bar {
+.life-dash__bar {
   height: 6px;
   border-radius: var(--radius-full);
   background: var(--color-surface-hover);
   overflow: hidden;
-  margin-bottom: var(--space-1);
 }
 
-.dash-widget__bar-fill {
+.life-dash__bar-fill {
   height: 100%;
   border-radius: var(--radius-full);
   transition: width 400ms var(--ease);
 }
 
-/* ── Project list ─────────────────────────────────────────── */
-.dash-widget__project-list {
+.life-dash__project-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-0);
 }
 
-.dash-widget__project {
+.life-dash__project-item {
   font-size: var(--font-sm);
   color: var(--color-text);
   line-height: 1.5;
@@ -203,7 +289,7 @@
   white-space: nowrap;
 }
 
-.dash-widget__risk {
+.life-dash__risk {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -218,7 +304,7 @@
   margin-left: 2px;
 }
 
-.dash-widget__mode-chip {
+.life-dash__mode-chip {
   font-size: var(--font-xs);
   font-weight: 600;
   padding: 1px var(--space-1);
@@ -230,65 +316,13 @@
   vertical-align: middle;
 }
 
-/* ── Explore prompt ───────────────────────────────────────── */
-.dash-widget__prompt {
-  margin: 0;
-  font-size: var(--font-md);
-  font-style: italic;
-  color: var(--color-text);
-  line-height: 1.5;
-}
+/* ── Responsive ───────────────────────────────────────────── */
+@media (min-width: 600px) {
+  .life-dash__layer--intent {
+    padding: var(--space-6);
+  }
 
-/* ── Quick capture ────────────────────────────────────────── */
-.dash-capture__form {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.dash-capture__input {
-  flex: 1;
-  min-width: 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-size: var(--font-base);
-  font-family: inherit;
-  transition: border-color var(--duration-fast) var(--ease),
-              box-shadow var(--duration-fast) var(--ease);
-}
-
-.dash-capture__input:focus {
-  outline: none;
-  border-color: var(--color-emerald);
-  box-shadow: 0 0 0 3px var(--color-emerald-light);
-}
-
-.dash-capture__btn {
-  flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: var(--radius-md);
-  background: var(--color-emerald);
-  color: var(--color-accent-text);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity var(--duration-fast) var(--ease);
-}
-
-.dash-capture__btn:hover {
-  opacity: 0.9;
-}
-
-.dash-capture__confirm {
-  margin: var(--space-1) 0 0;
-  font-size: var(--font-sm);
-  color: var(--color-success);
-  font-weight: 500;
+  .life-dash__hello {
+    font-size: var(--font-3xl);
+  }
 }

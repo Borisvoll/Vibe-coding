@@ -1,4 +1,4 @@
-import { getProjects, addProject, updateProject, deleteProject } from '../../stores/projects.js';
+import { getProjects, addProject, getPinnedProject } from '../../stores/projects.js';
 import { getTasksByProject } from '../../stores/tasks.js';
 import { escapeHTML } from '../../utils.js';
 
@@ -89,7 +89,10 @@ export function renderProjectList(container, context, onOpen) {
       return;
     }
 
-    // Load task counts for each project in the slice
+    // Load task counts + pin state
+    const pinned = await getPinnedProject(mode);
+    const pinnedId = pinned?.id || null;
+
     const cardData = await Promise.all(slice.map(async (project, idx) => {
       const tasks = await getTasksByProject(project.id);
       const totalTasks = tasks.length;
@@ -97,7 +100,8 @@ export function renderProjectList(container, context, onOpen) {
       const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
       const accentColor = project.accentColor || 'var(--color-accent)';
       const statusLabel = STATUS_LABELS[project.status] || project.status;
-      // SVG progress ring: r=18, circ ≈ 113.1
+      const isCardPinned = project.id === pinnedId;
+      // SVG progress ring: r=18, circ ~ 113.1
       const r = 18;
       const circ = 2 * Math.PI * r;
       const dash = ((pct / 100) * circ).toFixed(2);
@@ -106,9 +110,10 @@ export function renderProjectList(container, context, onOpen) {
       return {
         project,
         html: `
-          <article class="hub-card" data-project-id="${project.id}"
+          <article class="hub-card ${isCardPinned ? 'hub-card--pinned' : ''}" data-project-id="${project.id}"
             style="--project-accent: ${accentColor}; --card-stagger: ${stagger}ms"
             role="button" tabindex="0" aria-label="Open project ${escapeHTML(project.title)}">
+            ${isCardPinned ? `<span class="hub-card__pin-indicator" aria-label="Vastgepind">\u{1F4CC}</span>` : ''}
             <div class="hub-card__cover" data-cover-target>
               ${!project.cover ? `<span class="hub-card__cover-placeholder" aria-hidden="true">${escapeHTML(project.title.slice(0, 2).toUpperCase())}</span>` : ''}
             </div>

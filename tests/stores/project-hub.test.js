@@ -9,6 +9,7 @@ import {
   setCover, setAccentColor,
   updateMindmap,
   addFile, removeFile,
+  setPinned, unpinProject, getPinnedProject,
 } from '../../src/stores/projects.js';
 
 beforeEach(async () => {
@@ -130,5 +131,60 @@ describe('Project Hub 2.0 — file attachments', () => {
   it('removeFile returns null for non-existent project', async () => {
     const result = await removeFile('non-existent', 'f1');
     expect(result).toBeNull();
+  });
+});
+
+describe('Project Hub 2.0 — pin to today', () => {
+  it('setPinned sets pinnedForMode on the project', async () => {
+    const p = await addProject('Pin project', '', 'School');
+    const updated = await setPinned(p.id, 'School');
+    expect(updated.pinnedForMode).toBe('School');
+  });
+
+  it('getPinnedProject returns the pinned project for a mode', async () => {
+    const p = await addProject('Pinned', '', 'School');
+    await setPinned(p.id, 'School');
+    const pinned = await getPinnedProject('School');
+    expect(pinned).not.toBeNull();
+    expect(pinned.id).toBe(p.id);
+  });
+
+  it('getPinnedProject returns null when nothing pinned', async () => {
+    await addProject('Unpinned', '', 'School');
+    const pinned = await getPinnedProject('School');
+    expect(pinned).toBeNull();
+  });
+
+  it('setPinned clears previous pin in same mode (one per mode)', async () => {
+    const p1 = await addProject('First', '', 'School');
+    const p2 = await addProject('Second', '', 'School');
+    await setPinned(p1.id, 'School');
+    await setPinned(p2.id, 'School');
+    const pinned = await getPinnedProject('School');
+    expect(pinned.id).toBe(p2.id);
+    // Verify p1 is no longer pinned
+    const p1Loaded = await getProjectById(p1.id);
+    expect(p1Loaded.pinnedForMode).toBeNull();
+  });
+
+  it('pin is per-mode (BPV pin does not affect School)', async () => {
+    const school = await addProject('School proj', '', 'School');
+    const bpv = await addProject('BPV proj', '', 'BPV');
+    await setPinned(school.id, 'School');
+    await setPinned(bpv.id, 'BPV');
+    const schoolPin = await getPinnedProject('School');
+    const bpvPin = await getPinnedProject('BPV');
+    expect(schoolPin.id).toBe(school.id);
+    expect(bpvPin.id).toBe(bpv.id);
+  });
+
+  it('unpinProject clears pinnedForMode', async () => {
+    const p = await addProject('Unpin me', '', 'School');
+    await setPinned(p.id, 'School');
+    await unpinProject(p.id);
+    const pinned = await getPinnedProject('School');
+    expect(pinned).toBeNull();
+    const loaded = await getProjectById(p.id);
+    expect(loaded.pinnedForMode).toBeNull();
   });
 });

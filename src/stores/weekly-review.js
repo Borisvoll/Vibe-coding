@@ -151,18 +151,100 @@ export function isFriday() {
 
 /**
  * Send the weekly review by posting data to the serverless function.
+ * Falls back to mailto: if the Netlify function is unavailable (e.g. GitHub Pages).
  */
 export async function sendWeeklyReview(data) {
-  const response = await fetch('/.netlify/functions/send-weekly-review', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+  try {
+    const response = await fetch('/.netlify/functions/send-weekly-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => 'Unknown error');
-    throw new Error(`Failed to send: ${response.status} — ${body}`);
+    if (!response.ok) {
+      const body = await response.text().catch(() => '');
+      // nginx 405 = not on Netlify, use mailto fallback
+      if (response.status === 405 && body.includes('<html')) {
+        return openMailtoFallback(data);
+      }
+      throw new Error(`Failed to send: ${response.status} — ${body}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    // Network error or fetch failed — try mailto
+    if (err.message?.includes('405') || err.name === 'TypeError') {
+      return openMailtoFallback(data);
+    }
+    throw err;
+  }
+}
+
+/**
+ * Build a plain-text summary and open the user's email client.
+ */
+function openMailtoFallback(data) {
+  const {
+    week = '', weekStartFormatted = '', weekEndFormatted = '',
+    completedTaskCount = 0, completedTasks = [], openTaskCount = 0,
+    bpv = {}, gratitude = [], reflections = [], journalNotes = [],
+    habitsSummary = {}, activeProjects = [], processedInboxCount = 0, prompt = '',
+  } = data;
+
+  const habitLabels = { water: 'Water', movement: 'Bewegen', focus: 'Focus' };
+  const lines = [];
+
+  lines.push(`BORIS — Weekoverzicht ${week}`);
+  lines.push(`${weekStartFormatted} — ${weekEndFormatted}`);
+  lines.push('');
+  lines.push(`Taken klaar: ${completedTaskCount}  |  BPV-uren: ${bpv.formattedTotal || '0u'}  |  Verwerkt: ${processedInboxCount}`);
+
+  if (bpv.totalMinutes > 0) {
+    lines.push(`BPV voortgang: ${bpv.formattedTotal || '0u'} / ${bpv.formattedTarget || '40u'} (${bpv.percentComplete || 0}%)`);
   }
 
-  return response.json();
+  if (completedTasks.length > 0) {
+    lines.push('', '— Afgeronde taken —');
+    completedTasks.slice(0, 15).forEach((t) => lines.push(`  ✓ ${t.text}`));
+    if (completedTaskCount > 15) lines.push(`  + ${completedTaskCount - 15} meer`);
+    if (openTaskCount > 0) lines.push(`  ${openTaskCount} taken nog open`);
+  }
+
+  if (Object.keys(habitsSummary).length > 0) {
+    lines.push('', '— Gewoontes —');
+    Object.entries(habitsSummary).forEach(([key, val]) => {
+      const pct = val.total > 0 ? Math.round((val.done / val.total) * 100) : 0;
+      lines.push(`  ${habitLabels[key] || key}: ${val.done}/${val.total} (${pct}%)`);
+    });
+  }
+
+  if (gratitude.length > 0) {
+    lines.push('', '— Dankbaarheid —');
+    gratitude.forEach((g) => lines.push(`  ✦ ${g.text}`));
+  }
+
+  if (reflections.length > 0) {
+    lines.push('', '— Reflecties —');
+    reflections.forEach((r) => lines.push(`  ${r.date}: ${r.text}`));
+  }
+
+  if (journalNotes.length > 0) {
+    lines.push('', '— Dagboek —');
+    journalNotes.forEach((j) => lines.push(`  ${j.date}: ${j.text}`));
+  }
+
+  if (activeProjects.length > 0) {
+    lines.push('', '— Actieve projecten —');
+    lines.push(`  ${activeProjects.map((p) => p.title).join(', ')}`);
+  }
+
+  if (prompt) {
+    lines.push('', `Even stilstaan: "${prompt}"`);
+  }
+
+  const subject = encodeURIComponent(`BORIS — Week ${week} overzicht`);
+  const body = encodeURIComponent(lines.join('\n'));
+  window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
+
+  return { ok: true, method: 'mailto' };
 }

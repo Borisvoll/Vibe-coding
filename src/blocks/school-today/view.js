@@ -24,7 +24,7 @@ export function renderSchoolToday(container) {
         <button class="btn btn-secondary btn-sm" data-action="add" ${tasks.length >= cap ? 'disabled' : ''}>Toevoegen</button>
       </div>
       <ul class="personal-list">
-        ${tasks.map((item) => `<li>${escapeHTML(item.title || '')} <button class="btn btn-ghost btn-sm" data-action="del" data-id="${item.id}">x</button></li>`).join('') || '<li><small>Geen focustaken.</small></li>'}
+        ${tasks.map((item) => `<li>${escapeHTML(item.text || item.title || '')} <button class="btn btn-ghost btn-sm" data-action="del" data-id="${item.id}">x</button></li>`).join('') || '<li><small>Geen focustaken.</small></li>'}
       </ul>
       <p class="school-block__subtitle">Projectfocus: ${escapeHTML(project?.building || 'Nog niet ingevuld.')} / ${escapeHTML(project?.learning || 'Nog niet ingevuld.')}</p>
       <label class="school-block__field"><span>Wat heb ik vandaag echt begrepen?</span><input class="form-input" data-field="learning" value="${escapeHTML(learning)}"></label>

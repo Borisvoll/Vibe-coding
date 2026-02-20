@@ -75,3 +75,15 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** When restructuring the Vandaag page from a single `today-sections` host to hierarchical zones (`vandaag-hero`, `vandaag-core`, etc.), 6 blocks were missed and still referenced the deleted `today-sections` or non-existent `vandaag-widgets` hosts. These blocks became completely invisible — no errors, no warnings, just silently unrendered.
 
 **Prevention:** After renaming or deleting any host slot, run `grep -r "hosts:" src/blocks/` and verify every block's `hosts` array references a host that exists in the shell HTML. The block registry silently skips unmatched hosts, so orphaned blocks produce zero runtime errors. Create a checklist of all registered blocks before and after a host migration.
+
+## 13. Competing task stores create data islands (2026-02-20)
+
+**Issue:** Mode-specific "today" blocks (school-today, personal-today) each used their own IndexedDB stores (`os_school_milestones`, `os_personal_tasks`) for task-like data, while the generic `tasks` block used `os_tasks`. Tasks added in one store didn't appear in the other, even though both rendered in the same host slot. Users saw two task input forms and couldn't understand why their tasks "disappeared."
+
+**Prevention:** All task-like data must flow through a single canonical store (`os_tasks`). Mode-specific blocks should use the shared store adapter (`stores/tasks.js`) with mode filtering, not create private task stores. Before adding a new store, ask: "Does `os_tasks` already handle this data type with mode+date filtering?" If yes, use it. One store, one truth.
+
+## 14. Dashboard card sprawl follows incremental addition (2026-02-20)
+
+**Issue:** Each mode accumulated dashboard-only cards incrementally (mini-cards, milestones, skill-tracker, concept-vault, energy, week-planning, weekly-reflection). School mode ended up with 8 dashboard cards. No budget was enforced, creating visual clutter.
+
+**Prevention:** Set a dashboard card budget per mode (max 4). New dashboard blocks must justify their existence by replacing an existing card or merging into the main-dashboard widget grid. Run `grep -c "dashboard-cards" src/blocks/*/index.js` to count current card count before adding new ones.

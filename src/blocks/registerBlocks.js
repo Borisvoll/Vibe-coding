@@ -3,7 +3,6 @@ import '../ui/collapsible-section.css';
 import '../ui/command-palette.css';
 import './inbox/styles.css';
 import './inbox-screen/styles.css';
-import './tasks/styles.css';
 import './bpv-log-summary/styles.css';
 import './bpv-quick-log/styles.css';
 import './bpv-weekly-overview/styles.css';
@@ -13,7 +12,6 @@ import './weekly-review/styles.css';
 import './daily-outcomes/styles.css';
 import './daily-todos/styles.css';
 import './daily-reflection/styles.css';
-import './schedule-placeholder/styles.css';
 import './projects/styles.css';
 import './dashboard/styles.css';
 import './daily-cockpit/styles.css';
@@ -27,31 +25,19 @@ import './worry-dump/styles.css';
 import './conversation-debrief/styles.css';
 import './context-checklist/styles.css';
 import '../ui/theme-studio.css';
-import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
-import { registerPersonalMiniCard } from './personal-mini-card/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
-import { registerSchoolMiniCard } from './school-mini-card/index.js';
 import { registerPersonalDashboardBlock } from './personal-dashboard/index.js';
-import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
-import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
-import { registerSchoolSkillTrackerBlock } from './school-skill-tracker/index.js';
-import { registerSchoolConceptVaultBlock } from './school-concept-vault/index.js';
 import { registerSchoolTodayBlock } from './school-today/index.js';
 import { registerPersonalTodayBlock } from './personal-today/index.js';
-import { registerPersonalEnergyBlock } from './personal-energy/index.js';
-import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
-import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
 import { registerInboxBlock } from './inbox/index.js';
 import { registerInboxScreenBlock } from './inbox-screen/index.js';
-import { registerTasksBlock } from './tasks/index.js';
 import { registerBPVLogSummaryBlock } from './bpv-log-summary/index.js';
 import { registerBPVQuickLogBlock } from './bpv-quick-log/index.js';
 import { registerBPVWeeklyOverviewBlock } from './bpv-weekly-overview/index.js';
 import { registerDailyOutcomesBlock } from './daily-outcomes/index.js';
 import { registerDailyTodosBlock } from './daily-todos/index.js';
 import { registerDailyReflectionBlock } from './daily-reflection/index.js';
-import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
 import { registerProjectsBlock } from './projects/index.js';
 import { registerWeeklyReviewBlock } from './weekly-review/index.js';
 import { registerDashboardBlock } from './dashboard/index.js';
@@ -67,59 +53,39 @@ import { registerConversationDebriefBlock } from './conversation-debrief/index.j
 import { registerContextChecklistBlock } from './context-checklist/index.js';
 
 export function registerDefaultBlocks(registry) {
-  // Today page — cockpit + MVP blocks
+  // Level 1 — Focus (Today): hero + cockpit + tasks
   registerDailyCockpitBlock(registry);
   registerDailyOutcomesBlock(registry);
   registerDailyTodosBlock(registry);
+  registerDoneListBlock(registry);
+  registerTwoMinLauncherBlock(registry);
+  registerBrainStateBlock(registry);
+  registerContextChecklistBlock(registry);
+
+  // Level 2 — Projects & Lists: active work + capture
   registerInboxBlock(registry);
   registerProjectsBlock(registry);
-  registerTasksBlock(registry);
-  registerSchedulePlaceholderBlock(registry);
-  registerBPVLogSummaryBlock(registry);
-  registerDailyReflectionBlock(registry);
-
-  // BPV mode blocks
-  registerBPVMiniCard(registry);
-  registerBPVTodayBlock(registry);
-  registerBPVQuickLogBlock(registry);
-  registerBPVWeeklyOverviewBlock(registry);
-
-  // School mode blocks
-  registerSchoolDashboardBlock(registry);
-  registerSchoolMiniCard(registry);
-  registerSchoolCurrentProjectBlock(registry);
-  registerSchoolMilestonesBlock(registry);
-  registerSchoolSkillTrackerBlock(registry);
-  registerSchoolConceptVaultBlock(registry);
-  registerSchoolTodayBlock(registry);
-
-  // Personal mode blocks
-  registerPersonalDashboardBlock(registry);
-  registerPersonalMiniCard(registry);
-  registerPersonalTodayBlock(registry);
-  registerPersonalEnergyBlock(registry);
-  registerPersonalWeeklyReflectionBlock(registry);
-  registerPersonalWeekPlanningBlock(registry);
-
-  // Lijsten (all modes — Todoist-style persistent lists)
   registerLijstenBlock(registry);
   registerLijstenScreenBlock(registry);
+  registerInboxScreenBlock(registry);
+  registerWorryDumpBlock(registry);
 
-  // Weekly review (all modes)
+  // Level 3 — Context & Review: mode-specific + reflection + archive
+  registerDailyReflectionBlock(registry);
+  registerConversationDebriefBlock(registry);
   registerWeeklyReviewBlock(registry);
 
-  // Inbox screen (full-page processing)
-  registerInboxScreenBlock(registry);
-
-  // Main dashboard (synopsis widgets)
-  registerDashboardBlock(registry);
-
-  // Personality-driven blocks
-  registerTwoMinLauncherBlock(registry);
-  registerDoneListBlock(registry);
+  // Mode-specific context blocks (vandaag-mode)
+  registerSchoolDashboardBlock(registry);
+  registerSchoolTodayBlock(registry);
+  registerPersonalDashboardBlock(registry);
+  registerPersonalTodayBlock(registry);
+  registerBPVTodayBlock(registry);
+  registerBPVQuickLogBlock(registry);
+  registerBPVLogSummaryBlock(registry);
+  registerBPVWeeklyOverviewBlock(registry);
   registerBoundariesBlock(registry);
-  registerBrainStateBlock(registry);
-  registerWorryDumpBlock(registry);
-  registerConversationDebriefBlock(registry);
-  registerContextChecklistBlock(registry);
+
+  // Main dashboard (synopsis widgets — max 3 cards: dashboard + inbox + lijsten)
+  registerDashboardBlock(registry);
 }

@@ -52,24 +52,61 @@ export async function deleteList(id) {
 
 export async function getItemsByList(listId) {
   const items = await getByIndex(ITEM_STORE, 'listId', listId);
-  return items.sort((a, b) => {
-    // Active items first, then done items
-    if (a.done !== b.done) return a.done ? 1 : -1;
-    return (a.position ?? 999) - (b.position ?? 999);
-  });
+  // Only return top-level items (no parentId)
+  return items
+    .filter((i) => !i.parentId)
+    .sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return (a.position ?? 999) - (b.position ?? 999);
+    });
+}
+
+export async function getSubtasks(parentId) {
+  const parent = await getByKey(ITEM_STORE, parentId);
+  if (!parent) return [];
+  const items = await getByIndex(ITEM_STORE, 'listId', parent.listId);
+  return items
+    .filter((i) => i.parentId === parentId)
+    .sort((a, b) => {
+      if (a.done !== b.done) return a.done ? 1 : -1;
+      return (a.position ?? 999) - (b.position ?? 999);
+    });
 }
 
 export async function addItem(listId, text) {
   if (!text?.trim()) throw new Error('text: must not be empty');
   const existing = await getByIndex(ITEM_STORE, 'listId', listId);
-  const activeItems = existing.filter((i) => !i.done);
+  const activeItems = existing.filter((i) => !i.done && !i.parentId);
   const now = new Date().toISOString();
   const item = {
     id: crypto.randomUUID(),
     listId,
+    parentId: null,
     text: text.trim(),
     done: false,
     position: activeItems.length,
+    createdAt: now,
+    doneAt: null,
+    updated_at: now,
+  };
+  await put(ITEM_STORE, item);
+  return item;
+}
+
+export async function addSubtask(parentId, text) {
+  if (!text?.trim()) throw new Error('text: must not be empty');
+  const parent = await getByKey(ITEM_STORE, parentId);
+  if (!parent) throw new Error('parentId: parent item not found');
+  const siblings = await getSubtasks(parentId);
+  const activeSiblings = siblings.filter((i) => !i.done);
+  const now = new Date().toISOString();
+  const item = {
+    id: crypto.randomUUID(),
+    listId: parent.listId,
+    parentId,
+    text: text.trim(),
+    done: false,
+    position: activeSiblings.length,
     createdAt: now,
     doneAt: null,
     updated_at: now,
@@ -98,7 +135,26 @@ export async function updateItem(id, changes) {
 }
 
 export async function deleteItem(id) {
+  // Also delete subtasks of this item
+  const item = await getByKey(ITEM_STORE, id);
+  if (item) {
+    const allItems = await getByIndex(ITEM_STORE, 'listId', item.listId);
+    const subtasks = allItems.filter((i) => i.parentId === id);
+    for (const sub of subtasks) {
+      await remove(ITEM_STORE, sub.id);
+    }
+  }
   return remove(ITEM_STORE, id);
+}
+
+export async function reorderItems(orderedIds) {
+  const now = new Date().toISOString();
+  for (let i = 0; i < orderedIds.length; i++) {
+    const item = await getByKey(ITEM_STORE, orderedIds[i]);
+    if (item && item.position !== i) {
+      await put(ITEM_STORE, { ...item, position: i, updated_at: now });
+    }
+  }
 }
 
 export async function getItemCount(listId) {

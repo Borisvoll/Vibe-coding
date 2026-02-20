@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { initDB } from '../../src/db.js';
 import {
   getLists, getListById, addList, updateList, deleteList,
-  getItemsByList, addItem, toggleItem, updateItem, deleteItem, getItemCount,
+  getItemsByList, addItem, addSubtask, getSubtasks,
+  toggleItem, updateItem, deleteItem, getItemCount,
+  reorderItems,
 } from '../../src/stores/lists.js';
 
 beforeEach(async () => {
@@ -205,5 +207,120 @@ describe('Lists store — item CRUD', () => {
     expect(items2).toHaveLength(1);
     expect(items1[0].text).toBe('List 1 item');
     expect(items2[0].text).toBe('List 2 item');
+  });
+
+  it('addItem sets parentId to null', async () => {
+    const item = await addItem(listId, 'Top level');
+    expect(item.parentId).toBeNull();
+  });
+});
+
+describe('Lists store — subtasks', () => {
+  let listId;
+  let parentItem;
+
+  beforeEach(async () => {
+    const list = await addList('Test list');
+    listId = list.id;
+    parentItem = await addItem(listId, 'Parent');
+  });
+
+  it('addSubtask creates a subtask under parent', async () => {
+    const sub = await addSubtask(parentItem.id, 'Child task');
+    expect(sub.id).toBeDefined();
+    expect(sub.parentId).toBe(parentItem.id);
+    expect(sub.listId).toBe(listId);
+    expect(sub.text).toBe('Child task');
+    expect(sub.done).toBe(false);
+  });
+
+  it('addSubtask rejects empty text', async () => {
+    await expect(addSubtask(parentItem.id, '')).rejects.toThrow('text');
+  });
+
+  it('addSubtask rejects unknown parent', async () => {
+    await expect(addSubtask('non-existent', 'Task')).rejects.toThrow('parentId');
+  });
+
+  it('getSubtasks returns children sorted by position', async () => {
+    await addSubtask(parentItem.id, 'First');
+    await addSubtask(parentItem.id, 'Second');
+    await addSubtask(parentItem.id, 'Third');
+
+    const subs = await getSubtasks(parentItem.id);
+    expect(subs).toHaveLength(3);
+    expect(subs[0].text).toBe('First');
+    expect(subs[1].text).toBe('Second');
+    expect(subs[2].text).toBe('Third');
+  });
+
+  it('getSubtasks returns empty for unknown parent', async () => {
+    const subs = await getSubtasks('non-existent');
+    expect(subs).toHaveLength(0);
+  });
+
+  it('subtasks do not appear in getItemsByList', async () => {
+    await addSubtask(parentItem.id, 'Hidden child');
+    const items = await getItemsByList(listId);
+    expect(items).toHaveLength(1);
+    expect(items[0].text).toBe('Parent');
+  });
+
+  it('toggleItem works on subtasks', async () => {
+    const sub = await addSubtask(parentItem.id, 'Toggle me');
+    const toggled = await toggleItem(sub.id);
+    expect(toggled.done).toBe(true);
+  });
+
+  it('deleteItem on parent also deletes subtasks', async () => {
+    await addSubtask(parentItem.id, 'Child A');
+    await addSubtask(parentItem.id, 'Child B');
+    await deleteItem(parentItem.id);
+
+    const subs = await getSubtasks(parentItem.id);
+    expect(subs).toHaveLength(0);
+    const items = await getItemsByList(listId);
+    expect(items).toHaveLength(0);
+  });
+
+  it('subtasks count in getItemCount', async () => {
+    await addSubtask(parentItem.id, 'Sub 1');
+    const sub2 = await addSubtask(parentItem.id, 'Sub 2');
+    await toggleItem(sub2.id);
+
+    const count = await getItemCount(listId);
+    expect(count.total).toBe(3); // parent + 2 subs
+    expect(count.done).toBe(1);
+  });
+});
+
+describe('Lists store — reorder', () => {
+  let listId;
+
+  beforeEach(async () => {
+    const list = await addList('Test list');
+    listId = list.id;
+  });
+
+  it('reorderItems updates positions', async () => {
+    const a = await addItem(listId, 'A');
+    const b = await addItem(listId, 'B');
+    const c = await addItem(listId, 'C');
+
+    // Reverse order: C, B, A
+    await reorderItems([c.id, b.id, a.id]);
+    const items = await getItemsByList(listId);
+    // All not done, so sorted by position
+    expect(items[0].text).toBe('C');
+    expect(items[1].text).toBe('B');
+    expect(items[2].text).toBe('A');
+  });
+
+  it('reorderItems ignores unknown ids gracefully', async () => {
+    const a = await addItem(listId, 'A');
+    // Include a non-existent id — should not throw
+    await reorderItems(['non-existent', a.id]);
+    const items = await getItemsByList(listId);
+    expect(items).toHaveLength(1);
   });
 });

@@ -252,7 +252,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         <section class="os-section" data-os-section="planning" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <h2 class="os-section__title">Planning</h2>
-          <p class="os-host-empty">Planningmodules volgen in een volgende iteratie.</p>
+          <div class="os-host-stack" data-os-host="planning-main"></div>
         </section>
         <section class="os-section" data-os-section="settings" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>

@@ -92,6 +92,29 @@
   white-space: nowrap;
 }
 
+.projects-block__open-btn {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.projects-block__summary:hover .projects-block__open-btn {
+  opacity: 1;
+}
+
+.projects-block__open-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+}
+
 .projects-block__chevron {
   font-size: var(--font-xs);
   color: var(--color-text-tertiary);

@@ -65,3 +65,37 @@ export async function clearNextAction(projectId) {
 export async function deleteProject(id) {
   return remove(STORE, id);
 }
+
+// --- Milestones ---
+
+export async function addMilestone(projectId, title, date) {
+  const project = await getByKey(STORE, projectId);
+  if (!project) return null;
+  const milestones = project.milestones || [];
+  milestones.push({ id: crypto.randomUUID(), title: title.trim(), date });
+  return updateProject(projectId, { milestones });
+}
+
+export async function removeMilestone(projectId, milestoneId) {
+  const project = await getByKey(STORE, projectId);
+  if (!project) return null;
+  const milestones = (project.milestones || []).filter((m) => m.id !== milestoneId);
+  return updateProject(projectId, { milestones });
+}
+
+// --- Phases ---
+
+export async function addPhase(projectId, title, startDate, endDate, color = 'var(--color-accent)') {
+  const project = await getByKey(STORE, projectId);
+  if (!project) return null;
+  const phases = project.phases || [];
+  phases.push({ id: crypto.randomUUID(), title: title.trim(), startDate, endDate, color });
+  return updateProject(projectId, { phases });
+}
+
+export async function removePhase(projectId, phaseId) {
+  const project = await getByKey(STORE, projectId);
+  if (!project) return null;
+  const phases = (project.phases || []).filter((p) => p.id !== phaseId);
+  return updateProject(projectId, { phases });
+}

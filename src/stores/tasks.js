@@ -14,7 +14,12 @@ export async function getTasksForToday(mode) {
   return byMode.filter((t) => t.date === today || (!t.date && t.status !== 'done'));
 }
 
-export async function addTask(text, mode, date = null) {
+export async function getTasksByProject(projectId) {
+  const all = await getAll(STORE);
+  return all.filter((t) => t.project_id === projectId);
+}
+
+export async function addTask(text, mode, date = null, projectId = null) {
   validateTask({ text, mode, date });
   const task = {
     id: crypto.randomUUID(),
@@ -23,12 +28,21 @@ export async function addTask(text, mode, date = null) {
     status: 'todo',
     priority: 3,
     date: date || getToday(),
+    project_id: projectId || null,
     doneAt: null,
     createdAt: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
   await put(STORE, task);
   return task;
+}
+
+export async function updateTask(id, changes) {
+  const task = await getByKey(STORE, id);
+  if (!task) return null;
+  const updated = { ...task, ...changes, id, updated_at: new Date().toISOString() };
+  await put(STORE, updated);
+  return updated;
 }
 
 export async function toggleTask(id) {

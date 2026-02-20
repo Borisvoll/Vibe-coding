@@ -99,6 +99,7 @@ export function renderProjects(container, context) {
           <div class="projects-block__summary" data-expand>
             <span class="badge ${badge} projects-block__status">${statusLabel}</span>
             <span class="projects-block__name">${escapeHTML(project.title)}</span>
+            <button type="button" class="projects-block__open-btn" data-open-project="${project.id}" title="Open in Planning">↗</button>
             <span class="projects-block__chevron">${isExpanded ? '▲' : '▼'}</span>
           </div>
           <div class="projects-block__next-preview">→ ${nextPreview}</div>
@@ -155,6 +156,15 @@ export function renderProjects(container, context) {
   }
 
   function bindEvents(projects) {
+    // Open project in Planning tab
+    listEl.querySelectorAll('[data-open-project]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const projectId = btn.dataset.openProject;
+        window.location.hash = `planning/${projectId}`;
+      });
+    });
+
     // Expand/collapse
     listEl.querySelectorAll('[data-expand]').forEach((summary) => {
       summary.addEventListener('click', () => {

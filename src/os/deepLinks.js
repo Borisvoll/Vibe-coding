@@ -5,7 +5,7 @@
  * Supports: tab (any SHELL_TAB), focus (section zone id), mode
  */
 
-const VALID_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'settings'];
+const VALID_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
 /**
  * Parse the current URL hash into structured params.

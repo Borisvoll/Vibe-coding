@@ -3,7 +3,7 @@ import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
-import { ACCENT_COLORS, WEEKDAY_FULL } from '../constants.js';
+import { WEEKDAY_FULL } from '../constants.js';
 import { setTheme } from '../core/themeEngine.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
@@ -12,7 +12,6 @@ import { createFocusOverlay } from '../ui/focus-overlay.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
-// Mode order: School & Personal first, BPV secondary (Rams: match user's primary context)
 const MODE_META = {
   School: {
     label: 'School',
@@ -43,275 +42,111 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   let activeTab = 'today';
   let mountedBlocks = [];
 
+  // ── Hydrate shell chrome (already in DOM via index.html) ──
   const todayLabel = formatDateShort(getToday());
+  const sidebarDate = app.querySelector('.os-sidebar__date');
+  if (sidebarDate) sidebarDate.textContent = todayLabel;
+  const mobileDate = app.querySelector('.os-shell__date');
+  if (mobileDate) mobileDate.textContent = todayLabel;
 
-  app.innerHTML = `
-    <div id="new-os-shell" class="os-shell">
-      <!-- Ambient wash layer for mode transitions -->
-      <div class="os-mode-wash" aria-hidden="true"></div>
+  // Route container — templates get cloned into here
+  const routeContainer = app.querySelector('[data-route-container]');
 
-      <div id="mode-picker" class="mode-picker" role="dialog" aria-label="Kies een modus" aria-modal="true" hidden>
-        <div class="mode-picker__backdrop"></div>
-        <div class="mode-picker__panel">
-          <p class="mode-picker__eyebrow">Jouw context</p>
-          <h2 class="mode-picker__title">Welke modus?</h2>
-          <div class="mode-picker__cards">
-            ${Object.entries(MODE_META).map(([key, m]) => `
-              <button type="button" class="mode-card" data-mode="${key}"
-                style="--mode-color:${m.color};--mode-color-light:${m.colorLight}">
-                <span class="mode-card__emoji">${m.emoji}</span>
-                <span class="mode-card__label">${m.label}</span>
-                <span class="mode-card__desc">${m.description}</span>
-                <span class="mode-card__check" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8L6.5 11.5L13 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </span>
-              </button>
-            `).join('')}
-          </div>
-        </div>
-      </div>
+  // Current route params (e.g. { id: 'abc123' } for #projects/abc123)
+  let routeParams = {};
 
-      <!-- Desktop sidebar (hidden on mobile via CSS) -->
-      <aside class="os-sidebar" aria-label="Navigatie">
-        <div class="os-sidebar__brand">
-          <h1 class="os-sidebar__title">BORIS</h1>
-          <span class="os-sidebar__date">${todayLabel}</span>
-        </div>
+  // ── Route mounting (template cloning) ─────────────────────
+  function mountRoute(tab, params = {}) {
+    // Determine which template to use
+    let templateName = tab;
+    if (tab === 'projects' && params.id) {
+      templateName = 'project-detail';
+    }
 
-        <div class="os-sidebar__section-label">Modules</div>
-        <nav class="os-sidebar__nav">
-          <button class="os-sidebar__item" type="button" data-os-tab="dashboard">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            <span class="os-sidebar__label">Dashboard</span>
-          </button>
-          <button class="os-sidebar__item" type="button" data-os-tab="today">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-            <span class="os-sidebar__label">Vandaag</span>
-          </button>
-          <button class="os-sidebar__item" type="button" data-os-tab="inbox">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
-            <span class="os-sidebar__label">Inbox</span>
-            <span class="os-sidebar__badge" id="sidebar-inbox-badge" hidden>0</span>
-          </button>
-          <button class="os-sidebar__item" type="button" data-os-tab="lijsten">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            <span class="os-sidebar__label">Lijsten</span>
-          </button>
-          <button class="os-sidebar__item" type="button" data-os-tab="planning">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span class="os-sidebar__label">Planning</span>
-          </button>
-          <button class="os-sidebar__item" type="button" data-os-tab="projects" data-tooltip="Projects (Alt+G)" data-tooltip-pos="right">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            <span class="os-sidebar__label">Projects 🚀</span>
-          </button>
-        </nav>
+    const template = document.querySelector(`template[data-route="${templateName}"]`);
+    if (!template) return;
 
-        <div class="os-sidebar__divider"></div>
+    const clone = template.content.cloneNode(true);
+    routeContainer.appendChild(clone);
 
-        <div class="os-sidebar__section-label">Systeem</div>
-        <nav class="os-sidebar__system">
-          <button class="os-sidebar__item" type="button" data-os-tab="settings">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-            <span class="os-sidebar__label">Instellingen</span>
-          </button>
-          <button id="legacy-switch-btn" type="button" class="os-sidebar__item os-sidebar__item--muted">
-            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-            <span class="os-sidebar__label">Legacy</span>
-          </button>
-        </nav>
+    const mode = modeManager.getMode();
 
-        <div class="os-sidebar__mode">
-          <button id="mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
-            <span class="os-mode-btn__dot"></span>
-            <span class="os-mode-btn__label"></span>
-            <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-      </aside>
+    // Route-specific hydration
+    if (tab === 'today') {
+      buildVandaagLayout(mode);
+      renderVandaagHeader(mode);
+      initSearchBar();
+    }
+    if (tab === 'dashboard') {
+      updateSectionTitles(mode);
+      updateModeHero(mode);
+    }
+    if (tab === 'planning') {
+      updateSectionTitles(mode);
+    }
+    if (tab === 'settings') {
+      renderSettingsBlock(routeContainer.querySelector('#new-os-settings-block'), {
+        modeManager,
+        eventBus,
+        onChange: async () => {},
+      });
+    }
 
-      <!-- Desktop top bar (hidden on mobile via CSS) -->
-      <header class="os-shell__topbar">
-        <div class="os-shell__topbar-inner">
-          <button id="sidebar-toggle-btn" type="button" class="os-topbar__hamburger" aria-label="Menu" data-tooltip="Menu" data-tooltip-pos="bottom">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-          </button>
-          <span class="os-topbar__spacer"></span>
-          <div class="os-topbar__gear-wrap">
-            <button id="topbar-settings-btn" type="button" class="os-topbar__gear" aria-label="Instellingen" aria-haspopup="true" data-tooltip="Instellingen" data-tooltip-pos="bottom">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-              </svg>
-            </button>
-            <div class="os-topbar__menu" id="topbar-menu">
-              <div class="os-topbar__menu-label">Thema</div>
-              <div class="os-topbar__theme-switcher" id="os-theme-switcher">
-                <button class="os-topbar__theme-option" data-theme="light">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                  Licht
-                </button>
-                <button class="os-topbar__theme-option" data-theme="system">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                  Auto
-                </button>
-                <button class="os-topbar__theme-option" data-theme="dark">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                  Donker
-                </button>
-              </div>
-              <div class="os-topbar__menu-divider"></div>
-              <div class="os-topbar__menu-label">Accentkleur</div>
-              <div class="os-topbar__accent-picker" id="os-accent-picker">
-                ${ACCENT_COLORS.map(c => `
-                  <div class="os-topbar__accent-dot" data-color="${c.id}" data-hex="${c.hex}" data-tooltip="${c.label}" style="background:${c.hex}"></div>
-                `).join('')}
-              </div>
-              <div class="os-topbar__menu-divider"></div>
-              <div class="os-topbar__menu-label">Modus</div>
-              <div role="radiogroup" class="os-topbar__mode-radio" id="topbar-mode-radio" aria-label="Kies modus">
-                ${Object.entries(MODE_META).map(([key, m]) => `
-                  <label class="os-topbar__mode-opt" data-mode="${key}">
-                    <input type="radio" class="sr-only" name="topbar-mode" value="${key}" aria-label="${m.label}" ${modeManager.getMode() === key ? 'checked' : ''}>
-                    <span class="os-topbar__mode-opt-dot" style="background:${m.color}"></span>
-                    <span class="os-topbar__mode-opt-text">${m.emoji} ${m.label}</span>
-                  </label>
-                `).join('')}
-              </div>
-              <div class="os-topbar__menu-divider"></div>
-              <button class="os-topbar__menu-item" data-action="settings">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                Alle instellingen
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
+    // Breadcrumb visibility + handler
+    const homeLink = routeContainer.querySelector('.os-section__home-link');
+    if (homeLink) {
+      homeLink.hidden = tab === 'dashboard';
+      if (templateName === 'project-detail') {
+        homeLink.addEventListener('click', () => setActiveTab('projects'));
+      } else {
+        homeLink.addEventListener('click', () => setActiveTab('dashboard'));
+      }
+    }
 
-      <!-- Mobile top bar (hidden on desktop via CSS) -->
-      <header class="os-shell__header os-shell__header--mobile">
-        <div class="os-shell__header-inner">
-          <div class="os-shell__header-left">
-            <h1 class="os-shell__title">BORIS</h1>
-            <span class="os-shell__date">${todayLabel}</span>
-          </div>
-          <div class="os-shell__header-actions">
-            <button id="mobile-mode-btn" type="button" class="os-mode-btn" aria-label="Verander modus" aria-haspopup="dialog">
-              <span class="os-mode-btn__dot"></span>
-              <span class="os-mode-btn__label"></span>
-              <svg class="os-mode-btn__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
+    renderHosts();
+  }
 
-      <!-- Mobile horizontal nav (hidden on desktop via CSS) -->
-      <nav id="os-nav" class="os-nav os-nav--mobile" aria-label="BORIS navigatie">
-        <div class="os-nav__inner">
-          <button class="os-nav__button" type="button" data-os-tab="dashboard">Dashboard</button>
-          <button class="os-nav__button" type="button" data-os-tab="today">Vandaag</button>
-          <button class="os-nav__button" type="button" data-os-tab="inbox">
-            Inbox <span class="os-nav__badge" id="inbox-badge" hidden>0</span>
-          </button>
-          <button class="os-nav__button" type="button" data-os-tab="lijsten">Lijsten</button>
-          <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
-          <button class="os-nav__button" type="button" data-os-tab="projects">Projects 🚀</button>
-          <button class="os-nav__button" type="button" data-os-tab="settings">Instellingen</button>
-        </div>
-      </nav>
+  function unmountRoute(tab) {
+    unmountAll();
+    if (tab === 'today') {
+      Object.values(vandaagSections).forEach(s => s?.destroy());
+      Object.keys(vandaagSections).forEach(k => delete vandaagSections[k]);
+    }
+    routeContainer.innerHTML = '';
+  }
 
-      <main id="new-os-content" class="os-shell__content">
-        <section class="os-section" data-os-section="dashboard" hidden>
-          <h2 class="os-section__title">Dashboard</h2>
-          <div class="os-host-stack" data-os-host="dashboard-cards"></div>
-        </section>
-        <section class="os-section" data-os-section="today">
-          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <div class="vandaag-header" data-vandaag-header></div>
-          <div class="vandaag-search" data-vandaag-search></div>
-          <!-- Level 1 — Focus (Today) -->
-          <div class="vandaag-level vandaag-level--focus" data-vandaag-level="1">
-            <div class="os-host-stack" data-os-host="vandaag-hero"></div>
-            <div class="os-host-stack" data-os-host="vandaag-cockpit"></div>
-            <div data-vandaag-zone="tasks"></div>
-          </div>
-          <hr class="vandaag-level-divider" aria-hidden="true">
-          <!-- Level 2 — Projects & Lists -->
-          <div class="vandaag-level vandaag-level--projects" data-vandaag-level="2">
-            <div data-vandaag-zone="projects"></div>
-            <div data-vandaag-zone="capture"></div>
-          </div>
-          <hr class="vandaag-level-divider" aria-hidden="true">
-          <!-- Level 3 — Context & Review -->
-          <div class="vandaag-level vandaag-level--review" data-vandaag-level="3">
-            <div data-vandaag-zone="reflection"></div>
-            <div data-vandaag-zone="mode"></div>
-            <div data-vandaag-zone="weekly"></div>
-          </div>
-        </section>
-        <section class="os-section" data-os-section="inbox" hidden>
-          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <div class="os-host-stack" data-os-host="inbox-screen"></div>
-        </section>
-        <section class="os-section" data-os-section="lijsten" hidden>
-          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <h2 class="os-section__title">Lijsten</h2>
-          <div class="os-host-stack" data-os-host="lijsten-screen"></div>
-        </section>
-        <section class="os-section" data-os-section="planning" hidden>
-          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <h2 class="os-section__title">Planning</h2>
-          <div class="os-host-stack" data-os-host="planning-main"></div>
-        </section>
-        <section class="os-section" data-os-section="projects" hidden>
-          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <h2 class="os-section__title">Projects 🚀</h2>
-          <div class="os-host-stack" data-os-host="projects-hub"></div>
-        </section>
-        <section class="os-section" data-os-section="settings" hidden>
-          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <h2 class="os-section__title">Instellingen</h2>
-          <div id="new-os-settings-block"></div>
-        </section>
-      </main>
-    </div>
-  `;
-
+  // ── Tab navigation ────────────────────────────────────────
   function setActiveTab(tab, opts) {
+    const prevTab = activeTab;
     activeTab = SHELL_TABS.includes(tab) ? tab : 'today';
-    app.querySelectorAll('[data-os-section]').forEach((section) => {
-      const name = section.getAttribute('data-os-section');
-      section.hidden = name !== activeTab;
-    });
+    routeParams = opts?.params || {};
+
+    // Unmount previous route (skip if nothing mounted yet)
+    if (routeContainer.firstChild) {
+      unmountRoute(prevTab);
+    }
+
+    // Mount new route with params
+    mountRoute(activeTab, routeParams);
+
     // Update all nav buttons (both sidebar and mobile nav)
     app.querySelectorAll('[data-os-tab]').forEach((button) => {
       const isActive = button.getAttribute('data-os-tab') === activeTab;
       button.setAttribute('aria-pressed', String(isActive));
       button.classList.toggle('os-sidebar__item--active', isActive);
     });
-    // Update dashboard breadcrumb visibility
-    app.querySelectorAll('.os-section__home-link').forEach((link) => {
-      link.hidden = activeTab === 'dashboard';
-    });
-    // Deep link: update URL hash (skip during initial load if hash already set)
+
+    // Deep link: update URL hash
     const focus = opts?.focus || null;
-    updateHash(activeTab, focus);
-    // Scroll to focus target if specified
+    updateHash(activeTab, focus, routeParams);
     if (focus) {
-      scrollToFocus(app.querySelector('#new-os-shell'), focus);
+      scrollToFocus(routeContainer, focus);
     }
   }
 
+  // ── Block mounting ────────────────────────────────────────
   function ensureHostEmptyStates() {
-    app.querySelectorAll('[data-os-host]').forEach((host) => {
+    routeContainer.querySelectorAll('[data-os-host]').forEach((host) => {
       if (host.children.length === 0) {
         host.innerHTML = '<p class="os-host-empty">Nog geen actieve blokken voor deze weergave.</p>';
       }
@@ -321,7 +156,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   function unmountAll() {
     mountedBlocks.forEach((entry) => { entry.instance?.unmount?.(); });
     mountedBlocks = [];
-    app.querySelectorAll('[data-os-host]').forEach((host) => { host.innerHTML = ''; });
+    routeContainer.querySelectorAll('[data-os-host]').forEach((host) => { host.innerHTML = ''; });
   }
 
   function renderHosts() {
@@ -335,18 +170,16 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
     const sorted = [...eligibleBlocks].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
 
-    // Track stagger per host for sequential entrance animation
     const hostStagger = {};
     sorted.forEach((block) => {
       const hosts = Array.isArray(block.hosts) ? block.hosts : [];
       hosts.forEach((hostName) => {
-        const hostEl = app.querySelector(`[data-os-host="${hostName}"]`);
+        const hostEl = routeContainer.querySelector(`[data-os-host="${hostName}"]`);
         if (!hostEl || typeof block.mount !== 'function') return;
         try {
           const instance = block.mount(hostEl, context) || null;
           mountedBlocks.push({ blockId: block.id, hostName, instance });
 
-          // Assign stagger delay for block entrance animation
           if (!hostStagger[hostName]) hostStagger[hostName] = 0;
           const lastChild = hostEl.lastElementChild;
           if (lastChild) {
@@ -369,7 +202,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     const meta = MODE_META[mode] || MODE_META.BPV;
     wash.style.setProperty('--wash-color', meta.color);
     wash.classList.remove('os-mode-wash--active');
-    // Force reflow to restart the animation
     void wash.offsetWidth;
     wash.classList.add('os-mode-wash--active');
     wash.addEventListener('animationend', () => {
@@ -381,7 +213,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     const mode = modeManager.getMode();
     const meta = MODE_META[mode] || MODE_META.BPV;
 
-    // Update all mode buttons (sidebar + mobile)
     app.querySelectorAll('#mode-btn, #mobile-mode-btn').forEach((btn) => {
       const dot = btn.querySelector('.os-mode-btn__dot');
       const label = btn.querySelector('.os-mode-btn__label');
@@ -391,19 +222,17 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       btn.style.setProperty('--mode-color-light', meta.colorLight);
     });
 
-    // Update active card in picker
     app.querySelectorAll('.mode-card').forEach((card) => {
       card.classList.toggle('mode-card--active', card.getAttribute('data-mode') === mode);
     });
   }
 
-  // Set data-mode on shell root for mode-aware CSS accents
   function setShellMode(mode) {
     const shell = app.querySelector('#new-os-shell');
     if (shell) shell.setAttribute('data-mode', mode);
   }
 
-  // ── Vandaag page layout with collapsible zones (Notion-style) ──
+  // ── Vandaag page layout with collapsible zones ────────────
 
   const VANDAAG_SECTIONS = [
     { zone: 'tasks',      id: 'vandaag-tasks',      title: 'Taken',                hostName: 'vandaag-tasks' },
@@ -426,7 +255,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
 
     VANDAAG_SECTIONS.forEach((cfg) => {
-      const zoneEl = app.querySelector(`[data-vandaag-zone="${cfg.zone}"]`);
+      const zoneEl = routeContainer.querySelector(`[data-vandaag-zone="${cfg.zone}"]`);
       if (!zoneEl) return;
       const section = createCollapsibleSection({
         id: cfg.id,
@@ -448,12 +277,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   function renderVandaagHeader(mode) {
-    const headerEl = app.querySelector('[data-vandaag-header]');
+    const headerEl = routeContainer.querySelector('[data-vandaag-header]');
     if (!headerEl) return;
     const meta = MODE_META[mode] || MODE_META.School;
     const today = getToday();
     const d = new Date(today + 'T00:00:00');
-    const dayIdx = (d.getDay() + 6) % 7; // 0=Mon
+    const dayIdx = (d.getDay() + 6) % 7;
     const dayName = WEEKDAY_FULL[dayIdx] || '';
     const dateLong = formatDateLong(today);
     const weekStr = getISOWeek(today);
@@ -469,9 +298,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     `;
   }
 
-  // ── Search bar (uses globalSearch from stores/search.js) ────
+  // ── Search bar ────────────────────────────────────────────
   function initSearchBar() {
-    const searchEl = app.querySelector('[data-vandaag-search]');
+    const searchEl = routeContainer.querySelector('[data-vandaag-search]');
     if (!searchEl) return;
     searchEl.innerHTML = `
       <div class="vandaag-search__wrap">
@@ -518,7 +347,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   }
 
-  // Update section titles with mode label so mode change is unmissable
+  // ── Section titles + mode hero ────────────────────────────
   function updateSectionTitles(mode) {
     const meta = MODE_META[mode] || MODE_META.School;
     const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
@@ -527,12 +356,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       planning: `Planning ${badge}`,
     };
     Object.entries(titleMap).forEach(([section, html]) => {
-      const el = app.querySelector(`[data-os-section="${section}"] .os-section__title`);
+      const el = routeContainer.querySelector(`[data-os-section="${section}"] .os-section__title`);
       if (el) el.innerHTML = html;
     });
   }
 
-  // Mode hero banner — large colored bar at top of visible sections
   function updateModeHero(mode) {
     const meta = MODE_META[mode] || MODE_META.School;
     const heroHTML = `
@@ -544,9 +372,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         </div>
       </div>`;
 
-    // Insert or replace hero in dashboard section
     ['dashboard'].forEach((section) => {
-      const sectionEl = app.querySelector(`[data-os-section="${section}"]`);
+      const sectionEl = routeContainer.querySelector(`[data-os-section="${section}"]`);
       if (!sectionEl) return;
       const existing = sectionEl.querySelector('.os-mode-hero');
       if (existing) {
@@ -560,6 +387,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     });
   }
 
+  // ── Mode picker ───────────────────────────────────────────
   let focusTrapCleanup = null;
 
   function showModePicker() {
@@ -572,7 +400,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       active?.focus();
     }, 50);
 
-    // Focus trap: keep Tab cycling within the picker
     const cards = picker.querySelectorAll('.mode-card');
     if (cards.length > 0) {
       const first = cards[0];
@@ -598,13 +425,13 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     focusTrapCleanup?.();
     focusTrapCleanup = null;
     picker.classList.remove('mode-picker--visible');
-    // pointer-events: none kicks in immediately via CSS (no --visible = no clicks)
-    // Set hidden after exit animation for DOM cleanup
     const setHidden = () => { picker.hidden = true; };
     picker.addEventListener('transitionend', setHidden, { once: true });
     setTimeout(setHidden, 500);
     app.querySelector('#mode-btn')?.focus();
   }
+
+  // ── Shell chrome event listeners ──────────────────────────
 
   // Mode picker — card clicks
   app.querySelectorAll('.mode-card').forEach((card) => {
@@ -630,19 +457,20 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
   document.addEventListener('keydown', handleEscapeKey);
 
+  // Tab navigation (sidebar + mobile nav)
   app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
     tabButton.addEventListener('click', () => {
       setActiveTab(tabButton.getAttribute('data-os-tab'));
     });
   });
 
-  // Desktop topbar — sidebar toggle (hamburger)
+  // Desktop topbar — sidebar toggle
   app.querySelector('#sidebar-toggle-btn')?.addEventListener('click', () => {
     const shell = app.querySelector('#new-os-shell');
     if (shell) shell.classList.toggle('os-shell--sidebar-collapsed');
   });
 
-  // Desktop topbar — gear dropdown menu
+  // Desktop topbar — gear dropdown
   const gearBtn = app.querySelector('#topbar-settings-btn');
   const gearMenu = app.querySelector('#topbar-menu');
 
@@ -658,7 +486,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
   document.addEventListener('click', closeGearMenu);
 
-  // Theme switcher in gear menu
+  // Theme switcher
   const osThemeSwitcher = app.querySelector('#os-theme-switcher');
   async function setOSTheme(theme) {
     osThemeSwitcher?.querySelectorAll('.os-topbar__theme-option').forEach(opt => {
@@ -676,7 +504,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     opt.addEventListener('click', () => setOSTheme(opt.dataset.theme));
   });
 
-  // Accent picker in gear menu
+  // Accent picker
   const osAccentPicker = app.querySelector('#os-accent-picker');
   async function setOSAccent(colorId, hex) {
     osAccentPicker?.querySelectorAll('.os-topbar__accent-dot').forEach(d => {
@@ -696,7 +524,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setActiveTab('settings');
   });
 
-  // Mode radiogroup in gear menu — instant switch without modal
+  // Mode radiogroup in gear menu
   const topbarModeRadio = app.querySelector('#topbar-mode-radio');
 
   function updateTopbarModeRadio(mode) {
@@ -716,11 +544,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
   updateTopbarModeRadio(modeManager.getMode());
 
-  // ── Focus overlay (post-switch next-actions) ────────────────
+  // ── Focus overlay ─────────────────────────────────────────
   const focusOverlay = createFocusOverlay();
   app.querySelector('#new-os-shell')?.appendChild(focusOverlay.el);
 
-  // Load saved theme + accent into gear menu
+  // Load saved theme + accent
   (async () => {
     const savedTheme = await getSetting('theme') || 'system';
     osThemeSwitcher?.querySelectorAll('.os-topbar__theme-option').forEach(opt => {
@@ -734,54 +562,47 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     }
   })();
 
-  // Legacy switch button — switch back to legacy interface
-  app.querySelector('#legacy-switch-btn')?.addEventListener('click', () => {
-    import('../core/featureFlags.js').then(({ setFeatureFlag }) => {
-      setFeatureFlag('enableNewOS', false);
-      window.location.hash = '';
-      window.location.reload();
-    });
-  });
-
-  // "← Dashboard" breadcrumb links
-  app.querySelectorAll('.os-section__home-link').forEach((link) => {
-    link.addEventListener('click', () => setActiveTab('dashboard'));
-  });
-
+  // ── Mode change handler ───────────────────────────────────
   let modeTransitionTimer = null;
 
   const unsubscribeMode = eventBus.on('mode:changed', ({ mode }) => {
+    // Shell chrome updates (always)
     setShellMode(mode);
     triggerModeWash(mode);
     updateModeBtn();
     updateTopbarModeRadio(mode);
-    updateSectionTitles(mode);
-    updateModeHero(mode);
-    renderVandaagHeader(mode);
-    updateVandaagCollapse(mode);
     focusOverlay.showFor(mode, MODE_META[mode]);
 
-    // Content crossfade: brief fade-out, remount blocks, fade-in
-    const content = app.querySelector('.os-shell__content');
-    if (content) {
+    // Route-specific updates
+    if (activeTab === 'today') {
+      renderVandaagHeader(mode);
+      updateVandaagCollapse(mode);
+    }
+    updateSectionTitles(mode);
+    if (activeTab === 'dashboard') {
+      updateModeHero(mode);
+    }
+
+    // Content crossfade + remount blocks
+    if (routeContainer) {
       if (modeTransitionTimer) clearTimeout(modeTransitionTimer);
-      content.classList.add('os-content--switching');
+      routeContainer.classList.add('os-content--switching');
       modeTransitionTimer = setTimeout(() => {
         modeTransitionTimer = null;
         renderHosts();
-        content.classList.remove('os-content--switching');
+        routeContainer.classList.remove('os-content--switching');
       }, 120);
     } else {
       renderHosts();
     }
   });
 
-  // Listen for inbox:open event (from quick-action or Ctrl+I)
+  // inbox:open event
   const unsubscribeInboxOpen = eventBus.on('inbox:open', () => {
     setActiveTab('inbox');
   });
 
-  // ── Command palette (Ctrl+K global search) ─────────────────
+  // ── Command palette ───────────────────────────────────────
   const cmdPalette = createCommandPalette({
     onNavigate: ({ tab, focus }) => {
       setActiveTab(tab, { focus });
@@ -790,28 +611,21 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
 
-  // Global keyboard shortcuts: Ctrl+K (search), Ctrl+I (inbox)
+  // Global keyboard shortcuts
   function handleGlobalKeydown(e) {
-    // Ctrl+K — open command palette
     if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !e.shiftKey && !e.altKey) {
       e.preventDefault();
-      if (cmdPalette.isOpen) {
-        cmdPalette.close();
-      } else {
-        cmdPalette.open();
-      }
+      if (cmdPalette.isOpen) { cmdPalette.close(); } else { cmdPalette.open(); }
       return;
     }
-    // Ctrl+I — open inbox
     if (e.ctrlKey && e.key === 'i' && !e.shiftKey && !e.altKey && !e.metaKey) {
       e.preventDefault();
       setActiveTab('inbox');
       setTimeout(() => {
-        const input = app.querySelector('.inbox-screen__capture-input');
+        const input = routeContainer.querySelector('.inbox-screen__capture-input');
         input?.focus();
       }, 50);
     }
-    // Alt+G — open Projects hub
     if (e.altKey && e.key === 'g' && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       setActiveTab('projects');
@@ -819,25 +633,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
   document.addEventListener('keydown', handleGlobalKeydown);
 
-  // ── Settings with mode-switch callback ──────────────────────
-  renderSettingsBlock(app.querySelector('#new-os-settings-block'), {
-    modeManager,
-    eventBus,
-    onChange: async ({ key }) => {
-      // Settings that require live re-rendering
-    },
-  });
-
+  // ── Initialize ────────────────────────────────────────────
   setShellMode(modeManager.getMode());
   updateModeBtn();
-  updateSectionTitles(modeManager.getMode());
-  updateModeHero(modeManager.getMode());
-  buildVandaagLayout(modeManager.getMode());
-  renderVandaagHeader(modeManager.getMode());
-  initSearchBar();
-  renderHosts();
 
-  // ── Deep links: restore tab from URL hash on load ─────────
+  // Deep links: determine initial tab from URL hash
   const hashState = parseHash();
   if (hashState.tab) {
     activeTab = hashState.tab;
@@ -845,35 +645,38 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   if (hashState.mode && ['School', 'Personal', 'BPV'].includes(hashState.mode)) {
     modeManager.setMode(hashState.mode);
   }
-  setActiveTab(activeTab, { focus: hashState.focus });
 
+  // Mount initial route (this calls renderHosts internally)
+  setActiveTab(activeTab, { focus: hashState.focus, params: hashState.params || {} });
+
+  // Hash change listener
   function handleHashChange() {
     const h = parseHash();
-    if (h.tab && h.tab !== activeTab) {
-      setActiveTab(h.tab, { focus: h.focus });
+    const paramsChanged = JSON.stringify(h.params || {}) !== JSON.stringify(routeParams);
+    if (h.tab && (h.tab !== activeTab || paramsChanged)) {
+      setActiveTab(h.tab, { focus: h.focus, params: h.params || {} });
     } else if (h.focus) {
-      scrollToFocus(app.querySelector('#new-os-shell'), h.focus);
+      scrollToFocus(routeContainer, h.focus);
     }
   }
   window.addEventListener('hashchange', handleHashChange);
 
-  // Show mode picker on first visit so user can set their context
+  // First visit: mode picker
   if (modeManager.isFirstVisit?.()) {
     setTimeout(() => showModePicker(), 400);
   }
 
-  // Start tutorial for new users (after mode picker)
+  // Tutorial
   const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
   setTimeout(() => startTutorial(), tutorialDelay);
 
-  // ── Friday prompt: gentle nudge to send weekly review ───────
+  // ── Friday prompt ─────────────────────────────────────────
   (async () => {
     try {
       if (!isFriday()) return;
       const week = getISOWeek(getToday());
       const sent = await isReviewSent(week);
       if (sent) return;
-      // Show a non-intrusive banner after a short delay
       setTimeout(() => {
         const banner = document.createElement('div');
         banner.className = 'os-friday-prompt';
@@ -886,16 +689,17 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           setActiveTab('today');
           banner.remove();
           setTimeout(() => {
-            const review = app.querySelector('.weekly-review');
+            const review = routeContainer.querySelector('.weekly-review');
             review?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 100);
         });
         banner.querySelector('.os-friday-prompt__close')?.addEventListener('click', () => banner.remove());
-        app.querySelector('.os-shell__content')?.prepend(banner);
+        routeContainer?.prepend(banner);
       }, 2000);
     } catch { /* non-critical */ }
   })();
 
+  // ── Cleanup ───────────────────────────────────────────────
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();
     unsubscribeInboxOpen?.();

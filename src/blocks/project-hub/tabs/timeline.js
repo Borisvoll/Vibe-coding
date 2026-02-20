@@ -319,17 +319,16 @@ export function renderTimelineTab(host, project, context) {
         dayEl.classList.remove('hub-timeline__day--drop-target');
         if (!dragState) return;
         const newDate = dayEl.dataset.date;
-        const updated = await addMilestone(project.id, '_temp_', newDate); // get project
-        // Actually: update existing milestone date
-        const milestone = (project.milestones || []).find((m) => m.id === dragState.milestoneId);
-        if (!milestone || !newDate) return;
-        const currentMs = project.milestones || [];
-        const updatedMs = currentMs.map((m) => m.id === dragState.milestoneId ? { ...m, date: newDate } : m);
-        const result = await import('../../../stores/projects.js').then((s) =>
-          s.updateProject(project.id, { milestones: updatedMs })
-        );
-        if (result) { project.milestones = result.milestones; }
+        const milestoneId = dragState.milestoneId;
         dragState = null;
+        if (!newDate) return;
+        const currentMs = project.milestones || [];
+        const milestone = currentMs.find((m) => m.id === milestoneId);
+        if (!milestone || milestone.date === newDate) return;
+        const updatedMs = currentMs.map((m) => m.id === milestoneId ? { ...m, date: newDate } : m);
+        const { updateProject } = await import('../../../stores/projects.js');
+        const result = await updateProject(project.id, { milestones: updatedMs });
+        if (result) { project.milestones = result.milestones; }
         eventBus.emit('projects:changed');
         await render();
       });

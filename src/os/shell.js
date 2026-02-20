@@ -214,7 +214,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       <main id="new-os-content" class="os-shell__content">
         <section class="os-section" data-os-section="dashboard" hidden>
           <h2 class="os-section__title">Dashboard</h2>
-          <div class="os-host-grid" data-os-host="dashboard-cards"></div>
+          <div class="os-host-stack" data-os-host="dashboard-cards"></div>
         </section>
         <section class="os-section" data-os-section="today">
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>

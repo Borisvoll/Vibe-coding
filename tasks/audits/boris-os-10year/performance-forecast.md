@@ -136,7 +136,42 @@ app.querySelectorAll('[data-os-host]').forEach((host) => { host.innerHTML = ''; 
 
 **Weakness:** No try/catch around `unmount()` (see architecture-resilience.md). A throwing unmount prevents subsequent blocks from cleaning up.
 
-### Event Listener Lifecycle
+### CRITICAL: Block Event Listener Leaks
+**Risk: HIGH** — found by deep analysis of block implementations.
+
+Blocks subscribe to eventBus events in `mount()` but many do NOT unsubscribe in `unmount()`:
+
+```javascript
+// Typical pattern in blocks:
+mount(container, { eventBus }) {
+  eventBus.on('mode:changed', updateHandler); // Subscribes
+  return {
+    unmount() { /* missing: eventBus.off() call */ }
+  };
+}
+```
+
+The shell's `eventBus.clear()` runs on `beforeunload` (`src/os/shell.js:854`), but **not on mode switch**. Each mode switch calls `unmountAll()` + `renderHosts()`, re-mounting blocks that re-subscribe without unsubscribing. Over a session:
+
+- 10 mode switches/day × 15 blocks × 1 listener each = **150 leaked listeners/day**
+- Over a week: ~1,000 zombie listeners, each holding closure references to block context
+- Estimated memory: **2-5MB per year** of accumulated closures
+
+### Timer Leaks in Blocks
+Several blocks use `setInterval()` or `setTimeout()` without cleanup in `unmount()`. When the block unmounts, the timer continues firing, referencing stale DOM and context.
+
+**Minimal Fix for both:** Every block that calls `eventBus.on()` must store the unsubscribe function and call it in `unmount()`:
+```javascript
+mount(container, { eventBus }) {
+  const unsub = eventBus.on('mode:changed', handler);
+  const timer = setInterval(tick, 1000);
+  return {
+    unmount() { unsub(); clearInterval(timer); }
+  };
+}
+```
+
+### Shell Event Listener Lifecycle
 Shell cleanup on `beforeunload` (`src/os/shell.js:845-855`):
 - Unsubscribes mode:changed and inbox:open handlers
 - Destroys collapsible sections
@@ -145,7 +180,7 @@ Shell cleanup on `beforeunload` (`src/os/shell.js:845-855`):
 - Removes hashchange listener
 - Clears eventBus
 
-**Assessment: Thorough.** The cleanup covers all registered listeners.
+**Assessment:** Shell-level cleanup is thorough. The leak is at the **block level**, not the shell level.
 
 ### Potential Leak: setInterval in auto-sync
 `src/auto-sync.js:336`: `pollTimer = setInterval(download, POLL_INTERVAL_MS);`

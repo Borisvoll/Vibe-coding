@@ -4,7 +4,7 @@ export function registerBPVLogSummaryBlock(registry) {
   registry.register({
     id: 'bpv-log-summary',
     title: 'BPV Log',
-    hosts: ['vandaag-secondary'],
+    hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
     order: 30,

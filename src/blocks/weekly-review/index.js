@@ -4,7 +4,7 @@ export function registerWeeklyReviewBlock(registry) {
   registry.register({
     id: 'weekly-review',
     title: 'Weekoverzicht',
-    hosts: ['vandaag-secondary'],
+    hosts: ['vandaag-weekly'],
     modes: [],  // All modes — always visible
     enabled: true,
     order: 90,  // Near bottom of today page

@@ -21,6 +21,7 @@ import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
+import { registerSchoolMiniCard } from './school-mini-card/index.js';
 import { registerPersonalDashboardBlock } from './personal-dashboard/index.js';
 import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
 import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
@@ -67,6 +68,7 @@ export function registerDefaultBlocks(registry) {
 
   // School mode blocks
   registerSchoolDashboardBlock(registry);
+  registerSchoolMiniCard(registry);
   registerSchoolCurrentProjectBlock(registry);
   registerSchoolMilestonesBlock(registry);
   registerSchoolSkillTrackerBlock(registry);

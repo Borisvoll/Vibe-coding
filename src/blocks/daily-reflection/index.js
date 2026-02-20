@@ -4,7 +4,7 @@ export function registerDailyReflectionBlock(registry) {
   registry.register({
     id: 'daily-reflection',
     title: 'Reflectie',
-    hosts: ['today-sections'],
+    hosts: ['vandaag-reflection'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,
     order: 50,

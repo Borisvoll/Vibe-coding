@@ -4,7 +4,7 @@ export function registerSchoolTodayBlock(registry) {
   registry.register({
     id: 'school-today',
     title: 'School Vandaag',
-    hosts: ['today-sections', 'vandaag-widgets'],
+    hosts: ['vandaag-secondary'],
     modes: ['School'],
     enabled: true,
     order: 40,

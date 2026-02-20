@@ -176,9 +176,13 @@ export function mountWeeklyReview(container, { eventBus }) {
     status.textContent = '';
 
     try {
-      await sendWeeklyReview(currentData);
+      const result = await sendWeeklyReview(currentData);
       await markReviewSent(currentData.week);
-      btn.textContent = 'Verstuurd ✓';
+      if (result?.method === 'mailto') {
+        btn.textContent = 'Geopend in email-app ✓';
+      } else {
+        btn.textContent = 'Verstuurd ✓';
+      }
       status.textContent = '';
       status.className = 'wr__status';
     } catch (err) {

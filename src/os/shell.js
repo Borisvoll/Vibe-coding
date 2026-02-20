@@ -1,9 +1,10 @@
 import { getSetting, setSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
-import { formatDateShort, getToday, getISOWeek } from '../utils.js';
+import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
-import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
+import { ACCENT_COLORS, WEEKDAY_FULL, applyAccentColor } from '../constants.js';
+import { createCollapsibleSection } from '../ui/collapsible-section.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'settings'];
 
@@ -209,9 +210,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         </section>
         <section class="os-section" data-os-section="today">
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
-          <h2 class="os-section__title">Vandaag</h2>
-          <div class="os-host-stack" data-os-host="today-sections"></div>
-          <div class="os-host-grid" data-os-host="vandaag-widgets"></div>
+          <div class="vandaag-header" data-vandaag-header></div>
+          <div class="os-host-stack" data-os-host="vandaag-hero"></div>
+          <div class="os-host-stack" data-os-host="vandaag-cockpit"></div>
+          <div class="os-host-stack" data-os-host="vandaag-core"></div>
+          <div data-vandaag-zone="reflection"></div>
+          <div data-vandaag-zone="secondary"></div>
         </section>
         <section class="os-section" data-os-section="inbox" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
@@ -342,13 +346,78 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (shell) shell.setAttribute('data-mode', mode);
   }
 
+  // ── Vandaag page layout with collapsible zones ──────────────
+
+  const COLLAPSE_DEFAULTS = {
+    School:   { reflection: false, secondary: false },
+    Personal: { reflection: true,  secondary: false },
+    BPV:      { reflection: false, secondary: true  },
+  };
+
+  let reflectionSection = null;
+  let secondarySection = null;
+
+  function buildVandaagLayout(mode) {
+    const reflectionZone = app.querySelector('[data-vandaag-zone="reflection"]');
+    const secondaryZone = app.querySelector('[data-vandaag-zone="secondary"]');
+    if (!reflectionZone || !secondaryZone) return;
+
+    const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
+
+    reflectionSection = createCollapsibleSection({
+      id: 'vandaag-reflection',
+      title: 'Reflectie',
+      hostName: 'vandaag-reflection',
+      defaultOpen: defaults.reflection,
+      mode,
+    });
+
+    secondarySection = createCollapsibleSection({
+      id: 'vandaag-secondary',
+      title: 'Overig',
+      hostName: 'vandaag-secondary',
+      defaultOpen: defaults.secondary,
+      mode,
+    });
+
+    reflectionZone.appendChild(reflectionSection.el);
+    secondaryZone.appendChild(secondarySection.el);
+  }
+
+  function updateVandaagCollapse(mode) {
+    const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
+    reflectionSection?.setMode(mode, defaults.reflection);
+    secondarySection?.setMode(mode, defaults.secondary);
+  }
+
+  function renderVandaagHeader(mode) {
+    const headerEl = app.querySelector('[data-vandaag-header]');
+    if (!headerEl) return;
+    const meta = MODE_META[mode] || MODE_META.School;
+    const today = getToday();
+    const d = new Date(today + 'T00:00:00');
+    const dayIdx = (d.getDay() + 6) % 7; // 0=Mon
+    const dayName = WEEKDAY_FULL[dayIdx] || '';
+    const dateLong = formatDateLong(today);
+    const weekStr = getISOWeek(today);
+    const weekNum = weekStr.split('-W')[1]?.replace(/^0/, '') || '';
+
+    const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
+    headerEl.innerHTML = `
+      <div class="vandaag-header__top">
+        <h2 class="vandaag-header__title">Vandaag</h2>
+        ${badge}
+      </div>
+      <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum}</span>
+    `;
+  }
+
   // Update section titles with mode label so mode change is unmissable
   function updateSectionTitles(mode) {
     const meta = MODE_META[mode] || MODE_META.School;
     const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
     const titleMap = {
       dashboard: `Dashboard ${badge}`,
-      today: `Vandaag ${badge}`,
       planning: `Planning ${badge}`,
     };
     Object.entries(titleMap).forEach(([section, html]) => {
@@ -369,8 +438,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         </div>
       </div>`;
 
-    // Insert or replace hero in dashboard + today sections
-    ['dashboard', 'today'].forEach((section) => {
+    // Insert or replace hero in dashboard section
+    ['dashboard'].forEach((section) => {
       const sectionEl = app.querySelector(`[data-os-section="${section}"]`);
       if (!sectionEl) return;
       const existing = sectionEl.querySelector('.os-mode-hero');
@@ -557,6 +626,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     updateModeBtn();
     updateSectionTitles(mode);
     updateModeHero(mode);
+    renderVandaagHeader(mode);
+    updateVandaagCollapse(mode);
 
     // Content crossfade: brief fade-out, remount blocks, fade-in
     const content = app.querySelector('.os-shell__content');
@@ -604,6 +675,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   updateModeBtn();
   updateSectionTitles(modeManager.getMode());
   updateModeHero(modeManager.getMode());
+  buildVandaagLayout(modeManager.getMode());
+  renderVandaagHeader(modeManager.getMode());
   renderHosts();
   setActiveTab(activeTab);
 
@@ -649,6 +722,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   window.addEventListener('beforeunload', () => {
     unsubscribeMode?.();
     unsubscribeInboxOpen?.();
+    reflectionSection?.destroy();
+    secondarySection?.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);

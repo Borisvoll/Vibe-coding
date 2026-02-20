@@ -4,7 +4,7 @@ export function registerPersonalDashboardBlock(registry) {
   registry.register({
     id: 'personal-dashboard',
     title: 'Persoonlijk Dashboard',
-    hosts: ['today-sections'],
+    hosts: ['vandaag-secondary'],
     modes: ['Personal'],
     enabled: true,
     order: 5,

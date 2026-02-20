@@ -48,8 +48,14 @@ export function renderDailyCockpit(container, context) {
   const listEl = el.querySelector('.daily-cockpit__list');
 
   async function render() {
-    const mode = modeManager.getMode();
-    const items = await getCockpitItems(mode);
+    let items;
+    try {
+      const mode = modeManager.getMode();
+      items = await getCockpitItems(mode);
+    } catch (err) {
+      console.error('[daily-cockpit] Failed to load cockpit data:', err);
+      return;
+    }
     const doneCount = items.filter((i) => i.done).length;
     const openCount = items.length - doneCount;
 

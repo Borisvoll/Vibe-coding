@@ -6,7 +6,7 @@ import { startTutorial } from '../core/tutorial.js';
 import { ACCENT_COLORS, WEEKDAY_FULL, applyAccentColor } from '../constants.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'planning', 'settings'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'settings'];
 
 // Mode order: School & Personal first, BPV secondary (Rams: match user's primary context)
 const MODE_META = {
@@ -90,6 +90,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
             <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
             <span class="os-sidebar__label">Inbox</span>
             <span class="os-sidebar__badge" id="sidebar-inbox-badge" hidden>0</span>
+          </button>
+          <button class="os-sidebar__item" type="button" data-os-tab="lijsten">
+            <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span class="os-sidebar__label">Lijsten</span>
           </button>
           <button class="os-sidebar__item" type="button" data-os-tab="planning">
             <svg class="os-sidebar__icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -198,6 +202,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
           <button class="os-nav__button" type="button" data-os-tab="inbox">
             Inbox <span class="os-nav__badge" id="inbox-badge" hidden>0</span>
           </button>
+          <button class="os-nav__button" type="button" data-os-tab="lijsten">Lijsten</button>
           <button class="os-nav__button" type="button" data-os-tab="planning">Planning</button>
           <button class="os-nav__button" type="button" data-os-tab="settings">Instellingen</button>
         </div>
@@ -224,6 +229,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         <section class="os-section" data-os-section="inbox" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
           <div class="os-host-stack" data-os-host="inbox-screen"></div>
+        </section>
+        <section class="os-section" data-os-section="lijsten" hidden>
+          <button type="button" class="os-section__home-link" hidden>← Dashboard</button>
+          <h2 class="os-section__title">Lijsten</h2>
+          <div class="os-host-stack" data-os-host="lijsten-screen"></div>
         </section>
         <section class="os-section" data-os-section="planning" hidden>
           <button type="button" class="os-section__home-link" hidden>← Dashboard</button>

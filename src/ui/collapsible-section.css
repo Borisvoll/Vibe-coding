@@ -3,11 +3,11 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .collapsible-section {
-  margin-top: var(--space-8);
+  margin-top: var(--space-10);
 }
 
 .collapsible-section:first-child {
-  margin-top: var(--space-4);
+  margin-top: var(--space-6);
 }
 
 .collapsible-section__header {
@@ -74,7 +74,11 @@
 
 @media (min-width: 768px) {
   .collapsible-section {
-    margin-top: var(--space-10);
+    margin-top: var(--space-12, 3rem);
+  }
+
+  .collapsible-section:first-child {
+    margin-top: var(--space-8);
   }
 
   .collapsible-section__content {

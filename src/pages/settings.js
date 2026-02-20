@@ -5,6 +5,7 @@ import { showToast } from '../toast.js';
 import { APP_VERSION } from '../version.js';
 import { restartAutoSync, stopAutoSync, syncNow, testSync } from '../auto-sync.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
+import { showConfirm } from '../ui/modal.js';
 
 export function createPage(container) {
 
@@ -306,7 +307,8 @@ export function createPage(container) {
 
     // Clear data
     container.querySelector('[data-action="clear"]')?.addEventListener('click', async () => {
-      if (!confirm('Weet je zeker dat je ALLE data wilt wissen? Dit kan niet ongedaan worden gemaakt.')) return;
+      const ok = await showConfirm('Weet je zeker dat je ALLE data wilt wissen? Dit kan niet ongedaan worden gemaakt.', { danger: true });
+      if (!ok) return;
       await clearAllData();
       emit('hours:updated');
       emit('logbook:updated');
@@ -317,7 +319,8 @@ export function createPage(container) {
 
     // Reset SW & cache
     container.querySelector('[data-action="reset-sw"]')?.addEventListener('click', async () => {
-      if (!confirm('Cache en Service Worker resetten? De pagina wordt herladen.')) return;
+      const ok = await showConfirm('Cache en Service Worker resetten? De pagina wordt herladen.', { danger: true });
+      if (!ok) return;
       try {
         if ('serviceWorker' in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();

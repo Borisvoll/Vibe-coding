@@ -2,6 +2,88 @@
 
 ---
 
+## Milestone 4 — Smart Theme Studio
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+Enhance the existing theme system with user knobs (full manual controls), color harmony suggestions (analogous + split-complementary), WCAG AA contrast auto-fix guardrails, progressive disclosure (Default ↔ Advanced toggle), and improved import/export with validation feedback. All controls derive from the existing `themeEngine.js` architecture.
+
+### Design Decisions
+
+| Question | Answer |
+|----------|--------|
+| Contrast target | AA (4.5:1 body, 3:1 muted) — keep existing `enforceContrast` |
+| Guardrail behavior | Auto-fix (silent) — existing pattern, no warn+fix button |
+| User knobs v1 | Full manual (advanced) with progressive disclosure toggle |
+| Default harmony | Both analogous AND split-complementary suggestions |
+
+### Plan
+
+#### Increment 1: Harmony Algorithm — `src/core/themeEngine.js`
+- [x] Add `generateAnalogous(hex)` → returns 2 neighboring hues (±30°)
+- [x] Add `generateSplitComplementary(hex)` → returns 2 hues (180° ± 30°)
+- [x] Add `generateHarmonySuggestions(hex)` → { analogous: [hex, hex], splitComplementary: [hex, hex] }
+- [x] All use existing `hexToHSL` / `hslToHex` helpers, same saturation/lightness
+- [x] Export for use by theme-studio and tests
+
+#### Increment 2: Theme Studio UI Redesign — `src/ui/theme-studio.js`
+- [x] Keep presets section (unchanged)
+- [x] Add "Geavanceerd" toggle below presets (progressive disclosure)
+- [x] When Advanced is open, show 7 knobs:
+  - Accent color (hex input + color picker)
+  - Achtergrondkleur / App background (hex input + color picker)
+  - Blok achtergrond / Block background (hex input + color picker)
+  - Tekstkleur / Text color (hex input + color picker)
+  - Gedempte tekst / Muted text (hex input + color picker)
+  - Tint sterkte / Tint strength (range slider 0–100)
+  - Schaduw sterkte / Shadow strength (range slider 0–100)
+- [x] Add Harmony Suggestions row below accent picker:
+  - Show 4 dots (2 analogous + 2 split-complementary) with labels
+  - Click a dot → applies as new accent color via `setTheme({ accent: hex })`
+- [x] Keep live preview section (unchanged)
+- [x] Keep actions section (reset, export, import — unchanged)
+- [x] Import: show success/failure toast-like feedback message
+
+#### Increment 3: Theme Studio Styles — `src/ui/theme-studio.css`
+- [x] `.theme-studio__advanced-toggle` — collapsible toggle button
+- [x] `.theme-studio__knobs` — grid layout for color + slider controls
+- [x] `.theme-studio__knob` — individual control row (label + input)
+- [x] `.theme-studio__color-input` — native color picker + hex text input side by side
+- [x] `.theme-studio__range` — styled range slider for tint/shadow
+- [x] `.theme-studio__harmony` — row of harmony suggestion dots
+- [x] `.theme-studio__harmony-dot` — clickable color dot
+- [x] `.theme-studio__feedback` — import success/error message
+
+#### Increment 4: Tests — `tests/core/themeEngine.test.js`
+- [x] Test `generateAnalogous` — correct hue offsets, preserves saturation/lightness
+- [x] Test `generateSplitComplementary` — correct hue offsets
+- [x] Test `generateHarmonySuggestions` — returns both arrays with 2 entries each
+- [x] Test harmony with edge hues (red at 0°, wrap-around at 350°)
+- [x] Test harmony colors are valid hex
+- [x] Test `autoFixContrast` round-trip (verify it actually meets the ratio)
+- [x] Test `importThemeJson` with invalid/malformed input
+
+#### Increment 5: Docs & Verify
+- [x] Run `npm test` — all tests pass (556 passed, 8 pre-existing failures)
+- [x] Create `docs/feature-specs/theme-studio.md`
+- [x] Update `tasks/todo.md` — mark all items checked
+- [ ] Commit and push
+
+### Acceptance Criteria
+1. Presets still work as before (no regression)
+2. Advanced toggle reveals 7 knobs that update the live preview in real-time
+3. Harmony suggestions show 4 colors (2 analogous + 2 split-comp) that can be applied with one click
+4. All text remains readable — `enforceContrast` auto-fixes fg/muted colors silently
+5. Import shows feedback (success/fail message)
+6. All existing + new tests pass
+7. No hardcoded colors in UI — everything uses CSS custom properties
+8. Dutch-language labels throughout
+
+---
+
 ## Milestone 3 — Project Momentum Visualization
 
 **Branch:** `claude/fix-api-400-error-Bq2kH`

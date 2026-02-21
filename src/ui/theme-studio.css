@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════
-   Theme Studio — Preset-based theming UI
+   Theme Studio — Preset-based theming UI with advanced knobs
    ═══════════════════════════════════════════════════════════════ */
 
 .theme-studio {
@@ -63,6 +63,220 @@
   height: 12px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
+}
+
+/* ── Advanced toggle ─────────────────────────────────────── */
+.theme-studio__advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms var(--ease);
+}
+
+.theme-studio__advanced-toggle:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.theme-studio__chevron {
+  transition: transform 180ms var(--ease);
+}
+
+.theme-studio__chevron--open {
+  transform: rotate(180deg);
+}
+
+/* ── Knobs grid ──────────────────────────────────────────── */
+.theme-studio__knobs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-top: var(--space-3);
+}
+
+.theme-studio__knob {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.theme-studio__knob-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.theme-studio__knob-value {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-tertiary);
+}
+
+/* Color input: picker + hex text side by side */
+.theme-studio__color-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.theme-studio__color-picker {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+}
+
+.theme-studio__color-picker::-webkit-color-swatch-wrapper {
+  padding: 2px;
+}
+
+.theme-studio__color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.theme-studio__hex-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 120px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-sm);
+  font-family: var(--font-mono);
+}
+
+.theme-studio__hex-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.theme-studio__knob-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-md);
+  cursor: pointer;
+  transition: all 150ms var(--ease);
+  flex-shrink: 0;
+}
+
+.theme-studio__knob-clear:hover {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+/* Range slider */
+.theme-studio__range {
+  width: 100%;
+  max-width: 240px;
+  height: 6px;
+  appearance: none;
+  background: var(--color-border-light);
+  border-radius: var(--radius-full);
+  outline: none;
+}
+
+.theme-studio__range::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.theme-studio__range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+/* ── Harmony suggestions ─────────────────────────────────── */
+.theme-studio__harmony {
+  display: flex;
+  gap: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.theme-studio__harmony-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.theme-studio__harmony-label {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+}
+
+.theme-studio__harmony-dots {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.theme-studio__harmony-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  padding: 0;
+  cursor: pointer;
+  transition: border-color 150ms var(--ease),
+              transform 150ms var(--ease),
+              box-shadow 150ms var(--ease);
+}
+
+.theme-studio__harmony-dot:hover {
+  border-color: var(--color-text-secondary);
+  transform: scale(1.15);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Feedback message ────────────────────────────────────── */
+.theme-studio__feedback {
+  margin-top: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-sm);
+  font-weight: 500;
+}
+
+.theme-studio__feedback--success {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.theme-studio__feedback--error {
+  background: var(--color-error-light);
+  color: var(--color-error);
 }
 
 /* ── Live preview ────────────────────────────────────────── */

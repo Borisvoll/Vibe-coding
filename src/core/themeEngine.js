@@ -90,6 +90,34 @@ export function autoFixContrast(fgHex, bgHex, minRatio = 4.5) {
   return bgDark ? '#ffffff' : '#000000';
 }
 
+// ── Color harmony generators ─────────────────────────────────
+
+/** Generate 2 analogous colors (±30° hue shift) */
+export function generateAnalogous(hex) {
+  const hsl = hexToHSL(hex);
+  return [
+    hslToHex((hsl.h + 330) % 360, hsl.s, hsl.l), // -30°
+    hslToHex((hsl.h + 30) % 360, hsl.s, hsl.l),   // +30°
+  ];
+}
+
+/** Generate 2 split-complementary colors (180° ± 30°) */
+export function generateSplitComplementary(hex) {
+  const hsl = hexToHSL(hex);
+  return [
+    hslToHex((hsl.h + 150) % 360, hsl.s, hsl.l), // 180° - 30°
+    hslToHex((hsl.h + 210) % 360, hsl.s, hsl.l), // 180° + 30°
+  ];
+}
+
+/** All harmony suggestions for a given accent color */
+export function generateHarmonySuggestions(hex) {
+  return {
+    analogous: generateAnalogous(hex),
+    splitComplementary: generateSplitComplementary(hex),
+  };
+}
+
 // ── Default theme ─────────────────────────────────────────────
 
 const DEFAULT_THEME = {

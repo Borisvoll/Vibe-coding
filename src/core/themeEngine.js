@@ -195,14 +195,24 @@ export function exportThemeJson() {
   return JSON.stringify(currentTheme, null, 2);
 }
 
+const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+function isValidHex(v) { return v === null || (typeof v === 'string' && HEX_RE.test(v)); }
+function isValidRange(v) { return v == null || (typeof v === 'number' && v >= 0 && v <= 100); }
+
 /** Import from JSON string */
 export async function importThemeJson(json) {
   try {
     const parsed = JSON.parse(json);
     if (!parsed || typeof parsed !== 'object') throw new Error('Invalid theme');
     const safe = {};
+    const hexFields = ['accent', 'appBg', 'blockBg', 'blockFg', 'mutedFg', 'blockBorder', 'danger', 'success'];
+    const rangeFields = ['tintStrength', 'shadowStrength'];
     for (const key of Object.keys(DEFAULT_THEME)) {
-      if (key in parsed) safe[key] = parsed[key];
+      if (!(key in parsed)) continue;
+      const val = parsed[key];
+      if (hexFields.includes(key) && !isValidHex(val)) continue;
+      if (rangeFields.includes(key) && !isValidRange(val)) continue;
+      safe[key] = val;
     }
     await setTheme(safe);
     return true;

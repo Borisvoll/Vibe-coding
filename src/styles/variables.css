@@ -128,6 +128,11 @@
   --sidebar-width: 220px;
 }
 
+/* ⚠️ SYNC: dark tokens below are duplicated for two selectors:
+   1. @media (prefers-color-scheme: dark) — system preference
+   2. [data-theme="dark"] — manual toggle from settings
+   Both must stay identical. Edit one → edit the other. */
+
 /* Dark mode — system preference */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -171,7 +176,7 @@
   }
 }
 
-/* Dark mode — manual toggle */
+/* ⚠️ SYNC: keep identical to @media (prefers-color-scheme: dark) block above */
 [data-theme="dark"] {
   --color-bg: #191919;
   --color-surface: #202020;

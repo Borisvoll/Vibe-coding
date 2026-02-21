@@ -42,9 +42,9 @@
   font-size: var(--font-base);
   font-weight: 500;
   color: var(--color-text);
-  transition: border-color 180ms var(--ease),
-              background 180ms var(--ease),
-              box-shadow 180ms var(--ease);
+  transition: border-color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
 }
 
 .theme-studio__preset:hover {
@@ -170,7 +170,7 @@
   font-size: var(--font-base);
   font-weight: 500;
   cursor: pointer;
-  transition: all 150ms var(--ease);
+  transition: all var(--duration-fast) var(--ease);
 }
 
 .theme-studio__action-btn:hover {

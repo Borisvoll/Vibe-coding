@@ -15,7 +15,7 @@
 [data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
-  z-index: 10000;
+  z-index: 9500;
   pointer-events: none;
 
   /* Visual */

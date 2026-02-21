@@ -26,6 +26,15 @@ import './conversation-debrief/styles.css';
 import './context-checklist/styles.css';
 import './project-detail/styles.css';
 import './project-hub/styles.css';
+import './bpv-mini-card/styles.css';
+import './school-mini-card/styles.css';
+import './personal-mini-card/styles.css';
+import './school-concept-vault/styles.css';
+import './school-current-project/styles.css';
+import './school-milestones/styles.css';
+import './school-skill-tracker/styles.css';
+import './tasks/styles.css';
+import './schedule-placeholder/styles.css';
 import '../ui/theme-studio.css';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
@@ -55,6 +64,18 @@ import { registerConversationDebriefBlock } from './conversation-debrief/index.j
 import { registerContextChecklistBlock } from './context-checklist/index.js';
 import { registerProjectDetailBlock } from './project-detail/index.js';
 import { registerProjectHubBlock } from './project-hub/index.js';
+import { registerBPVMiniCard } from './bpv-mini-card/index.js';
+import { registerSchoolMiniCard } from './school-mini-card/index.js';
+import { registerPersonalMiniCard } from './personal-mini-card/index.js';
+import { registerSchoolConceptVaultBlock } from './school-concept-vault/index.js';
+import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
+import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
+import { registerSchoolSkillTrackerBlock } from './school-skill-tracker/index.js';
+import { registerPersonalEnergyBlock } from './personal-energy/index.js';
+import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
+import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
+import { registerTasksBlock } from './tasks/index.js';
+import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
@@ -89,6 +110,8 @@ export function registerDefaultBlocks(registry) {
   registerBPVLogSummaryBlock(registry);
   registerBPVWeeklyOverviewBlock(registry);
   registerBoundariesBlock(registry);
+  registerTasksBlock(registry);
+  registerSchedulePlaceholderBlock(registry);
 
   // Planning tab — project detail view
   registerProjectDetailBlock(registry);
@@ -98,4 +121,16 @@ export function registerDefaultBlocks(registry) {
 
   // Main dashboard (synopsis widgets — max 3 cards: dashboard + inbox + lijsten)
   registerDashboardBlock(registry);
+
+  // Mode-specific dashboard cards
+  registerBPVMiniCard(registry);
+  registerSchoolMiniCard(registry);
+  registerPersonalMiniCard(registry);
+  registerSchoolConceptVaultBlock(registry);
+  registerSchoolCurrentProjectBlock(registry);
+  registerSchoolMilestonesBlock(registry);
+  registerSchoolSkillTrackerBlock(registry);
+  registerPersonalEnergyBlock(registry);
+  registerPersonalWeekPlanningBlock(registry);
+  registerPersonalWeeklyReflectionBlock(registry);
 }

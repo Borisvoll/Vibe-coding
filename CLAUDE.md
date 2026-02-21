@@ -17,7 +17,7 @@ npx vitest run tests/stores/tasks.test.js
 npx vitest run -t "should add a task"
 ```
 
-**Important:** Always run `npm test` before committing. Tests must pass (298 tests across 21 files).
+**Important:** Always run `npm test` before committing. Tests must pass (556 tests across 31 files).
 
 ## Tech Stack
 
@@ -68,7 +68,7 @@ Collapsible section state persists per mode in localStorage via `src/ui/collapsi
 
 ### Block System (`src/blocks/`)
 
-31 registered blocks. Self-contained UI components mounted into host slots.
+40 registered blocks. Self-contained UI components mounted into host slots.
 
 Block contract:
 1. Export `register*Block(registry)` function

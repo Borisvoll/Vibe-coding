@@ -37,7 +37,10 @@ export async function aggregateWeeklyReview(weekStr = null) {
   const week = weekStr || getISOWeek(today);
   const weekDates = getWeekDates(week);
   const weekStart = weekDates[0];
-  const weekEnd = weekDates[4];
+  // Use Sunday (Mon + 6 days) so weekend journal entries are included
+  const _sun = new Date(weekStart + 'T00:00:00');
+  _sun.setDate(_sun.getDate() + 6);
+  const weekEnd = _sun.toISOString().slice(0, 10);
 
   // Tasks completed this week
   const allTasks = await getAll(TASKS_STORE);

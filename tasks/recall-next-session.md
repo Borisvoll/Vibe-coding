@@ -1,90 +1,91 @@
 # Recall Prompt — Next Session
 
-Paste this at the start of a new Claude Code session to continue the HTML5-first refactor of BORIS OS.
+Paste this at the start of a new Claude Code session to continue BORIS OS development.
 
 ---
 
 ## Context
 
-You are continuing an HTML5-first refactor of BORIS OS on branch `claude/html5-structure-implementation-pANgV`.
+You are continuing the React + VanillaBridge migration of BORIS OS.
 
-**Phases 0–2 are complete and committed.** Phase 3 is next.
+**A comprehensive 5-phase audit was completed (2026-02-21).** All audit docs live in `docs/audit/`. The roadmap (`docs/audit/roadmap.md`) defines 3 milestones.
 
 Read these files first to get full context:
-- `tasks/session-progress.md` — everything done so far
-- `tasks/next-steps.md` — everything still to do
-- `tasks/refactor-html5-first.md` — phase checklist
-- `tasks/review.md` — decisions and architectural notes
+- `docs/audit/roadmap.md` — the 3-milestone roadmap (START HERE)
+- `docs/audit/current-state.md` — architecture map
+- `docs/audit/risk-register.md` — 9 risks, prioritized
+- `tasks/todo.md` — checklist for each milestone
+- `tasks/lessons.md` — 17 lessons learned (read before coding)
 
-## What was done
+## Current State
 
-**Phase 0:** Audit — 495 tests across 29 files, baseline established.
+**React Router v7 (HashRouter) is the sole routing authority.** 8 routes + catch-all in `src/react/App.jsx`.
 
-**Phase 1 (commit `886c436`):** index.html now contains shell chrome (sidebar, topbar, mobile nav, mode picker) as permanent DOM + 8 `<template data-route="...">` elements. shell.js hydrates existing DOM instead of creating it. `mountRoute()`/`unmountRoute()` clone templates into `<main data-route-container>`.
+| Route | Status |
+|-------|--------|
+| `/dashboard` | Fully implemented in React (149 LOC) |
+| `/today` | Placeholder — needs VanillaBridge |
+| `/inbox` | Placeholder — needs VanillaBridge |
+| `/lijsten` | Placeholder — needs VanillaBridge |
+| `/planning` | Placeholder — needs VanillaBridge |
+| `/projects` | Placeholder — needs VanillaBridge |
+| `/projects/:id` | Placeholder — needs VanillaBridge |
+| `/settings` | Placeholder — needs React implementation |
 
-**Phase 2 (commits `b56d035`, `fbb1539`):**
-- Clean URL routing: `#today`, `#projects/abc123` (backward compat for `#tab=today&focus=tasks`)
-- Killed legacy dual-path: removed `enableNewOS` flag, `initLegacy()`, `modules` export from main.js
-- Removed OS/Legacy interface toggle from settings-panel.js
-- Removed legacy switch button from sidebar
-- Deleted: `src/components/shell.js`, `src/router.js`, `src/shortcuts.js`
+**31 vanilla blocks are registered** in `blockRegistry` but have NO host slots to mount into. The `VanillaBridge.jsx` component exists but is unused.
 
-## Current architecture
+**13 store adapters** are framework-agnostic (IndexedDB). 495+ tests pass. Data layer is solid.
 
-- `index.html` — shell chrome + `<template data-route="...">` elements (8 routes: dashboard, today, inbox, lijsten, planning, projects, settings, project-detail)
-- `src/os/shell.js` — hydrates shell, `mountRoute(tab, params)` clones template into `<main data-route-container>`, `unmountRoute()` destroys + clears
-- `src/os/deepLinks.js` — `parseHash()` / `updateHash()` for clean URLs
-- `src/main.js` — always calls `initNewOSShell()`, no legacy path
-- `src/blocks/settings-panel.js` — no more OS/Legacy toggle
+## Milestone 1: App Works Again (NEXT)
 
-## Phase 3 — Project module MVP (START HERE)
+Wire `VanillaBridge` into all 7 placeholder routes to mount existing vanilla blocks:
 
-### What to build:
-1. **Projects list (`#projects`)** — template + host slot `projects-hub` already exist in index.html
-   - Use/extend `src/blocks/projects/view.js` or `src/blocks/project-hub/list.js`
-   - Max 3 active projects visible (pinned first, then most recent)
-   - Each project card shows: title, accent color, last activity
-   - "Nieuw project" button
+1. Create `useBlockMount` hook — queries blockRegistry, filters by mode, returns mount fn
+2. Today.jsx — mount 8 host slots (vandaag-hero, cockpit, tasks, projects, capture, reflection, mode, weekly)
+3. Inbox.jsx — mount `inbox-screen` block
+4. Projects.jsx — mount `project-hub` block
+5. ProjectDetail.jsx — mount `project-detail` block (pass ID from useParams)
+6. Lijsten.jsx — mount `lijsten-screen` block
+7. Planning.jsx — mount `project-detail` block
+8. Settings.jsx — build minimal React settings page
 
-2. **Accent color per project**
-   - Add `accentColor` field to `src/stores/projects.js` project model
-   - 8 colors: blue (#4f6ef7), purple (#8b5cf6), green (#10b981), rose (#f43f5e), orange (#f97316), cyan (#06b6d4), indigo (#6366f1), teal (#14b8a6)
+Key files:
+- `src/react/components/VanillaBridge.jsx` — bridge component (31 LOC)
+- `src/blocks/registerBlocks.js` — all 31 block registrations
+- `src/core/blockRegistry.js` — registry API
+- `src/react/hooks/useMode.jsx` — mode context
+- `src/react/hooks/useEventBus.jsx` — event bus context
 
-3. **Project Detail (`#projects/:id`)**
-   - Template `<template data-route="project-detail">` already in index.html
-   - Host slot: `project-detail-view`
-   - shell.js already selects this template when `params.id` is set
-   - Back button already wired: `← Projecten` → `setActiveTab('projects')`
-   - Build: Notion-like header (title, accent color strip, cover area), tasks tab reusing existing primitives
+### Block → Host Slot Map (critical reference)
 
-4. **Tests** for the new rendering logic
+| Route | Host Slot | Blocks |
+|-------|-----------|--------|
+| Today | `vandaag-hero` | daily-outcomes, brain-state, two-min-launcher |
+| Today | `vandaag-cockpit` | daily-cockpit, done-list |
+| Today | `vandaag-tasks` | daily-todos, context-checklist |
+| Today | `vandaag-projects` | projects, lijsten |
+| Today | `vandaag-capture` | inbox, worry-dump |
+| Today | `vandaag-reflection` | daily-reflection, conversation-debrief |
+| Today | `vandaag-mode` | 11 mode-specific blocks |
+| Today | `vandaag-weekly` | weekly-review |
+| Inbox | `inbox-screen` | inbox-screen |
+| Projects | `projects-hub` | project-hub |
+| ProjectDetail | `planning-main` | project-detail |
+| Lijsten | `lijsten-screen` | lijsten-screen |
+| Planning | `planning-main` | project-detail |
 
-### Existing infrastructure to reuse:
-- `src/stores/projects.js` — CRUD (18 tests pass)
-- `src/stores/tasks.js` — tasks with `projectId` filter
-- `src/blocks/projects/view.js` — existing projects block
-- `src/blocks/project-hub/` — list.js, detail.js, tabs/
-- `src/blocks/project-detail/` — view.js, timeline.js
-- `tests/stores/project-hub.test.js` — 22 tests
-- `tests/stores/project-tasks.test.js` — 15 tests
+## Design rules (non-negotiable)
 
-### Design rules (non-negotiable):
-- Template-based routing: clone on navigate, NOT permanent DOM sections
-- Blocks hydrate only within their `rootEl` — NO `document.querySelector` outside `rootEl`
-- Hybrid events: delegation for dynamic lists, direct listeners for static UI
-- Max 3 projects visible at a time
 - Dutch-language UI throughout
-- Product vision: rust + focus + controle bij openen (calm/focused/in-control)
-- iPhone 11 Pro Max primary mobile target
-
-### Open questions to ask user before implementing cover + timeline:
-1. Cover: image only, or PDF preview too?
-2. Timeline items: tasks or separate milestones?
-3. Mindmap: minimal drag or outline-based only?
+- Max 2 font sizes per block
+- No unnecessary toggles or configurability
+- Strong defaults, minimal user decisions
+- Use `escapeHTML()` from `src/utils.js` for all user content
+- Run `npm test` before committing — all tests must pass
+- Run `npm run build` to verify build succeeds
 
 ## Branch + workflow
-- Branch: `claude/html5-structure-implementation-pANgV`
-- Run `npm test` before committing — all 495 tests must pass
-- Run `npm run build` to verify build succeeds
-- Commit per phase with descriptive message
-- Push with: `git push -u origin claude/html5-structure-implementation-pANgV`
+
+- Branch: `claude/refactor-getweekdates-h5JTc`
+- Commit per milestone with descriptive message
+- Push with: `git push -u origin claude/refactor-getweekdates-h5JTc`

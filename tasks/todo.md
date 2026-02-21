@@ -2,7 +2,50 @@
 
 ---
 
-## Project-Hub 2.0 — Implementation Plan
+## Milestone 1: App Works Again (VanillaBridge Sprint)
+
+**Date:** 2026-02-21
+**Branch:** `claude/refactor-getweekdates-h5JTc`
+**Audit:** `docs/audit/roadmap.md`
+
+### Core: Wire VanillaBridge into all placeholder routes
+
+- [ ] Create `useBlockMount` hook (query blockRegistry, filter by mode, return mount fn)
+- [ ] Today.jsx — mount 8 host slots (vandaag-hero, cockpit, tasks, projects, capture, reflection, mode, weekly)
+- [ ] Inbox.jsx — mount inbox-screen block
+- [ ] Projects.jsx — mount project-hub block
+- [ ] ProjectDetail.jsx — mount project-detail block with URL param
+- [ ] Lijsten.jsx — mount lijsten-screen block
+- [ ] Planning.jsx — mount project-detail block
+- [ ] Settings.jsx — build minimal React settings (export/import, mode, theme)
+
+### Verification
+
+- [ ] All 8 routes render real UI (no placeholders)
+- [ ] Mode switching works on all routes
+- [ ] All 495+ existing tests pass
+- [ ] Manual smoke test of full app flow
+
+---
+
+## Milestone 2: Clean House (Dead Code Removal)
+
+- [ ] Delete `src/pages/` (20 files, ~1,200 LOC)
+- [ ] Delete `src/os/shell.js`, `src/os/deepLinks.js`, `src/core/featureFlags.js`
+- [ ] Delete 12 unregistered block directories
+- [ ] Clean dead imports in `main.js` and `registerBlocks.js`
+- [ ] Verify build + tests pass
+
+## Milestone 3: Design Polish
+
+- [ ] Refactor Dashboard.jsx to use mapped Tailwind tokens
+- [ ] Extract shared components (ModeBadge, StatCard, Card)
+- [ ] Fix stale block navigation (daily-cockpit hash links)
+- [ ] Add @testing-library/react smoke tests
+
+---
+
+## Archive: Project-Hub 2.0 — Implementation Plan
 
 **Feature branch:** `claude/life-dashboard-modular-blocks-AOPzD`
 **Date:** 2026-02-20

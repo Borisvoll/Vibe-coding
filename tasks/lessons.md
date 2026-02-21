@@ -93,3 +93,15 @@ Rules added after corrections to prevent recurring mistakes.
 **Issue:** The original dashboard (6-widget grid) included a "Snel vastleggen" capture form — an input field that duplicated the inbox capture on the Vandaag page. Users didn't know which capture to use. The capture form also had to be carefully managed (one-time setup outside loadData) to avoid losing user input during event-driven refreshes.
 
 **Prevention:** Dashboard is a read-only synopsis layer. It shows summaries and navigates to the relevant section for interaction. No `<input>`, `<form>`, or `<textarea>` on the dashboard. All editing happens in Vandaag/Inbox/Lijsten tabs. Apply the "3 layers" principle: Layer 1 = Intent (greeting + Top 3), Layer 2 = Snapshot (navigational pulse rows), Layer 3 = Collapsible depth (closed by default).
+
+## 16. Never remove DOM host slots without wiring replacements first (2026-02-21)
+
+**Issue:** The React migration simplified `index.html` to `<div id="app">`, removing all `<template data-route="...">` elements and `[data-os-host]` divs. This made 7/8 routes non-functional because 31 vanilla blocks had no host slots to mount into. The app appeared to work (React shell rendered) but was useless (all pages showed placeholder text).
+
+**Prevention:** Before deleting any host infrastructure (templates, host slots, mount points), verify that a replacement delivery mechanism exists. Use VanillaBridge to mount vanilla blocks inside React routes during incremental migration. Test each route after infrastructure changes. "It renders" is not "it works."
+
+## 17. Audit before building: know what you have (2026-02-21)
+
+**Issue:** Feature additions accumulated over multiple sessions without periodic review: 12 unregistered blocks, 20 dead page files, ~716 LOC dead shell, competing task stores. Technical debt compounded silently because nothing threw errors — blocks with bad host mappings simply didn't render.
+
+**Prevention:** Before starting a new feature sprint, run the audit checklist (`docs/audit/rerun-checklist.md`). Count: registered vs unregistered blocks, active vs dead routes, used vs unused CSS files. Set a "dead code budget" (e.g., max 5% of codebase). Silent failures are worse than loud ones.

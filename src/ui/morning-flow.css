@@ -1,0 +1,414 @@
+/* ── Morning Flow Stepper ──────────────────────────────────── */
+
+.morning-flow {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+  opacity: 0;
+  transition: opacity var(--duration-fast, 180ms) var(--ease, ease);
+  pointer-events: none;
+}
+
+.morning-flow--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.morning-flow__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.morning-flow__panel {
+  position: relative;
+  width: min(480px, calc(100vw - 2rem));
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.15));
+  overflow: hidden;
+  transform: translateY(-8px) scale(0.98);
+  transition: transform var(--duration-fast, 180ms) var(--ease, ease);
+}
+
+.morning-flow--visible .morning-flow__panel {
+  transform: translateY(0) scale(1);
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+
+.morning-flow__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-bottom: 1px solid var(--color-border-light, #f0f0f0);
+}
+
+.morning-flow__title {
+  font-size: var(--font-sm, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.morning-flow__dots {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  justify-content: center;
+}
+
+.morning-flow__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border, #e5e7eb);
+  transition: background var(--duration-fast, 180ms) var(--ease, ease);
+}
+
+.morning-flow__dot--active {
+  background: var(--color-accent, #4f6ef7);
+}
+
+.morning-flow__dot--done {
+  background: var(--color-text-tertiary, #9ca3af);
+}
+
+.morning-flow__close {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--color-text-tertiary, #9ca3af);
+  font-size: 1.125rem;
+  cursor: pointer;
+  transition: background var(--duration-fast, 100ms) var(--ease, ease);
+}
+
+.morning-flow__close:hover {
+  background: var(--color-surface-hover, #f3f4f6);
+}
+
+/* ── Body (step content) ─────────────────────────────────── */
+
+.morning-flow__body {
+  padding: var(--space-4, 16px) var(--space-5, 20px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  flex: 1;
+}
+
+.morning-flow__step-title {
+  font-size: var(--font-lg, 0.9375rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 4px);
+  color: var(--color-text, #1f1f1f);
+}
+
+.morning-flow__step-sub {
+  font-size: var(--font-sm, 0.75rem);
+  color: var(--color-text-tertiary, #9ca3af);
+  margin: 0 0 var(--space-4, 16px);
+}
+
+.morning-flow__empty {
+  font-size: var(--font-sm, 0.75rem);
+  color: var(--color-text-tertiary, #9ca3af);
+  text-align: center;
+  padding: var(--space-4, 16px) 0;
+}
+
+/* ── Step 1: Outcomes ────────────────────────────────────── */
+
+.morning-flow__outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  margin-top: var(--space-4, 16px);
+}
+
+.morning-flow__outcome {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.morning-flow__outcome-num {
+  flex-shrink: 0;
+  width: 20px;
+  font-size: var(--font-md, 0.875rem);
+  font-weight: 600;
+  text-align: center;
+}
+
+.morning-flow__outcome-input {
+  flex: 1;
+}
+
+/* ── Step 2: Actions ─────────────────────────────────────── */
+
+.morning-flow__actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  margin-top: var(--space-4, 16px);
+}
+
+.morning-flow__action-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2, 8px);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg, #f6f7f8);
+}
+
+.morning-flow__action-check {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  font-size: var(--font-sm, 0.75rem);
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.morning-flow__action-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.morning-flow__action-project {
+  font-size: var(--font-base, 0.8125rem);
+  font-weight: 500;
+  color: var(--color-text, #1f1f1f);
+}
+
+.morning-flow__action-next {
+  font-size: var(--font-sm, 0.75rem);
+  color: var(--color-text-secondary, #6b6b6b);
+}
+
+.morning-flow__action-next--empty {
+  color: var(--color-text-tertiary, #9ca3af);
+  font-style: italic;
+}
+
+/* ── Step 3: Focus picker ────────────────────────────────── */
+
+.morning-flow__focus-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+}
+
+.morning-flow__focus-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3, 12px);
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  transition: border-color var(--duration-fast, 100ms) var(--ease, ease),
+              background var(--duration-fast, 100ms) var(--ease, ease);
+}
+
+.morning-flow__focus-option:hover {
+  background: var(--color-surface-hover, #f3f4f6);
+}
+
+.morning-flow__focus-option--selected {
+  border-color: var(--color-accent, #4f6ef7);
+  background: var(--color-accent-soft, #eef1fe);
+}
+
+.morning-flow__focus-radio {
+  accent-color: var(--color-accent, #4f6ef7);
+}
+
+.morning-flow__focus-label {
+  font-size: var(--font-base, 0.8125rem);
+  font-weight: 500;
+  color: var(--color-text, #1f1f1f);
+}
+
+/* ── Step 4: Confirm ─────────────────────────────────────── */
+
+.morning-flow__step--confirm {
+  text-align: center;
+}
+
+.morning-flow__confirm-outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  margin: var(--space-4, 16px) 0;
+  text-align: left;
+}
+
+.morning-flow__confirm-outcome {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2, 8px);
+  font-size: var(--font-base, 0.8125rem);
+  color: var(--color-text, #1f1f1f);
+}
+
+.morning-flow__confirm-num {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: var(--font-sm, 0.75rem);
+}
+
+.morning-flow__confirm-focus {
+  margin-top: var(--space-4, 16px);
+  padding: var(--space-3, 12px);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-bg, #f6f7f8);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.morning-flow__confirm-focus-label {
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.morning-flow__confirm-focus-title {
+  font-size: var(--font-base, 0.8125rem);
+  font-weight: 600;
+  color: var(--color-text, #1f1f1f);
+}
+
+.morning-flow__confirm-focus-action {
+  font-size: var(--font-sm, 0.75rem);
+  color: var(--color-text-secondary, #6b6b6b);
+}
+
+/* ── Footer ──────────────────────────────────────────────── */
+
+.morning-flow__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-top: 1px solid var(--color-border-light, #f0f0f0);
+}
+
+/* ── Focus Card (Vandaag block) ───────────────────────────── */
+
+.morning-focus__card {
+  padding: var(--space-3, 12px) var(--space-4, 16px);
+  border-radius: var(--radius-md, 8px);
+  border-left: 3px solid var(--focus-color, var(--color-accent));
+  background: var(--focus-light, var(--color-bg));
+}
+
+.morning-focus__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  margin-bottom: var(--space-2, 8px);
+}
+
+.morning-focus__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--focus-color, var(--color-accent));
+  color: #fff;
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.morning-focus__label {
+  font-size: var(--font-sm, 0.75rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--focus-color, var(--color-accent));
+}
+
+.morning-focus__outcomes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+
+.morning-focus__outcome {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2, 8px);
+  font-size: var(--font-base, 0.8125rem);
+  color: var(--color-text, #1f1f1f);
+}
+
+.morning-focus__num {
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: var(--font-sm, 0.75rem);
+}
+
+.morning-focus__project {
+  margin-top: var(--space-3, 12px);
+  padding-top: var(--space-2, 8px);
+  border-top: 1px solid var(--color-border-light, #f0f0f0);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.morning-focus__project-label {
+  font-size: var(--font-xs, 0.6875rem);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary, #9ca3af);
+}
+
+.morning-focus__project-title {
+  font-size: var(--font-base, 0.8125rem);
+  font-weight: 600;
+  color: var(--color-text, #1f1f1f);
+}
+
+.morning-focus__project-action {
+  font-size: var(--font-sm, 0.75rem);
+  color: var(--color-text-secondary, #6b6b6b);
+}
+
+/* ── Reduced motion ──────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .morning-flow,
+  .morning-flow__panel {
+    transition: none;
+  }
+}

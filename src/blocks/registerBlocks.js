@@ -28,6 +28,8 @@ import './project-detail/styles.css';
 import './project-hub/styles.css';
 import './history-browser/styles.css';
 import '../ui/theme-studio.css';
+import '../ui/morning-flow.css';
+import { registerMorningFocusBlock } from './morning-focus/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';
 import { registerPersonalDashboardBlock } from './personal-dashboard/index.js';
@@ -62,6 +64,7 @@ export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
   registerDailyCockpitBlock(registry);
   registerDailyOutcomesBlock(registry);
+  registerMorningFocusBlock(registry);
   registerDailyTodosBlock(registry);
   registerDoneListBlock(registry);
   registerTwoMinLauncherBlock(registry);

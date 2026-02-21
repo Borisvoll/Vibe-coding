@@ -57,12 +57,16 @@ describe('Weekly review — aggregateWeeklyReview', () => {
   });
 
   it('includes BPV hours for the week', async () => {
-    const today = getToday();
-    await addHoursEntry(today, {
+    // Use Monday of the current week — getWeeklyOverview only sums Mon-Fri dates
+    const d = new Date();
+    const day = d.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    const monday = d.toISOString().slice(0, 10);
+    await addHoursEntry(monday, {
       type: 'work', startTime: '08:00', endTime: '16:30', breakMinutes: 30,
     });
 
-    const week = getISOWeek(today);
+    const week = getISOWeek(monday);
     const data = await aggregateWeeklyReview(week);
     expect(data.bpv.totalMinutes).toBeGreaterThanOrEqual(480);
     expect(data.bpv.percentComplete).toBeGreaterThan(0);

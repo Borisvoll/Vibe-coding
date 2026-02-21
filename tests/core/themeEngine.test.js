@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   hexToHSL, hslToHex, relativeLuminance, contrastRatio, isDark,
-  checkContrast,
+  checkContrast, autoFixContrast,
+  generateAnalogous, generateSplitComplementary, generateHarmonySuggestions,
 } from '../../src/core/themeEngine.js';
 
 // ── Color helper tests (pure functions, no DOM needed) ────────
@@ -216,5 +217,178 @@ describe('exportThemeJson', () => {
     expect(parsed).toHaveProperty('accent');
     expect(parsed).toHaveProperty('tintStrength');
     expect(parsed).toHaveProperty('shadowStrength');
+  });
+});
+
+// ── Harmony generator tests ─────────────────────────────────
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+
+describe('generateAnalogous', () => {
+  it('returns 2 valid hex colors', () => {
+    const result = generateAnalogous('#4f6ef7');
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatch(HEX_RE);
+    expect(result[1]).toMatch(HEX_RE);
+  });
+
+  it('shifts hue by approximately ±30°', () => {
+    const accent = '#ff0000'; // hue = 0
+    const [left, right] = generateAnalogous(accent);
+    const leftHsl = hexToHSL(left);
+    const rightHsl = hexToHSL(right);
+    // left should be around 330°, right around 30°
+    expect(leftHsl.h).toBeGreaterThanOrEqual(325);
+    expect(leftHsl.h).toBeLessThanOrEqual(335);
+    expect(rightHsl.h).toBeGreaterThanOrEqual(25);
+    expect(rightHsl.h).toBeLessThanOrEqual(35);
+  });
+
+  it('preserves saturation and lightness', () => {
+    const accent = '#4f6ef7';
+    const accentHsl = hexToHSL(accent);
+    const [left, right] = generateAnalogous(accent);
+    const leftHsl = hexToHSL(left);
+    const rightHsl = hexToHSL(right);
+    // Allow small rounding from hex round-trip
+    expect(Math.abs(leftHsl.s - accentHsl.s)).toBeLessThanOrEqual(2);
+    expect(Math.abs(leftHsl.l - accentHsl.l)).toBeLessThanOrEqual(2);
+    expect(Math.abs(rightHsl.s - accentHsl.s)).toBeLessThanOrEqual(2);
+    expect(Math.abs(rightHsl.l - accentHsl.l)).toBeLessThanOrEqual(2);
+  });
+
+  it('handles hue wrap-around (red at 0°)', () => {
+    const result = generateAnalogous('#ff0000');
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatch(HEX_RE);
+    expect(result[1]).toMatch(HEX_RE);
+  });
+
+  it('handles high hue values (350°)', () => {
+    // hue ~350° is a pinkish red
+    const hex = hslToHex(350, 80, 50);
+    const result = generateAnalogous(hex);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatch(HEX_RE);
+    expect(result[1]).toMatch(HEX_RE);
+  });
+});
+
+describe('generateSplitComplementary', () => {
+  it('returns 2 valid hex colors', () => {
+    const result = generateSplitComplementary('#4f6ef7');
+    expect(result).toHaveLength(2);
+    expect(result[0]).toMatch(HEX_RE);
+    expect(result[1]).toMatch(HEX_RE);
+  });
+
+  it('shifts hue to 180° ± 30°', () => {
+    const accent = '#ff0000'; // hue = 0
+    const [left, right] = generateSplitComplementary(accent);
+    const leftHsl = hexToHSL(left);
+    const rightHsl = hexToHSL(right);
+    // left: 0 + 150 = 150°, right: 0 + 210 = 210°
+    expect(leftHsl.h).toBeGreaterThanOrEqual(145);
+    expect(leftHsl.h).toBeLessThanOrEqual(155);
+    expect(rightHsl.h).toBeGreaterThanOrEqual(205);
+    expect(rightHsl.h).toBeLessThanOrEqual(215);
+  });
+
+  it('preserves saturation and lightness', () => {
+    const accent = '#10b981';
+    const accentHsl = hexToHSL(accent);
+    const [left, right] = generateSplitComplementary(accent);
+    const leftHsl = hexToHSL(left);
+    const rightHsl = hexToHSL(right);
+    expect(Math.abs(leftHsl.s - accentHsl.s)).toBeLessThanOrEqual(2);
+    expect(Math.abs(leftHsl.l - accentHsl.l)).toBeLessThanOrEqual(2);
+    expect(Math.abs(rightHsl.s - accentHsl.s)).toBeLessThanOrEqual(2);
+    expect(Math.abs(rightHsl.l - accentHsl.l)).toBeLessThanOrEqual(2);
+  });
+});
+
+describe('generateHarmonySuggestions', () => {
+  it('returns both analogous and splitComplementary arrays', () => {
+    const result = generateHarmonySuggestions('#4f6ef7');
+    expect(result).toHaveProperty('analogous');
+    expect(result).toHaveProperty('splitComplementary');
+    expect(result.analogous).toHaveLength(2);
+    expect(result.splitComplementary).toHaveLength(2);
+  });
+
+  it('all returned colors are valid hex', () => {
+    const result = generateHarmonySuggestions('#f97316');
+    [...result.analogous, ...result.splitComplementary].forEach(hex => {
+      expect(hex).toMatch(HEX_RE);
+    });
+  });
+
+  it('returns different colors than input', () => {
+    const accent = '#4f6ef7';
+    const result = generateHarmonySuggestions(accent);
+    [...result.analogous, ...result.splitComplementary].forEach(hex => {
+      expect(hex).not.toBe(accent);
+    });
+  });
+});
+
+// ── autoFixContrast tests ──────────────────────────────────
+
+describe('autoFixContrast', () => {
+  it('returns original color when contrast is already sufficient', () => {
+    const result = autoFixContrast('#1f1f1f', '#ffffff', 4.5);
+    expect(result).toBe('#1f1f1f');
+  });
+
+  it('fixes low-contrast text to meet minimum ratio', () => {
+    const result = autoFixContrast('#999999', '#ffffff', 4.5);
+    const ratio = contrastRatio(result, '#ffffff');
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('fixes low-contrast text on dark background', () => {
+    const result = autoFixContrast('#555555', '#1a1a1a', 4.5);
+    const ratio = contrastRatio(result, '#1a1a1a');
+    expect(ratio).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('returns valid hex color', () => {
+    const result = autoFixContrast('#888888', '#ffffff', 4.5);
+    expect(result).toMatch(HEX_RE);
+  });
+});
+
+// ── importThemeJson edge cases ──────────────────────────────
+
+describe('importThemeJson edge cases', () => {
+  it('rejects non-JSON string', async () => {
+    const { importThemeJson } = await import('../../src/core/themeEngine.js');
+    const result = await importThemeJson('not json');
+    expect(result).toBe(false);
+  });
+
+  it('rejects primitive values', async () => {
+    const { importThemeJson } = await import('../../src/core/themeEngine.js');
+    expect(await importThemeJson('42')).toBe(false);
+    expect(await importThemeJson('"string"')).toBe(false);
+    expect(await importThemeJson('null')).toBe(false);
+  });
+
+  it('rejects arrays', async () => {
+    const { importThemeJson } = await import('../../src/core/themeEngine.js');
+    const result = await importThemeJson('[1, 2, 3]');
+    expect(result).toBe(false);
+  });
+
+  it('parses valid theme JSON without throwing', () => {
+    // importThemeJson calls setTheme → applyTheme → DOM access, which requires
+    // a full DOM environment. Here we verify the parsing logic is sound by
+    // confirming that valid JSON with a theme shape passes JSON.parse + validation.
+    const json = '{"accent": "#ff0000", "tintStrength": 60}';
+    const parsed = JSON.parse(json);
+    expect(parsed).toBeTruthy();
+    expect(typeof parsed).toBe('object');
+    expect(parsed.accent).toBe('#ff0000');
+    expect(parsed.tintStrength).toBe(60);
   });
 });

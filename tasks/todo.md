@@ -2,6 +2,500 @@
 
 ---
 
+## Milestone 4 — Smart Theme Studio
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+Enhance the existing theme system with user knobs (full manual controls), color harmony suggestions (analogous + split-complementary), WCAG AA contrast auto-fix guardrails, progressive disclosure (Default ↔ Advanced toggle), and improved import/export with validation feedback. All controls derive from the existing `themeEngine.js` architecture.
+
+### Design Decisions
+
+| Question | Answer |
+|----------|--------|
+| Contrast target | AA (4.5:1 body, 3:1 muted) — keep existing `enforceContrast` |
+| Guardrail behavior | Auto-fix (silent) — existing pattern, no warn+fix button |
+| User knobs v1 | Full manual (advanced) with progressive disclosure toggle |
+| Default harmony | Both analogous AND split-complementary suggestions |
+
+### Plan
+
+#### Increment 1: Harmony Algorithm — `src/core/themeEngine.js`
+- [x] Add `generateAnalogous(hex)` → returns 2 neighboring hues (±30°)
+- [x] Add `generateSplitComplementary(hex)` → returns 2 hues (180° ± 30°)
+- [x] Add `generateHarmonySuggestions(hex)` → { analogous: [hex, hex], splitComplementary: [hex, hex] }
+- [x] All use existing `hexToHSL` / `hslToHex` helpers, same saturation/lightness
+- [x] Export for use by theme-studio and tests
+
+#### Increment 2: Theme Studio UI Redesign — `src/ui/theme-studio.js`
+- [x] Keep presets section (unchanged)
+- [x] Add "Geavanceerd" toggle below presets (progressive disclosure)
+- [x] When Advanced is open, show 7 knobs:
+  - Accent color (hex input + color picker)
+  - Achtergrondkleur / App background (hex input + color picker)
+  - Blok achtergrond / Block background (hex input + color picker)
+  - Tekstkleur / Text color (hex input + color picker)
+  - Gedempte tekst / Muted text (hex input + color picker)
+  - Tint sterkte / Tint strength (range slider 0–100)
+  - Schaduw sterkte / Shadow strength (range slider 0–100)
+- [x] Add Harmony Suggestions row below accent picker:
+  - Show 4 dots (2 analogous + 2 split-complementary) with labels
+  - Click a dot → applies as new accent color via `setTheme({ accent: hex })`
+- [x] Keep live preview section (unchanged)
+- [x] Keep actions section (reset, export, import — unchanged)
+- [x] Import: show success/failure toast-like feedback message
+
+#### Increment 3: Theme Studio Styles — `src/ui/theme-studio.css`
+- [x] `.theme-studio__advanced-toggle` — collapsible toggle button
+- [x] `.theme-studio__knobs` — grid layout for color + slider controls
+- [x] `.theme-studio__knob` — individual control row (label + input)
+- [x] `.theme-studio__color-input` — native color picker + hex text input side by side
+- [x] `.theme-studio__range` — styled range slider for tint/shadow
+- [x] `.theme-studio__harmony` — row of harmony suggestion dots
+- [x] `.theme-studio__harmony-dot` — clickable color dot
+- [x] `.theme-studio__feedback` — import success/error message
+
+#### Increment 4: Tests — `tests/core/themeEngine.test.js`
+- [x] Test `generateAnalogous` — correct hue offsets, preserves saturation/lightness
+- [x] Test `generateSplitComplementary` — correct hue offsets
+- [x] Test `generateHarmonySuggestions` — returns both arrays with 2 entries each
+- [x] Test harmony with edge hues (red at 0°, wrap-around at 350°)
+- [x] Test harmony colors are valid hex
+- [x] Test `autoFixContrast` round-trip (verify it actually meets the ratio)
+- [x] Test `importThemeJson` with invalid/malformed input
+
+#### Increment 5: Docs & Verify
+- [x] Run `npm test` — all tests pass (556 passed, 8 pre-existing failures)
+- [x] Create `docs/feature-specs/theme-studio.md`
+- [x] Update `tasks/todo.md` — mark all items checked
+- [ ] Commit and push
+
+### Acceptance Criteria
+1. Presets still work as before (no regression)
+2. Advanced toggle reveals 7 knobs that update the live preview in real-time
+3. Harmony suggestions show 4 colors (2 analogous + 2 split-comp) that can be applied with one click
+4. All text remains readable — `enforceContrast` auto-fixes fg/muted colors silently
+5. Import shows feedback (success/fail message)
+6. All existing + new tests pass
+7. No hardcoded colors in UI — everything uses CSS custom properties
+8. Dutch-language labels throughout
+
+---
+
+## Milestone 3 — Project Momentum Visualization
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+Simple, legible momentum visualization for projects. Activity-based metric tracking task completions per week over 4 weeks. Shows tiny sparkline bars so the user can see at a glance which projects have momentum and which are stalling.
+
+### Design Decisions
+
+| Question | Answer |
+|----------|--------|
+| Metric | Activity-based: task completions + project edits per week |
+| Stalled threshold | 7 days without any activity |
+| Indicator | Tiny 4-week sparkline (mini SVG bar chart) |
+
+### Momentum Metric (v1)
+
+For each **active** project, compute:
+1. Get all tasks via `getTasksByProject(projectId)`
+2. Bucket task completions (`doneAt`) into 4 calendar weeks: [w-3, w-2, w-1, w0]
+3. Also count: project `updatedAt` falls in which week → +1 activity that week
+4. **`weeklyActivity`**: array of 4 numbers `[w3ago, w2ago, w1ago, thisWeek]`
+5. **`isStalled`**: active project with 0 activity in last 7 days (no task doneAt ≥ 7d ago AND project updatedAt < 7d ago)
+6. **`lastActiveDate`**: max of (latest `task.doneAt`, `project.updatedAt`)
+7. **`score`**: weighted sum → `w[0]*1 + w[1]*2 + w[2]*3 + w[3]*4` (recent weeks weigh more)
+
+### Computation — `src/stores/momentum.js`
+
+New store adapter (pure async, no schema changes). Key exports:
+
+```
+getProjectMomentum(projectId)
+  → { weeklyActivity: number[4], isStalled: boolean, lastActiveDate: string|null, score: number }
+
+getAllProjectsMomentum(mode)
+  → Map<projectId, MomentumData>
+
+getMomentumPulse(mode)
+  → { topActive: [{ id, title, score, weeklyActivity }], stalled: [{ id, title, daysSince }] }
+```
+
+Data sources (read-only):
+- `getActiveProjects(mode)` from projects store
+- `getTasksByProject(projectId)` from tasks store
+- No new IndexedDB stores or schema changes
+
+### UI Placements
+
+#### 1. Dashboard panel (Layer 3 details) — `src/blocks/dashboard/view.js`
+- Enhance existing "Projecten" section in `loadDetails()`
+- Show top 3 most active projects with sparkline + score label
+- Below: stalled projects list with warning indicator + "X dagen stil"
+- Uses `getMomentumPulse(mode)`
+
+#### 2. Project Hub list cards — `src/blocks/project-hub/list.js`
+- Add 4-bar sparkline SVG in card body (between status/ring row and title)
+- Add "Laatst actief: Xd geleden" subtitle below goal text
+- Uses `getAllProjectsMomentum(mode)` (batch call)
+
+#### 3. Project detail header — `src/blocks/project-detail/view.js`
+- Add sparkline + "Laatst actief" text in header, after title/goal
+- Uses `getProjectMomentum(projectId)`
+
+### Sparkline SVG Spec
+
+```
+Width: 48px, Height: 20px
+4 bars, 10px wide, 2px gap
+Colors: var(--color-accent) for normal bars
+        var(--color-text-tertiary) for zero-height bars (1px min)
+        var(--color-error) tint if isStalled
+Bar height: proportional to max(weeklyActivity), min 1px, max 18px
+```
+
+Pure inline SVG — no chart library.
+
+### Styles — `src/blocks/project-hub/styles.css` + `src/blocks/dashboard/styles.css`
+
+- `.momentum-spark` — sparkline container
+- `.momentum-spark__bar` — individual bar
+- `.momentum-stalled` — stalled project row in dashboard
+- `.hub-card__momentum` — sparkline placement in hub card
+- `.hub-card__last-active` — "last active" text
+- No hardcoded colors — CSS variables only
+
+### Checklist
+
+#### 1. Momentum computation — `src/stores/momentum.js`
+- [x] `getProjectMomentum(projectId)` — per-project calculation
+- [x] `getAllProjectsMomentum(mode)` — batch for all active projects
+- [x] `getMomentumPulse(mode)` — dashboard summary (top 3 + stalled)
+- [x] Week bucketing logic (ISO weeks, 4-week window)
+- [x] Stalled detection (7-day threshold)
+- [x] Score computation (weighted recent-first)
+
+#### 2. Sparkline SVG helper — `src/ui/sparkline.js`
+- [x] `renderSparkline(weeklyActivity, { isStalled })` → SVG string
+- [x] Proportional bar heights, 1px minimum
+- [x] Stalled coloring via CSS variable
+
+#### 3. Dashboard enhancement — `src/blocks/dashboard/view.js`
+- [x] Import `getMomentumPulse`
+- [x] Render top 3 active with sparklines in Layer 3
+- [x] Render stalled projects with warning + days count
+
+#### 4. Project Hub cards — `src/blocks/project-hub/list.js`
+- [x] Import `getAllProjectsMomentum`
+- [x] Add sparkline to card body
+- [x] Add "Laatst actief" subtitle
+
+#### 5. Project detail header — `src/blocks/project-detail/view.js`
+- [x] Import `getProjectMomentum`
+- [x] Add sparkline + last active text in header
+
+#### 6. Tests — `tests/stores/momentum.test.js`
+- [x] Week bucketing with known dates (7 tests)
+- [x] Stalled detection (7-day boundary)
+- [x] Score weighting
+- [x] Empty project (updatedAt only) → not stalled
+- [x] Mixed activity across weeks
+- [x] Sparkline SVG rendering (5 tests)
+
+#### 7. Docs
+- [x] `docs/feature-specs/project-momentum.md`
+- [x] Update `docs/demo.md` with QA script
+
+### Acceptance Criteria
+
+1. Momentum sparkline visible on dashboard (top 3 active + stalled list)
+2. Sparkline + "last active" visible on project hub cards
+3. Sparkline + "last active" visible on project detail header
+4. Stalled projects (>7 days inactive) highlighted with warning color
+5. No hardcoded colors — CSS variables only
+6. No new dependencies (pure SVG, no chart library)
+7. All existing tests pass + new momentum tests
+8. Projects data is read-only — no mutations, no data loss risk
+
+---
+
+## Milestone 2 — Morning Flow Mode
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+A calm, step-by-step morning planning flow that auto-opens once per day. Guides the user through setting their Top 3 outcomes, reviewing next actions, and optionally choosing a project focus. Ends with a summary focus card pinned on the Vandaag page.
+
+### Design Decisions
+
+| Question | Answer |
+|----------|--------|
+| Step order | Top 3 → Next Actions → Project Focus → Confirm |
+| Auto vs manual | Auto-open 1x/day (when outcomes empty), + manual button |
+| Project Focus | Optional — skip or choose |
+| End state | Focus card on Vandaag with clean summary |
+
+### Flow Steps
+
+```
+Step 1: Top 3 Outcomes
+  ┌─────────────────────────────┐
+  │  Wat wil je vandaag bereiken?│
+  │  1. [_________________]     │
+  │  2. [_________________]     │
+  │  3. [_________________]     │
+  │              [Volgende →]   │
+  └─────────────────────────────┘
+
+Step 2: Next Actions
+  ┌─────────────────────────────┐
+  │  Bekijk je volgende acties   │
+  │  📚 Project A → "Actie X"  │
+  │  📚 Project B → geen actie  │
+  │              [Volgende →]   │
+  └─────────────────────────────┘
+
+Step 3: Project Focus (optional)
+  ┌─────────────────────────────┐
+  │  Kies een project als focus  │
+  │  ○ Project A                │
+  │  ○ Project B                │
+  │  ○ Geen focus vandaag       │
+  │              [Volgende →]   │
+  └─────────────────────────────┘
+
+Step 4: Confirm
+  ┌─────────────────────────────┐
+  │  ☀ Je ochtendplan            │
+  │  Top 3: ...                  │
+  │  Focus: Project A            │
+  │         [Start je dag →]     │
+  └─────────────────────────────┘
+```
+
+### Data Model
+
+No schema changes. Uses existing stores:
+
+| Data | Store | API |
+|------|-------|-----|
+| Top 3 outcomes | `dailyPlans` | `saveOutcomes(mode, date, outcomes)` |
+| Project focus | `os_projects` | `setPinned(projectId, mode)` |
+| Flow progress | `localStorage` | `boris_morning_${date}_${mode}` → `{ step, completed }` |
+
+### Resume Logic
+
+- `localStorage` key: `boris_morning_${date}_${mode}`
+- Value: `{ step: 0-3, completed: false, dismissed: false }`
+- On open: reads state, resumes at saved step
+- Each step advance: saves `{ step: newStep }`
+- On complete: saves `{ step: 3, completed: true }`
+- On dismiss (Esc/backdrop): saves `{ dismissed: true }` — won't auto-open again
+
+### Auto-Open Logic (shell.js)
+
+After Vandaag tab mounts (~800ms delay):
+1. Read `boris_morning_${today}_${mode}` from localStorage
+2. If `completed` or `dismissed` → skip
+3. If today's outcomes are all empty → auto-open morning flow
+4. Also registers command in palette: "Start ochtendplan"
+
+### Focus Card (morning-focus block)
+
+Mounted in `vandaag-hero` (after daily-outcomes). Shows ONLY if morning flow is completed today:
+- Clean summary: Top 3 outcomes (read-only, compact)
+- Focus project name + next action (if set)
+- Mode-colored accent
+
+### File Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/ui/morning-flow.js` | **NEW** | Stepper overlay UI + persistence |
+| `src/ui/morning-flow.css` | **NEW** | Stepper styles |
+| `src/blocks/morning-focus/index.js` | **NEW** | Block registration |
+| `src/blocks/morning-focus/view.js` | **NEW** | Focus card after completion |
+| `src/blocks/registerBlocks.js` | **MODIFY** | Register morning-focus block |
+| `src/os/shell.js` | **MODIFY** | Auto-open logic + command registration |
+| `tests/ui/morning-flow.test.js` | **NEW** | Tests for stepper + persistence |
+| `docs/feature-specs/morning-flow.md` | **NEW** | Feature spec |
+| `docs/demo.md` | **MODIFY** | QA script |
+
+### Checklist
+
+#### 1. Morning flow stepper — `src/ui/morning-flow.js`
+- [x] `createMorningFlow({ modeManager, eventBus })` → `{ open, close, destroy }`
+- [x] Step 1: Top 3 input fields, pre-fill from daily entry
+- [x] Step 2: List active projects with next action status (read-only)
+- [x] Step 3: Project picker (radio: projects + "Geen focus"), optional
+- [x] Step 4: Summary card + "Start je dag" button
+- [x] Step navigation: Back/Next buttons, progress dots
+- [x] Keyboard: Escape dismisses, Enter advances
+- [x] Persist step to localStorage on each advance
+- [x] Resume from saved step on re-open
+- [x] Save outcomes after step 1 completion
+- [x] Pin project after step 3 completion
+- [x] Mark completed in localStorage after step 4
+
+#### 2. Morning focus card — `src/blocks/morning-focus/`
+- [x] Block registration: hosts `vandaag-hero`, order 7 (after daily-outcomes)
+- [x] Render only if flow completed today
+- [x] Show: Top 3 compact, focus project, mode accent
+- [x] "Herstart ochtendplan" link to re-open flow
+- [x] Reactive: listens to `daily:changed`, `projects:changed`, `morning:completed`
+
+#### 3. Shell integration — `src/os/shell.js`
+- [x] Auto-open check on Vandaag mount (1s delay, skips first visit)
+- [x] Register "Start ochtendplan" command in palette
+- [x] Morning flow instance created and appended to shell
+
+#### 4. Styles — `src/ui/morning-flow.css`
+- [x] Overlay + backdrop (same z-index pattern as modal)
+- [x] Panel with step content area
+- [x] Progress dots
+- [x] Mode-colored accent on confirm step
+- [x] Smooth step transitions
+- [x] Reduced-motion support
+
+#### 5. Tests
+- [x] `tests/ui/morning-flow.test.js` — 13 tests: persistence, resume, auto-open, data integration
+
+#### 6. Docs
+- [x] `docs/feature-specs/morning-flow.md`
+- [x] Update `docs/demo.md` with QA script
+
+### Acceptance Criteria
+
+1. Morning flow auto-opens 1x/day on Vandaag (when outcomes empty)
+2. Flow has 4 steps: Top 3 → Next Actions → Focus (optional) → Confirm
+3. Each step persists to localStorage — resume works after reload
+4. Dismissing (Esc/backdrop) prevents re-auto-open that day
+5. Completing saves outcomes + pins project + shows focus card
+6. Focus card on Vandaag shows clean summary of morning plan
+7. "Start ochtendplan" available in command palette
+8. All existing tests pass (499+)
+9. No hardcoded colors — CSS variables only
+
+---
+
+## Milestone 1 — Command Palette Enhancement
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+Enhance the existing Ctrl+K command palette with **navigation commands** and **create actions**. Currently the palette is search-only. After this milestone it becomes a true command palette: keyboard-first hub for navigation and quick creation.
+
+### Architecture Decision
+
+The project is a zero-dependency vanilla JS monolith. Rather than introducing React (3 new deps + build config changes) for a single component, we extend the existing `command-palette.js` with a new kernel module `src/core/commands.js`. This follows the established kernel pattern (`{ db, eventBus, modeManager, blockRegistry }`) and delivers all functional requirements as a small increment.
+
+### File Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/core/commands.js` | **NEW** | Command registry — register, filter, execute commands |
+| `src/ui/command-palette.js` | **MODIFY** | Add commands section (empty-state + mixed results) |
+| `src/ui/command-palette.css` | **MODIFY** | Styles for command items (icon, label, shortcut hint) |
+| `src/os/shell.js` | **MODIFY** | Register nav + create commands, pass commands to palette |
+| `tests/core/commands.test.js` | **NEW** | Tests for command registry |
+| `tests/ui/command-palette.test.js` | **MODIFY** | Tests for command filtering + execution |
+| `docs/feature-specs/command-palette.md` | **NEW** | Feature spec |
+| `docs/demo.md` | **MODIFY** | Add manual QA script |
+
+### Component Structure
+
+```
+src/core/commands.js (kernel module)
+├── createCommandRegistry()
+│   ├── register(id, { label, icon, keywords, group, handler, shortcut? })
+│   ├── getAll() → Command[]
+│   ├── filter(query) → Command[] (uses fuzzyScore from search.js)
+│   └── execute(id) → Promise<void>
+│
+src/ui/command-palette.js (enhanced)
+├── Empty state → shows all commands grouped by type
+├── Typing → commands filtered first, then search results below
+├── Command groups: "Navigatie" and "Aanmaken"
+└── Keyboard: arrows navigate, Enter executes, Esc closes
+```
+
+### Commands v1
+
+| ID | Group | Label | Icon | Action |
+|----|-------|-------|------|--------|
+| `nav:dashboard` | Navigatie | Ga naar Dashboard | `◫` | `setActiveTab('dashboard')` |
+| `nav:today` | Navigatie | Ga naar Vandaag | `☀` | `setActiveTab('today')` |
+| `nav:projects` | Navigatie | Ga naar Projecten | `🚀` | `setActiveTab('projects')` |
+| `nav:settings` | Navigatie | Ga naar Instellingen | `⚙` | `setActiveTab('settings')` |
+| `nav:inbox` | Navigatie | Ga naar Inbox | `📥` | `setActiveTab('inbox')` |
+| `nav:planning` | Navigatie | Ga naar Planning | `📋` | `setActiveTab('planning')` |
+| `create:task` | Aanmaken | Nieuwe taak | `+` | `showPrompt → addTask()` |
+| `create:project` | Aanmaken | Nieuw project | `+` | `showPrompt → addProject()` |
+
+### Checklist
+
+#### 1. Command registry — `src/core/commands.js`
+- [x] Create `createCommandRegistry()` factory
+- [x] `register(id, opts)` — add command to registry
+- [x] `getAll()` — return all commands
+- [x] `filter(query)` — fuzzy filter using `fuzzyScore`
+- [x] `execute(id)` — run handler, return result
+
+#### 2. Enhanced command palette — `src/ui/command-palette.js`
+- [x] Accept `commands` option (command registry instance)
+- [x] Empty state: render all commands grouped by `group` field
+- [x] Typing mode: show filtered commands above search results
+- [x] Command items: distinct styling (icon + label + optional shortcut hint)
+- [x] Click + Enter executes command
+- [x] Escape closes palette
+
+#### 3. Shell integration — `src/os/shell.js`
+- [x] Create command registry instance
+- [x] Register 6 navigation commands
+- [x] Register 2 create commands (task + project via `showPrompt`)
+- [x] Pass `commands` to `createCommandPalette()`
+- [x] Emit `tasks:changed` / `projects:changed` after creates
+
+#### 4. Styles — `src/ui/command-palette.css`
+- [x] `.cmd-palette__item--command` — command item styling
+- [x] `.cmd-palette__command-icon` — icon display
+- [x] `.cmd-palette__command-shortcut` — keyboard hint (muted)
+- [x] Group headers via existing `.cmd-palette__group-header`
+
+#### 5. Tests
+- [x] `tests/core/commands.test.js` — 12 tests (registry CRUD, filter, execute)
+- [x] `tests/ui/command-palette.test.js` — 28 existing tests pass (no regressions)
+
+#### 6. Docs
+- [x] `docs/feature-specs/command-palette.md` — feature spec
+- [x] Update `docs/demo.md` — manual QA script
+- [x] Update this todo with completion status
+
+### Acceptance Criteria
+
+1. Ctrl+K / Cmd+K opens palette
+2. Empty state shows all commands grouped (Navigatie, Aanmaken)
+3. Typing filters commands + searches data simultaneously
+4. Arrow keys navigate, Enter executes, Esc closes
+5. Navigate commands switch tabs correctly
+6. Create Task: prompts for text, creates task in current mode, emits `tasks:changed`
+7. Create Project: prompts for title, creates project in current mode, emits `projects:changed`
+8. All existing tests pass (298 tests)
+9. New tests pass for commands module
+10. No hardcoded colors — uses CSS variables only
+
+---
+
 ## UI Fixes + Theme Studio — Implementation Plan
 
 **Feature branch:** `claude/design-personal-os-ui-1hX66`

@@ -1,3 +1,205 @@
+# Project Momentum — QA Script
+
+Manual QA for the project momentum visualization (Milestone 3).
+
+---
+
+## Prerequisites
+1. `npm run dev` running
+2. Open app in browser, BORIS OS active
+3. Have at least 2-3 projects with some tasks (completed and open)
+
+## 1. Dashboard — Momentum Panel
+
+1. Navigate to **Dashboard** tab
+2. Click "Meer details" to expand Layer 3
+3. **Expected:** "Projecten" section shows top 3 projects with sparkline bars
+4. Each project row: sparkline (4 bars) + project title
+5. If any project has no activity for 7+ days: "Stilgevallen" section appears with warning color
+6. **Verify:** Sparklines use `--color-accent` for active bars, `--color-warning` for stalled
+
+## 2. Project Hub — Cards
+
+1. Navigate to **Projects** tab (Project Hub)
+2. **Expected:** Each project card shows a tiny sparkline below the goal text
+3. Below sparkline: "Vandaag actief" or "Xd geleden" text
+4. **Verify:** Stalled projects show warning-colored "last active" text
+5. Complete a task on a project → refresh → sparkline bar for this week should grow
+
+## 3. Project Detail — Header
+
+1. Navigate to **Planning** tab
+2. Select a project
+3. **Expected:** Sparkline + "Laatst actief" text visible in header below title/goal
+4. **Verify:** Stalled projects show warning-colored text
+
+## 4. Cross-Theme Check
+
+1. Switch between light/dark themes (if available)
+2. **Verify:** Sparkline bars use CSS variables — no hardcoded colors visible
+3. All text remains legible in both themes
+
+## 5. Edge Cases
+
+1. Create a new project with no tasks
+2. **Expected:** Sparkline shows 1 bar (this week, from creation) + "Vandaag actief"
+3. Project with all tasks done long ago
+4. **Expected:** Sparkline shows activity in past weeks, current week may be empty
+
+---
+
+# Morning Flow — QA Script
+
+Manual QA for the morning planning flow (Milestone 2).
+
+---
+
+## Prerequisites
+1. `npm run dev` running
+2. Open app in browser, BORIS OS active
+3. Clear localStorage for clean state: `localStorage.clear()` in console
+
+## 1. Auto-Open
+
+1. Refresh the page (should land on Vandaag tab)
+2. **Expected:** Morning flow overlay opens automatically after ~1 second
+3. Verify: 4 progress dots in header, first dot active
+4. Verify: Step 1 shows "Wat wil je vandaag bereiken?" with 3 input fields
+
+## 2. Step 1 — Top 3 Outcomes
+
+1. Type "Wiskunde afronden" in field 1
+2. Press Enter — cursor moves to field 2
+3. Type "Sporten" in field 2
+4. Leave field 3 empty
+5. Click "Volgende →"
+6. **Expected:** Step advances to "Volgende acties", dot 2 active
+
+## 3. Step 2 — Next Actions
+
+1. **Expected:** Shows active projects with their next action status
+2. If no projects: shows "Geen actieve projecten in deze modus"
+3. Click "Volgende →"
+4. **Expected:** Step 3 — project focus picker
+
+## 4. Step 3 — Project Focus (Optional)
+
+1. **Expected:** Radio list of active projects + "Geen focus vandaag"
+2. Select a project (or leave "Geen focus")
+3. Click "Volgende →"
+4. **Expected:** Step 4 — confirmation summary
+
+## 5. Step 4 — Confirm
+
+1. **Expected:** Summary showing your Top 3 + focus project (if selected)
+2. Click "Start je dag →"
+3. **Expected:** Flow closes, focus card appears on Vandaag page
+
+## 6. Focus Card
+
+1. On Vandaag page, look in the hero area
+2. **Expected:** "Ochtendplan klaar" card with:
+   - Checkmark + green/purple/blue accent (depending on mode)
+   - Your Top 3 outcomes listed
+   - Focus project name (if you selected one)
+3. Navigate away (Dashboard) and back (Vandaag)
+4. **Expected:** Focus card still visible
+
+## 7. Resume After Reload
+
+1. Start the flow (Ctrl+K → "Start ochtendplan")
+2. Advance to step 2
+3. Refresh the page
+4. Open the flow again (Ctrl+K → "Start ochtendplan")
+5. **Expected:** Resumes at step 2 (not step 1)
+
+## 8. Dismiss + No Re-Open
+
+1. Clear localStorage, refresh page
+2. Flow auto-opens
+3. Click × or press Escape
+4. **Expected:** Flow closes, does NOT auto-open again
+5. Refresh page
+6. **Expected:** Flow stays closed (dismissed for today)
+
+## 9. Command Palette Integration
+
+1. Press Ctrl+K
+2. Type "ochtend"
+3. **Expected:** "Start ochtendplan" command appears
+4. Select it, press Enter
+5. **Expected:** Flow opens on Vandaag tab
+
+---
+
+# Command Palette — QA Script
+
+Manual QA for the Ctrl+K command palette (Milestone 1).
+
+---
+
+## Prerequisites
+1. `npm run dev` running
+2. Open app in browser, BORIS OS active
+
+## 1. Open / Close
+
+1. Press `Ctrl+K` (or `Cmd+K` on Mac)
+2. **Expected:** Palette opens with smooth animation, input focused
+3. Verify two groups visible: **Navigatie** (6 commands) and **Aanmaken** (2 commands)
+4. Press `Escape`
+5. **Expected:** Palette closes
+6. Press `Ctrl+K` again, click the backdrop
+7. **Expected:** Palette closes
+
+## 2. Navigate Commands
+
+1. Open palette (`Ctrl+K`)
+2. Press `↓` to select "Ga naar Dashboard"
+3. Press `Enter`
+4. **Expected:** Palette closes, Dashboard tab is active
+5. Open palette, type "inbox"
+6. **Expected:** "Ga naar Inbox" command appears, filtered from other commands
+7. Press `Enter`
+8. **Expected:** Inbox tab is active
+
+## 3. Create Task
+
+1. Open palette, type "taak"
+2. **Expected:** "Nieuwe taak" command visible
+3. Select it and press `Enter`
+4. **Expected:** Prompt dialog appears asking "Wat moet er gebeuren?"
+5. Type "Test taak via palette" and press Enter
+6. **Expected:** Task created, visible in Vandaag → Taken section
+7. Refresh page — task persists
+
+## 4. Create Project
+
+1. Open palette, type "project"
+2. Select "Nieuw project" and press `Enter`
+3. **Expected:** Prompt dialog with "Projectnaam:"
+4. Type "Palette project" and confirm
+5. **Expected:** Project created in current mode
+6. Navigate to Projecten tab — project is visible
+
+## 5. Mixed Results
+
+1. Create a task with text "Wiskunde huiswerk"
+2. Open palette, type "wiskunde"
+3. **Expected:** Commands matching "wiskunde" (if any) shown first, then search result showing the task below
+4. Arrow-key down to the task result, press `Enter`
+5. **Expected:** Navigates to Vandaag → Taken section
+
+## 6. Keyboard Navigation
+
+1. Open palette (empty state shows all commands)
+2. Press `↓` multiple times — selection wraps around
+3. Press `↑` — moves up, wraps to bottom
+4. Hover mouse over a different item — selection follows mouse
+5. Click an item — executes it
+
+---
+
 # Inbox Processing — Demo Script
 
 Manual walkthrough to verify the Inbox screen and processing flow.

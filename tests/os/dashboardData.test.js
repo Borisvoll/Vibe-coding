@@ -101,8 +101,12 @@ describe('Dashboard Data Aggregation', () => {
   });
 
   it('should reflect logged hours', async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    await addHoursEntry(today, {
+    // Use Monday of the current week — getWeeklyOverview only sums Mon-Fri dates
+    const d = new Date();
+    const day = d.getDay(); // 0=Sun, 1=Mon, …, 6=Sat
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    const monday = d.toISOString().slice(0, 10);
+    await addHoursEntry(monday, {
       type: 'work',
       startTime: '08:00',
       endTime: '16:30',

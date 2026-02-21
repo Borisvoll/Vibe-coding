@@ -2,6 +2,8 @@ import { escapeHTML, getToday, formatDateLong } from '../../utils.js';
 import { getTodaySnapshot, getWeekFocus, getProjectsPulse, getBPVPulse } from '../../os/dashboardData.js';
 import { getCockpitItems } from '../../os/cockpitData.js';
 import { getInboxCount } from '../../stores/inbox.js';
+import { getMomentumPulse } from '../../stores/momentum.js';
+import { renderSparkline } from '../../ui/sparkline.js';
 import { WEEKDAY_FULL } from '../../constants.js';
 
 const MODE_META = {
@@ -223,10 +225,11 @@ export function renderDashboard(container, context) {
     const mode = context.modeManager?.getMode() || 'School';
 
     try {
-      const [week, projects, bpv] = await Promise.all([
+      const [week, projects, bpv, momentum] = await Promise.all([
         getWeekFocus(),
         getProjectsPulse(),
         getBPVPulse(),
+        getMomentumPulse(mode),
       ]);
 
       if (!detailsEl) return;
@@ -246,16 +249,37 @@ export function renderDashboard(container, context) {
       `);
 
       if (projects.activeCount > 0) {
-        const projList = projects.active.slice(0, 3).map((p) => {
-          const risk = p.hasNextAction ? '' : ' <span class="life-dash__risk">!</span>';
-          const modeChip = p.mode ? ` <span class="life-dash__mode-chip">${escapeHTML(p.mode)}</span>` : '';
-          return `<span class="life-dash__project-item">${escapeHTML(p.title)}${risk}${modeChip}</span>`;
+        // Top active projects with momentum sparklines
+        const topList = momentum.topActive.map((p) => {
+          const spark = renderSparkline(p.weeklyActivity, { isStalled: p.isStalled });
+          const risk = projects.active.find((a) => a.id === p.id)?.hasNextAction === false
+            ? ' <span class="life-dash__risk">!</span>' : '';
+          return `
+            <div class="life-dash__momentum-row">
+              ${spark}
+              <span class="life-dash__project-item">${escapeHTML(p.title)}${risk}</span>
+            </div>`;
+        }).join('');
+
+        // Stalled projects
+        const stalledList = momentum.stalled.map((p) => {
+          const days = p.daysSince != null ? `${p.daysSince}d stil` : 'geen activiteit';
+          return `
+            <div class="life-dash__momentum-row life-dash__momentum-row--stalled">
+              ${renderSparkline(p.weeklyActivity, { isStalled: true })}
+              <span class="life-dash__project-item">${escapeHTML(p.title)}</span>
+              <span class="life-dash__stalled-label">${escapeHTML(days)}</span>
+            </div>`;
         }).join('');
 
         sections.push(`
           <div class="life-dash__detail-section">
             <h4 class="life-dash__detail-title">Projecten</h4>
-            <div class="life-dash__project-list">${projList}</div>
+            <div class="life-dash__momentum-list">${topList}</div>
+            ${stalledList ? `
+              <h4 class="life-dash__detail-title life-dash__detail-title--stalled">Stilgevallen</h4>
+              <div class="life-dash__momentum-list">${stalledList}</div>
+            ` : ''}
           </div>
         `);
       }

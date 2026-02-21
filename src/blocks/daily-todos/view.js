@@ -1,5 +1,6 @@
 import { getDailyEntry, addTodo, toggleTodo, deleteTodo } from '../../stores/daily.js';
 import { getToday, escapeHTML } from '../../utils.js';
+import './styles.css';
 
 const MODE_META = {
   School:   { emoji: '📚', color: 'var(--color-purple)',  label: 'School' },
@@ -19,9 +20,9 @@ export function renderDailyTodos(container, context) {
         <span class="daily-todos__count"></span>
       </div>
       <div class="daily-todos__add-row">
-        <input type="text" class="form-input daily-todos__input"
-          placeholder="Taak toevoegen..." maxlength="200" />
-        <button type="button" class="btn btn-ghost btn-sm daily-todos__add-btn" aria-label="Taak toevoegen" data-tooltip="Taak toevoegen">+</button>
+        <input type="text" class="daily-todos__input"
+          placeholder="Taak toevoegen..." maxlength="200" aria-label="Nieuwe taak" />
+        <button type="button" class="daily-todos__add-btn" aria-label="Taak toevoegen">+</button>
       </div>
       <ul class="daily-todos__list"></ul>
     </article>
@@ -42,23 +43,38 @@ export function renderDailyTodos(container, context) {
 
     const done = todos.filter((t) => t.done).length;
 
+    // Keep focus on input across re-renders
+    const hadFocus = document.activeElement === inputEl;
+
     titleEl.textContent = 'Taken vandaag';
     titleEl.style.color = meta.color;
-    countEl.textContent = todos.length > 0 ? `${done}/${todos.length}` : '';
-    countEl.style.color = done === todos.length && todos.length > 0
-      ? meta.color
-      : 'var(--color-text-tertiary)';
 
-    listEl.innerHTML = todos.map((todo) => `
-      <li class="daily-todos__item ${todo.done ? 'daily-todos__item--done' : ''}" data-id="${escapeHTML(todo.id)}">
-        <button type="button" class="daily-todos__check" aria-label="${todo.done ? 'Markeer ongedaan' : 'Markeer gedaan'}"
-          style="--todo-color:${meta.color}">
-          ${todo.done ? '✓' : ''}
-        </button>
-        <span class="daily-todos__text">${escapeHTML(todo.text)}</span>
-        <button type="button" class="daily-todos__delete" aria-label="Verwijder taak">×</button>
-      </li>
-    `).join('');
+    if (todos.length === 0) {
+      countEl.textContent = '';
+    } else {
+      countEl.textContent = `${done}/${todos.length}`;
+      countEl.style.background = done === todos.length
+        ? `color-mix(in srgb, ${meta.color} 15%, transparent)`
+        : 'var(--color-border-light)';
+      countEl.style.color = done === todos.length ? meta.color : 'var(--color-text-secondary)';
+    }
+
+    if (todos.length === 0) {
+      listEl.innerHTML = `<li class="daily-todos__empty">Voeg je eerste taak toe</li>`;
+    } else {
+      listEl.innerHTML = todos.map((todo) => `
+        <li class="daily-todos__item ${todo.done ? 'daily-todos__item--done' : ''}"
+          data-id="${escapeHTML(todo.id)}" style="--todo-color:${meta.color}">
+          <button type="button" class="daily-todos__check"
+            aria-label="${todo.done ? 'Markeer ongedaan' : 'Markeer gedaan'}"
+            aria-pressed="${todo.done}">
+            ${todo.done ? '✓' : ''}
+          </button>
+          <span class="daily-todos__text">${escapeHTML(todo.text)}</span>
+          <button type="button" class="daily-todos__delete" aria-label="Verwijder taak">×</button>
+        </li>
+      `).join('');
+    }
 
     listEl.querySelectorAll('.daily-todos__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
@@ -77,6 +93,8 @@ export function renderDailyTodos(container, context) {
         eventBus.emit('daily:changed', { mode: currentMode, date: today });
       });
     });
+
+    if (hadFocus) inputEl.focus();
   }
 
   async function handleAdd() {

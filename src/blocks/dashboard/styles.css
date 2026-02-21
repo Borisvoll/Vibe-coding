@@ -118,26 +118,29 @@
   color: var(--color-accent);
 }
 
-/* ── Layer 2: Pulse rows ──────────────────────────────────── */
+/* ── Layer 2: Pulse cards (card-heavy redesign) ───────────── */
 .life-dash__pulses {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
 }
 
 .life-dash__pulse {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-lg, 12px);
   background: var(--color-surface);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
   cursor: pointer;
   text-align: left;
   font-family: inherit;
-  transition: border-color var(--duration-fast) var(--ease),
-              background var(--duration-fast) var(--ease);
+  transition: border-color 150ms var(--ease),
+              background 150ms var(--ease),
+              box-shadow 150ms var(--ease),
+              transform 100ms var(--ease);
   animation: block-enter var(--duration-slow) var(--ease-out) both;
   animation-delay: var(--stagger, 0ms);
 }
@@ -145,30 +148,46 @@
 .life-dash__pulse:hover {
   border-color: var(--color-accent);
   background: var(--color-surface-hover);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
 }
 
 .life-dash__pulse:active {
-  transform: scale(0.99);
+  transform: scale(0.98) translateY(0);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .life-dash__pulse-emoji {
   flex-shrink: 0;
-  font-size: var(--font-lg);
-  width: 1.5rem;
-  text-align: center;
+  font-size: 1.4rem;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md, 8px);
+}
+
+.life-dash__pulse-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .life-dash__pulse-label {
-  flex-shrink: 0;
-  font-size: var(--font-sm);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  min-width: 5rem;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--color-text-tertiary);
 }
 
 .life-dash__pulse-value {
-  flex: 1;
   font-size: var(--font-base);
+  font-weight: 600;
   color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -176,8 +195,51 @@
 }
 
 .life-dash__pulse-value--warn {
-  color: var(--color-warning);
-  font-weight: 500;
+  color: var(--color-warning, #f59e0b);
+}
+
+.life-dash__pulse-arrow {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+  font-size: 0.9rem;
+  transition: transform 150ms var(--ease), color 150ms var(--ease);
+}
+
+.life-dash__pulse:hover .life-dash__pulse-arrow {
+  transform: translateX(2px);
+  color: var(--color-accent);
+}
+
+/* Stat strip inside Layer 1 intent */
+.life-dash__stat-strip {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border-light);
+  margin-top: var(--space-2);
+}
+
+.life-dash__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.life-dash__stat-num {
+  font-size: var(--font-xl);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--color-text);
+}
+
+.life-dash__stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
 }
 
 /* ── Layer 3: Collapsible depth ───────────────────────────── */

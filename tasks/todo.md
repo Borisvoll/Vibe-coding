@@ -2230,6 +2230,17 @@ LEVEL 3 — ARCHIVE (Reference)
 **Source:** `docs/audit-fix-map.md` (audit points #1–#16 + additional discoveries)
 **Goal:** Fix stability, performance, data safety, and long-term agency issues — without feature creep.
 
+### Completion Summary
+
+| Milestone | Status | Commit | Tests Added | Key Files Changed |
+|-----------|--------|--------|-------------|-------------------|
+| A — Performance | DONE | `e1a88f1` | 20 | db.js, search.js, weekly-review.js, personal.js, daily.js, main.js |
+| B — Backup Safety | DONE | `7110fb8` | 12 | backup.js |
+| C — Modes Mature | DONE | `36e70ee` | 20 | modeConfig.js (new), modeManager.js, modeCaps.js, validate.js, daily.js, main.js |
+| D — UX Softening | DONE | `caec80d` | 19 | tasks/view.js, shell.js, cockpit/view.js, modulePresets.js, history-browser (new) |
+
+**Total new tests:** 71 | **Final suite:** 558 passing, 8 pre-existing date-dependent failures
+
 ---
 
 ### Milestone A — Performance (CRITICAL)

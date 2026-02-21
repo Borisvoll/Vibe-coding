@@ -1,100 +1,272 @@
 # Top 10 Risks
 
-> Ordered by likelihood x impact. Each risk includes a concrete mitigation.
+> Current-state audit (2026-02-21). Ordered by likelihood × impact.
+> Each risk includes root cause, observable symptoms, and a concrete mitigation path.
 
 ---
 
-### 1. No Tests — Silent Regressions
+## 1. No Runtime Framework = Manual Re-render Debt (Tech Debt)
 
-**Risk:** Zero test files in the repo. Any change can break existing features without detection. The dark mode regression (OS shell path skipping settings) is proof this already happened.
+**Category:** Tech debt / architectural fragility
 
-**Mitigation:** Add minimal unit tests for store adapters (inbox.js, tasks.js) and integration tests for the boot sequence (main.js). Use Vitest (zero-config with Vite). Start with 5-10 tests, not 100%.
+**Root cause:** Every block manages its own DOM mutation. There is no diffing, no
+virtual DOM, no reactive primitives. When data changes, blocks either do a full
+`innerHTML` replace or manually patch individual elements. The pattern is
+inconsistent across 30 blocks.
 
----
+**Observable symptoms:**
+- `inbox-screen` and `daily-todos` re-render their entire list on every `inbox:changed`
+  / `tasks:changed` event, discarding focus state and scroll position.
+- Adding a single task item causes the full task list to regenerate.
+- No shared abstraction for "render this list item" — each block duplicates its own
+  list-rendering logic.
 
-### 2. IndexedDB Schema Drift
+**Risk at scale:** As the block count grows, tracking which blocks subscribed to which
+events and forgetting to `eventBus.off()` in `unmount()` will create memory leaks and
+ghost event handlers across tab transitions.
 
-**Risk:** 28 stores across 5 schema versions with no migration tests. A bad `onupgradeneeded` handler can corrupt or lose all user data. IndexedDB doesn't support rollback.
-
-**Mitigation:** Write migration tests that simulate upgrading from v1→v5. Add a `diagnostics` page data integrity check (partially exists). Never delete stores — only add (append-only strategy is already in place, keep enforcing it).
-
----
-
-### 3. Dual Architecture Complexity
-
-**Risk:** Two complete UI systems (legacy shell + BORIS OS shell) coexist. Changes to shared code (db.js, constants.js, styles) can break either path in non-obvious ways. The feature flag gate adds a maintenance fork in every boot-related feature.
-
-**Mitigation:** Commit to BORIS OS as primary. Deprecate legacy shell in M2. Remove it in M3. Until then, keep the try/catch fallback but stop adding features to legacy pages.
-
----
-
-### 4. No Backend = No Recovery
-
-**Risk:** All data lives in a single browser's IndexedDB. Clear browser data, switch device, or corrupt the DB → everything is gone. Users (Boris) may not export regularly.
-
-**Mitigation:** M1: Add auto-export to JSON on weekly basis (save to Downloads). M2: Deploy to Cloudflare Pages + D1 for sync. The `device_id`, `updated_at`, and `deleted` store are already sync-ready.
+**Mitigation:**
+- Short-term: audit every block's `unmount()` to ensure `eventBus.off()` is called.
+- Medium-term: extract a `renderList(container, items, renderItem)` utility that handles
+  diffing via `data-id` attributes (no framework needed).
+- Long-term: evaluate a lightweight reactive layer (Preact signals or a 2KB store-subscriber
+  pattern) if block count exceeds 40.
 
 ---
 
-### 5. Store Duplication (os_personal_* vs os_tasks)
+## 2. Fragile State: Dual Persistence (IDB + localStorage Race)
 
-**Risk:** `os_personal_tasks` and `os_tasks` overlap. Some blocks read from one, some from the other. Data can diverge, causing user confusion (tasks appearing/disappearing).
+**Category:** Fragile state / data integrity
 
-**Mitigation:** Migrate `os_personal_tasks` data into `os_tasks` with mode='Personal'. Mark `os_personal_tasks` as deprecated. This is already tracked in todo.md.
+**Root cause:** Mode is written to both IDB (`setSetting('boris_mode', ...)`) and
+`localStorage`. On startup, `getSetting('boris_mode')` is awaited from IDB; if IDB is
+slow or throws, the fallback is `localStorage`. If a user clears site data selectively
+(localStorage only, or IDB only), the two stores diverge silently.
 
----
+**Observable symptoms:**
+- User switches mode, reloads → appears to revert to wrong mode.
+- Private browsing: IDB may be unavailable; localStorage-only write succeeds but IDB
+  read on next session fails silently with no fallback path shown.
 
-### 6. Dark Mode / Theme Regression (Active)
-
-**Risk:** Currently staged but not deployed. The `applyUserSettings()` extraction in main.js fixes it, but until committed and deployed, users see a broken light-only UI.
-
-**Mitigation:** Commit and deploy the staged fix immediately. Add a boot-sequence test that verifies `data-theme` is set before shell renders.
-
----
-
-### 7. No Type Safety
-
-**Risk:** Pure vanilla JS with no TypeScript, no JSDoc types, no runtime validation. Store schemas are informal — any block can write malformed data to any store. A typo in a field name (`updatedAt` vs `updated_at`) silently breaks queries.
-
-**Mitigation:** Add JSDoc `@typedef` for core entities (InboxItem, Task, DailyEntry, TrackerEntry). Add runtime validation in store adapters (simple schema checks, not a library). Consider TypeScript migration in M3.
-
----
-
-### 8. Service Worker Cache Staleness
-
-**Risk:** The SW caches `index.html` and core assets. If a deploy happens but the SW cache isn't invalidated, users see stale UI. The version-based cache name helps, but `APP_VERSION` must be bumped manually.
-
-**Mitigation:** Use Vite's content-hash filenames (already configured via default Vite behavior). Ensure `APP_VERSION` is auto-generated from `package.json` version or git SHA. Add `skipWaiting()` banner (already exists).
+**Mitigation:**
+- On startup, compare IDB and localStorage values; if they diverge, prefer IDB and
+  re-sync localStorage.
+- Wrap `getSetting` calls in `src/main.js:141` with explicit fallback: if IDB throws,
+  read `localStorage.getItem('boris_mode')` directly.
+- Add a `diagnostics` panel item showing storage health.
 
 ---
 
-### 9. Single Developer Bus Factor
+## 3. Re-render Risk: EventBus Without Debounce / Batching
 
-**Risk:** Solo developer (Boris). If Boris stops working on this, the project has no documentation of intent, architecture decisions, or onboarding path for a contributor.
+**Category:** Re-render risk / performance
 
-**Mitigation:** The `docs/` folder (architecture.md, design-principles.md, current-state.md) addresses this. Keep updating docs with each milestone. The block `_template/` folder is good for contributor onboarding.
+**Root cause:** Multiple stores can emit their events synchronously in a loop. For
+example, importing a backup calls `put(store, record)` for each record, and if any
+subscriber listens to `tasks:changed`, it re-renders on every single write.
+
+**Observable symptoms:**
+- Importing 200 tasks triggers 200 `tasks:changed` events → 200 full list re-renders
+  in rapid succession (blocked by write guard only during import, not after).
+- Mode switch calls `setActiveTab` which unmounts + remounts all blocks. If a block's
+  `mount()` immediately emits a `daily:changed` event (e.g. creating today's plan),
+  the cycle can trigger cascade re-mounts.
+
+**Mitigation:**
+- Add event batching to `eventBus.emit()`: if the same event is emitted more than once
+  in a single microtask queue, coalesce into one emission (debounce with
+  `queueMicrotask`).
+- In bulk operations (import, migration), suppress events and emit a single batch-done
+  event at the end.
 
 ---
 
-### 10. Scope Creep via Mode Proliferation
+## 4. Styling Inconsistency: 30 Blocks × No Shared Component Primitives
 
-**Risk:** Three modes (BPV/School/Personal) already create 3x block variants. Adding more modes (e.g., Work, Hobby) would explode the block count. Some blocks (school-current-project, personal-week-planning) are thin wrappers around similar patterns.
+**Category:** Styling inconsistencies / maintainability
 
-**Mitigation:** Keep exactly 3 modes. Extract shared patterns (card layout, CRUD list, status toggles) into reusable block primitives. New "modes" should be label variants, not new blocks.
+**Root cause:** Each block has its own `.css` file. There are no shared primitive
+components (no `<Button>`, `<Card>`, `<Input>` equivalents). Classes like `.btn`,
+`.card`, `.tag` are defined in `components.css` but usage patterns differ block to block.
+
+**Observable symptoms:**
+- Button padding and border-radius vary between blocks (e.g. `bpv-quick-log` buttons
+  vs `projects` block action buttons).
+- Spacing between list items is hardcoded differently in `daily-todos`, `lijsten-screen`,
+  and `inbox-screen`.
+- Dark mode: some blocks set inline `color:` or `background:` styles that override
+  `[data-theme="dark"]` CSS variable cascade, causing light-colored elements in dark mode.
+
+**Mitigation:**
+- Document a component class catalogue in `docs/ui-guidelines.md` (already partially
+  exists) and audit all 30 blocks against it.
+- Add a visual regression snapshot test (e.g. Playwright screenshot diff) for dark mode
+  of key blocks.
+- Enforce `escapeHTML` + no inline color styles as part of a block review checklist.
+
+---
+
+## 5. Accessibility Gaps: Focus Management on Route Transitions
+
+**Category:** Accessibility
+
+**Root cause:** `setActiveTab()` clears the DOM (`routeContainer.innerHTML = ''`) and
+remounts content. Browser focus is lost on every tab switch. No focus is programmatically
+set to the new route's heading or first interactive element.
+
+**Observable symptoms:**
+- Keyboard-only user clicks a tab nav item → focus stays on the nav button (or falls to
+  `<body>` if the button is removed from DOM during remount).
+- Screen reader announces nothing after tab switch — no ARIA live region announces the
+  new route.
+- The mode picker has a tab-focus trap (good), but the picker's initial focus target
+  is not set to the first mode card on open.
+
+**Mitigation:**
+- After `mountRoute()` completes, call `routeContainer.querySelector('h1, [autofocus], [data-focus-first]')?.focus()`.
+- Add `aria-live="polite"` region that announces the new tab name on switch.
+- Audit the mode picker's `showModePicker()` to `focus()` the first `.mode-card` on open.
+
+---
+
+## 6. IndexedDB Schema: No Downgrade Path / No Integrity Checks
+
+**Category:** Tech debt / data integrity
+
+**Root cause:** `MigrationManager` is append-only (correct), but there is no integrity
+check on startup. If a migration partially completes (e.g. power loss mid-upgrade), the
+IDB version number increments but store contents may be corrupt. There is no schema
+validation on read.
+
+**Observable symptoms:**
+- A user with a partially-migrated DB (v7 → v8 incomplete) will see the OS shell fail
+  silently at `initDB()` — the error is caught by `init()` but no user-facing error is
+  shown.
+- Records written by an old version (missing required fields like `updated_at`) are read
+  without validation and may cause block `mount()` to throw.
+
+**Mitigation:**
+- Add a `verifySchema()` check in `initDB()` that confirms all 31 expected stores exist.
+  If not, surface a recovery UI instead of a blank screen.
+- Add field-level defaults in store adapters (`tasks.js`, `inbox.js`) so records with
+  missing fields are normalised on read rather than throwing.
+- Write a migration rollback test (already flagged in old `risks.md`).
+
+---
+
+## 7. No Error Boundary Equivalent: One Block Crash = Silent Blank Slot
+
+**Category:** Fragile state / reliability
+
+**Root cause:** `renderHosts()` wraps each block's `mount()` in a `try/catch` that logs
+to `console.error` but renders nothing in the host slot. The host remains empty, and
+`ensureHostEmptyStates()` then shows "Nog geen actieve blokken" — indistinguishable from
+an intentionally empty host.
+
+**Observable symptoms:**
+- `school-concept-vault` throws a DB query error → the entire `vandaag-mode` section
+  shows "Nog geen actieve blokken voor deze weergave" with no indication of failure.
+- Developer must open DevTools to discover the crash.
+
+**Mitigation:**
+- In the `catch` block of `renderHosts()`, render a distinct error card in the host slot:
+  `<p class="os-host-error">⚠️ Blok kon niet laden (${block.id})</p>`.
+- Emit an `app:error` event so a global error counter can be shown in settings/diagnostics.
+
+---
+
+## 8. Deep Links: Route State Not Reflected in History Stack
+
+**Category:** Tech debt / UX
+
+**Root cause:** `updateHash()` uses `history.replaceState` exclusively — never
+`pushState`. Every tab switch overwrites the same history entry. The browser back button
+never navigates within the app; it always exits to the previous site.
+
+**Observable symptoms:**
+- User opens project detail (`#projects/abc123`) then clicks back → leaves the app
+  entirely instead of returning to `#projects`.
+- Sharing a link to `#projects/abc123` works (deep link parsing is correct), but the
+  back button UX is broken after clicking through multiple tabs.
+
+**Mitigation:**
+- Switch from `replaceState` to `pushState` for intentional user navigations
+  (tab clicks, card opens).
+- Keep `replaceState` for programmatic redirects (mode switches, morning flow open).
+- Add `hashchange` listener to support browser back/forward.
+
+---
+
+## 9. Block Count Scalability: BlockRegistry Has No Lazy Loading
+
+**Category:** Tech debt / performance
+
+**Root cause:** `registerDefaultBlocks()` eagerly imports all 30+ block modules + their
+CSS at startup. Every block's CSS is injected into `<head>` even if the user never
+visits the tab that block lives on. Vite bundles everything into a single JS chunk.
+
+**Observable symptoms:**
+- Initial JS bundle includes School, Personal, and BPV block code even though only one
+  mode is active at any time.
+- Adding a new block increases startup parse time regardless of the active mode.
+- No code-splitting is configured in `vite.config.js`.
+
+**Mitigation:**
+- Split `registerBlocks.js` into per-mode lazy imports using dynamic `import()`:
+  `const { registerSchoolBlocks } = await import('./school/registerSchoolBlocks.js')`.
+- Add Vite manual chunks in `vite.config.js` for `blocks-school`, `blocks-personal`,
+  `blocks-bpv`.
+- Defer block registration until the relevant mode is first activated.
+
+---
+
+## 10. No Automated UI / Integration Tests for Blocks
+
+**Category:** Tech debt / test coverage
+
+**Root cause:** The 658 existing tests cover store adapters, core utilities, and data
+aggregation thoroughly. But no test verifies that any block's `mount()` function
+renders correctly, responds to events, or cleans up properly. The block contract (mount,
+unmount, escapeHTML usage) is enforced only by code review.
+
+**Observable symptoms:**
+- Renaming a store field breaks a block silently — no test catches it.
+- A block that forgets `escapeHTML()` on user content is not caught until a manual
+  XSS test.
+- `unmount()` not calling `eventBus.off()` is invisible until a memory leak manifests
+  after many tab switches.
+
+**Mitigation:**
+- Add a block mount smoke-test harness using `fake-indexeddb` + a minimal DOM fixture:
+  ```javascript
+  // tests/blocks/smoke.test.js
+  it('daily-todos mounts and unmounts without throwing', async () => {
+    const container = document.createElement('div');
+    const ctx = makeFakeContext();
+    const { unmount } = registerDailyTodosBlock(registry);
+    const instance = block.mount(container, ctx);
+    expect(container.innerHTML).not.toBe('');
+    instance.unmount();
+    expect(leakDetector.activeListeners).toBe(0);
+  });
+  ```
+- Add an `escapeHTML` lint rule or a test that parses block `mount()` source for raw
+  template literal interpolation of user fields.
+- Target: at least a mount/unmount smoke test for each of the 30 blocks (30 tests).
 
 ---
 
 ## Risk Matrix Summary
 
 | # | Risk | Likelihood | Impact | Priority |
-|---|------|-----------|--------|----------|
-| 1 | No tests | High | High | **Critical** |
-| 2 | Schema drift | Medium | Critical | **Critical** |
-| 3 | Dual architecture | High | Medium | **High** |
-| 4 | No backup/recovery | High | Critical | **High** |
-| 5 | Store duplication | Medium | Medium | **Medium** |
-| 6 | Dark mode regression | Certain | Low | **Medium** |
-| 7 | No type safety | Medium | Medium | **Medium** |
-| 8 | SW cache staleness | Low | Medium | **Low** |
-| 9 | Bus factor | Medium | Low | **Low** |
-| 10 | Scope creep | Low | Medium | **Low** |
+|---|------|-----------|--------|---------|
+| 1 | Manual re-render debt | High | High | **Critical** |
+| 2 | Dual persistence race | Medium | High | **High** |
+| 3 | EventBus without batching | Medium | Medium | **High** |
+| 4 | Styling inconsistency | High | Medium | **High** |
+| 5 | Accessibility: focus loss on route switch | High | Medium | **High** |
+| 6 | IDB schema no integrity checks | Low | High | **Medium** |
+| 7 | No error boundary | Medium | Medium | **Medium** |
+| 8 | Back button broken (replaceState) | High | Low | **Medium** |
+| 9 | No lazy loading for blocks | Medium | Low | **Medium** |
+| 10 | No block integration tests | High | Medium | **Medium** |

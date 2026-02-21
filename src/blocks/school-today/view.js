@@ -50,79 +50,20 @@ export function renderSchoolToday(container) {
     const overdueHW = homework.filter((h) => !h.done && getDaysUntil(h.dueDate) < 0).length;
 
     host.innerHTML = `
-      <div class="school-today-block">
-
-        <!-- Focus tasks -->
-        <div class="st-section">
-          <div class="st-section__header">
-            <span class="st-section__title">Focustaken</span>
-            <span class="st-section__badge">${tasks.length}/${cap}</span>
-          </div>
-          <div class="st-add-form">
-            <input class="form-input" data-field="task" placeholder="Nieuwe focustaak...">
-            <button class="btn btn-primary btn-sm" data-action="add"
-              ${tasks.length >= cap ? 'disabled' : ''}>+</button>
-          </div>
-          <ul class="st-task-list">
-            ${tasks.length === 0
-              ? `<li class="st-empty">Geen focustaken — goed bezig!</li>`
-              : tasks.map((item) => `
-                <li class="st-task-item">
-                  <span class="st-task-dot"></span>
-                  <span class="st-task-text">${escapeHTML(item.text || item.title || '')}</span>
-                  <button class="btn btn-ghost btn-sm st-task-del" data-action="del" data-id="${item.id}" aria-label="Verwijder">×</button>
-                </li>
-              `).join('')}
-          </ul>
-        </div>
-
-        <!-- Homework queue -->
-        <div class="st-section">
-          <div class="st-section__header">
-            <span class="st-section__title">Huiswerk & opdrachten</span>
-            <div style="display:flex;gap:var(--space-1)">
-              ${overdueHW > 0 ? `<span class="st-badge st-badge--red">${overdueHW} te laat</span>` : ''}
-              ${pendingHW > 0 ? `<span class="st-badge st-badge--dim">${pendingHW} open</span>` : ''}
-            </div>
-          </div>
-          <div class="hw-add-form">
-            <input class="form-input" data-field="hw-title" placeholder="Opdracht omschrijving..." style="flex:1;min-width:0" />
-            <input class="form-input" data-field="hw-subject" placeholder="Vak" style="width:90px" />
-            <input class="form-input" data-field="hw-date" type="date" style="width:130px" />
-            <button class="btn btn-secondary btn-sm" data-action="add-hw">+</button>
-          </div>
-          ${homework.length === 0
-            ? `<div class="st-empty">Geen huiswerk — genieten!</div>`
-            : `<ul class="hw-list">
-              ${homework.map((hw) => `
-                <li class="hw-item ${hw.done ? 'hw-item--done' : ''} ${!hw.done ? hwUrgencyClass(hw.dueDate) : ''}">
-                  <button class="hw-check" data-action="toggle-hw" data-id="${hw.id}"
-                    aria-label="${hw.done ? 'Markeer open' : 'Markeer klaar'}" aria-pressed="${hw.done}">
-                    ${hw.done ? '✓' : ''}
-                  </button>
-                  <div class="hw-content">
-                    <span class="hw-title">${escapeHTML(hw.title)}</span>
-                    ${hw.subject ? `<span class="hw-subject">${escapeHTML(hw.subject)}</span>` : ''}
-                  </div>
-                  ${hw.dueDate && !hw.done ? `<span class="hw-due">${hwDueLabel(hw.dueDate)}</span>` : ''}
-                  <button class="hw-del btn btn-ghost btn-sm" data-action="del-hw" data-id="${hw.id}" aria-label="Verwijder">×</button>
-                </li>
-              `).join('')}
-            </ul>`}
-        </div>
-
-        <!-- Learning capture -->
-        <div class="st-section">
-          <div class="st-section__header">
-            <span class="st-section__title">Wat heb ik vandaag geleerd?</span>
-          </div>
-          <input class="form-input" data-field="learning" value="${escapeHTML(learning)}"
-            placeholder="Bijv. het verschil tussen X en Y..." />
-          <div style="margin-top:var(--space-2)">
-            <button class="btn btn-primary btn-sm" data-action="save">Opslaan</button>
-          </div>
-        </div>
-
+      <h3 class="school-block__title">School vandaag</h3>
+      <p class="school-block__subtitle">Focustaken (${tasks.length}/${cap})</p>
+      <div class="school-inline-form">
+        <input class="form-input" data-field="task" placeholder="Nieuwe focustaak">
+        <button class="btn btn-secondary btn-sm" data-action="add">Toevoegen</button>
+      </div>
+      <ul class="personal-list">
+        ${tasks.map((item) => `<li>${escapeHTML(item.text || item.title || '')} <button class="btn btn-ghost btn-sm" data-action="del" data-id="${item.id}">×</button></li>`).join('') || '<li><small>Geen focustaken.</small></li>'}
+      </ul>
+      <p class="school-block__subtitle">Projectfocus: ${escapeHTML(project?.building || '–')} / ${escapeHTML(project?.learning || '–')}</p>
+      <label class="school-block__field"><span>Wat heb ik vandaag echt begrepen?</span><input class="form-input" data-field="learning" value="${escapeHTML(learning)}"></label>
+      <div class="school-inline-form">
+        <a class="btn btn-ghost btn-sm" href="#planning">Naar mijlpalen</a>
+        <button class="btn btn-primary btn-sm" data-action="save">Opslaan</button>
       </div>
     `;
 

@@ -24,7 +24,7 @@ import { APP_VERSION } from './version.js';
 import { createOSShell } from './os/shell.js';
 import { initBalatro } from './ui/balatro.js';
 
-export const SCHEMA_VERSION = 6;
+export const SCHEMA_VERSION = 9;
 
 let updateBanner = null;
 let swControllerChangeBound = false;

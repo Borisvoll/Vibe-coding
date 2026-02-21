@@ -13,6 +13,7 @@ import './styles/pages.css';
 import './styles/print.css';
 
 import { initDB, getSetting, purgeDeletedOlderThan } from './db.js';
+import { seedModeConfigIfNeeded, getModeById, archiveMode } from './core/modeConfig.js';
 import { initTheme } from './core/themeEngine.js';
 import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
@@ -49,6 +50,8 @@ async function init() {
   await initDB();
   await applyUserSettings();
   await ensureDeviceId();
+  await seedModeConfigIfNeeded();
+  await checkBPVRetirement();
   await migratePersonalTasks();
   await checkExportReminder();
   // Purge soft-deleted tombstones older than 30 days (fire-and-forget)
@@ -57,6 +60,32 @@ async function init() {
   initBalatro();
 
   await initNewOSShell();
+}
+
+async function checkBPVRetirement() {
+  try {
+    const { BPV_END } = await import('./constants.js');
+    const { getToday } = await import('./utils.js');
+    const today = getToday();
+    if (today <= BPV_END) return;
+
+    const bpv = await getModeById('BPV');
+    if (!bpv || bpv.status === 'archived') return;
+
+    // BPV period is over — auto-archive
+    await archiveMode('BPV');
+
+    // Show one-time notification (deferred so it doesn't block init)
+    const notified = await getSetting('bpv_retirement_notified');
+    if (!notified) {
+      const { setSetting } = await import('./db.js');
+      await setSetting('bpv_retirement_notified', true);
+      setTimeout(async () => {
+        const { showToast } = await import('./toast.js');
+        showToast('Je BPV-periode is afgelopen. BPV-modus is gearchiveerd. Je data blijft bewaard.', { type: 'info', duration: 8000 });
+      }, 2000);
+    }
+  } catch { /* non-critical */ }
 }
 
 async function ensureDeviceId() {
@@ -112,6 +141,7 @@ async function initNewOSShell() {
   const savedMode = await getSetting('boris_mode').catch(() => null);
   const eventBus = createEventBus();
   const modeManager = createModeManager(eventBus, savedMode || 'School');
+  await modeManager.loadModes();
   const blockRegistry = createBlockRegistry();
   registerDefaultBlocks(blockRegistry);
 

@@ -305,3 +305,151 @@
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════════
+   Skeleton loading screens
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton {
+  display: inline-block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--color-border) 25%,
+    var(--color-surface-hover) 50%,
+    var(--color-border) 75%
+  );
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 0.875em;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.skeleton-text--sm   { height: 0.75em; }
+.skeleton-text--lg   { height: 1.125em; }
+.skeleton-text--full { width: 100%; }
+.skeleton-text--w80  { width: 80%; }
+.skeleton-text--w60  { width: 60%; }
+.skeleton-text--w40  { width: 40%; }
+
+.skeleton-circle {
+  border-radius: 50%;
+}
+
+.skeleton-block {
+  border-radius: var(--radius-md);
+  width: 100%;
+}
+
+/* os-mini-card skeleton helper */
+.os-mini-card--loading {
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   Empty states
+   ═══════════════════════════════════════════════════════ */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-8) var(--space-6);
+  gap: var(--space-3);
+  color: var(--color-text-tertiary);
+}
+
+.empty-state__icon {
+  font-size: 2rem;
+  line-height: 1;
+  opacity: 0.5;
+  margin-bottom: var(--space-1);
+}
+
+.empty-state__title {
+  font-size: var(--font-md);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.empty-state__desc {
+  font-size: var(--font-sm);
+  margin: 0;
+  max-width: 220px;
+  line-height: 1.5;
+}
+
+.empty-state__cta {
+  margin-top: var(--space-1);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--color-accent);
+  background: var(--color-accent-light);
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 6px 16px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.empty-state__cta:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Search result keyboard navigation
+   ═══════════════════════════════════════════════════════ */
+
+.vandaag-search__hit--active {
+  background: var(--color-accent-light);
+}
+
+.vandaag-search__hit--active .vandaag-search__hit-text {
+  color: var(--color-accent);
+}
+
+/* ═══════════════════════════════════════════════════════
+   Toast improvements — slide in from bottom-right
+   ═══════════════════════════════════════════════════════ */
+
+.toast {
+  transition:
+    opacity 200ms ease,
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toast--entering {
+  animation: toast-in 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   Task list item — entry animation
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes list-item-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.list-item-enter {
+  animation: list-item-in 200ms var(--ease-out) both;
+}
+

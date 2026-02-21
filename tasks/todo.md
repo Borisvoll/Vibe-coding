@@ -2,6 +2,173 @@
 
 ---
 
+## Milestone: Dashboard Redesign — Never Empty, Always Useful
+
+**Date:** 2026-02-21
+**Docs:** `docs/dashboard-spec.md`, `docs/empty-states.md`
+**Branch:** `claude/audit-react-app-docs-UdBBt`
+
+### Overview
+
+Replace the `#dashboard` tab block (`src/blocks/dashboard/`) with a 4-widget
+layout: StatusStrip + NextActionCard + QuickCapture + OpenVandaagShortcut.
+All widgets are mode-aware. The block is never blank — every widget has a
+defined zero state (see `docs/empty-states.md`).
+
+---
+
+### Phase D1 — Data Layer
+
+- [ ] **D1a** Create `src/blocks/dashboard/store.js`:
+  - Export `loadDashboardData(mode)` → `Promise<{ daily, tasks, inboxCount }>`
+  - Uses `Promise.all([getDailyEntry(mode, today), getTasksForToday(mode), getInboxCount()])`
+  - Import from `src/stores/daily.js`, `src/stores/tasks.js`, `src/stores/inbox.js`
+
+- [ ] **D1b** Add `deriveNextAction(daily, tasks)` helper (pure, no async) to `store.js`:
+  - Priority 1: first incomplete todo from `daily.todos` → `{ id, text, source: 'daily' }`
+  - Priority 2: first incomplete task from `tasks` → `{ id, text, source: 'task' }`
+  - Returns `null` if both are empty (zero state)
+
+- [ ] **D1c** Write unit tests in `tests/blocks/dashboard/store.test.js`:
+  - `deriveNextAction` with daily todos → returns first incomplete
+  - `deriveNextAction` with no daily todos → falls through to tasks
+  - `deriveNextAction` with all done → returns null
+  - `deriveNextAction` with no data → returns null
+
+---
+
+### Phase D2 — Markup & Styles
+
+- [ ] **D2a** Rewrite `src/blocks/dashboard/view.js`:
+  - `mount(container, context)` returns `{ unmount() }`
+  - Renders the 4 widgets in order: StatusStrip, NextActionCard, QuickCapture, OpenVandaag
+  - Calls `loadDashboardData()` once; QuickCapture + OpenVandaag render immediately
+  - Skeleton shown for StatusStrip + NextActionCard during the await
+
+- [ ] **D2b** StatusStrip widget (in `view.js`):
+  - Mode pill with mode color from `--color-purple-light / --color-emerald-light / --color-blue-light`
+  - Date via `formatDate(new Date(), 'long')` (Dutch long format)
+  - Task count `"${done}/${total} taken"` — omit if total is 0
+  - Inbox count `"${n} inbox"` — omit if 0
+  - `aria-live="polite"` on the count segment
+
+- [ ] **D2c** NextActionCard widget (in `view.js`):
+  - **has_action state**: task text (via `escapeHTML()`) + "Voltooid" button
+  - **zero_state**: mode-specific copy from `docs/empty-states.md` + CTA button → `updateHash('today', 'tasks')`
+  - **completing state**: spinner on button, task text faded
+  - **just_done micro-state**: "✓ Goed gedaan!" flash, 600 ms, then re-derive
+  - On "Voltooid": source `daily` → `saveDailyEntry(...)`, source `task` → `toggleTask(id)`
+  - On error: `showToast('Kon niet opslaan — probeer opnieuw', 'error')`
+  - `aria-label` on button: `"Markeer als voltooid: ${escapeHTML(task.text)}"`
+  - `min-height: 96px` on card to prevent layout shift
+
+- [ ] **D2d** QuickCapture widget (in `view.js`):
+  - `<input type="text" aria-label="Gedachte vastleggen" placeholder="Vang een gedachte op...">`
+  - Listen for `keydown` → `Enter`: if non-empty → `addInboxItem(text, mode)` → emit `inbox:changed` → clear → toast
+  - **idle state**: faint border (`--color-border`)
+  - **typing state**: accent border (`--color-accent`) via `:focus` CSS
+  - **submitting state**: `input.disabled = true`, spinner in card corner
+  - Empty Enter → no-op, no visual feedback
+
+- [ ] **D2e** OpenVandaagShortcut (in `view.js`):
+  - `<button>` or `<a>` element: "Open Vandaag →"
+  - Click: `updateHash('today')`
+  - No card chrome — plain text-link style, accent color
+  - Focus ring: `2px solid var(--color-accent)`, offset 2px
+
+- [ ] **D2f** Rewrite `src/blocks/dashboard/styles.css`:
+  - `.dashboard-root` — wrapper, `display: flex; flex-direction: column; gap: var(--space-4)`
+  - `.dashboard-card` — `background: var(--ui-surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: var(--space-5)`
+  - `.status-strip` — horizontal flex, gap `var(--space-2)`, dividers via `::before` content `"·"`
+  - `.mode-pill` — small badge, mode color, `border-radius: var(--radius-sm)`
+  - `.next-action-card` — extends `.dashboard-card`, `min-height: 96px`
+  - `.skeleton` — shimmer animation (`background: linear-gradient(90deg, var(--color-border)...)`)
+  - `.quick-capture input:focus` — border color `var(--color-accent)`
+  - `.open-vandaag-btn` — no background, `color: var(--color-accent)`, hover underline
+  - Responsive: `@media (min-width: 720px)` → `.dashboard-grid` puts NextActionCard + QuickCapture side-by-side
+
+---
+
+### Phase D3 — Event Wiring & Reactivity
+
+- [ ] **D3a** In `mount()`, subscribe to 4 events (see spec):
+  - `mode:changed` → full re-render (call `loadData(newMode)`, rebuild all widgets)
+  - `tasks:changed` → reload tasks, re-derive NextActionCard, update StatusStrip count
+  - `daily:changed` → reload daily, re-derive NextActionCard
+  - `inbox:changed` → reload inbox count, update StatusStrip
+
+- [ ] **D3b** In `unmount()`, call all unsubscribe functions returned by `eventBus.on()`
+
+- [ ] **D3c** Verify no memory leaks: mount → trigger events → unmount → trigger again → no handler fires
+
+---
+
+### Phase D4 — Tests
+
+- [ ] **D4a** `tests/blocks/dashboard/store.test.js` — data layer (from D1c)
+
+- [ ] **D4b** `tests/blocks/dashboard/view.test.js` (jsdom/vitest):
+  - Renders 4 widgets
+  - QuickCapture Enter with text → `addInboxItem` called, input cleared
+  - QuickCapture Enter with empty input → `addInboxItem` NOT called
+  - NextActionCard with task → shows task text
+  - NextActionCard without tasks → shows zero state copy (mode-specific)
+  - StatusStrip shows mode name
+  - Mode change → block re-renders with new mode data
+
+- [ ] **D4e** `npm test` — all tests pass (658 baseline + new dashboard tests)
+
+---
+
+### Phase D5 — QA
+
+- [ ] **D5a** Hard refresh on `#dashboard`:
+  - All 4 widgets render (no blank screen)
+  - StatusStrip shows correct mode + date
+  - NextActionCard shows first incomplete task (or zero state if none)
+  - QuickCapture input is immediately focusable
+
+- [ ] **D5b** Zero state walkthrough:
+  - Clear all tasks → NextActionCard shows zero state copy (correct per mode)
+  - CTA button navigates to `#today?focus=tasks`
+
+- [ ] **D5c** Quick Capture flow:
+  - Type a thought → Enter → toast appears → input clears
+  - StatusStrip inbox count increments
+  - Navigate to `#inbox` → item appears
+
+- [ ] **D5d** NextActionCard "Voltooid" flow (source: daily):
+  - Mark done → item disappears → next task surfaces (or zero state)
+  - Navigate to `#today` → item is checked in the today todo list
+
+- [ ] **D5e** NextActionCard "Voltooid" flow (source: task):
+  - Mark done → navigate to `#today` → task is checked in Taken block
+
+- [ ] **D5f** Mode switch while on dashboard:
+  - StatusStrip updates to new mode pill + color
+  - NextActionCard re-derives for new mode
+
+- [ ] **D5g** Dark mode: all 4 widgets render correctly in `[data-theme="dark"]`
+
+- [ ] **D5h** Screen reader: verify `aria-live` on StatusStrip counts, `aria-label` on
+  "Voltooid" button, input `aria-label`
+
+---
+
+### Definition of Done
+
+- [ ] `npm test` passes (all tests including new dashboard suite)
+- [ ] `npm run build` succeeds with no errors
+- [ ] Dashboard is never blank — zero state visible with actionable CTA
+- [ ] QuickCapture creates inbox items visible on `#inbox` tab
+- [ ] NextActionCard mark-done reflects in `#today` Taken/Todos block
+- [ ] StatusStrip updates reactively on task/inbox/mode changes
+- [ ] No layout shift between loading → loaded → zero state
+- [ ] All user text rendered via `escapeHTML()`
+- [ ] All event listeners cleaned up in `unmount()`
+
+---
+
 ## Milestone: Design System + Theme Fix
 
 **Date:** 2026-02-21

@@ -2,6 +2,147 @@
 
 ---
 
+## Milestone 3 — Project Momentum Visualization
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+Simple, legible momentum visualization for projects. Activity-based metric tracking task completions per week over 4 weeks. Shows tiny sparkline bars so the user can see at a glance which projects have momentum and which are stalling.
+
+### Design Decisions
+
+| Question | Answer |
+|----------|--------|
+| Metric | Activity-based: task completions + project edits per week |
+| Stalled threshold | 7 days without any activity |
+| Indicator | Tiny 4-week sparkline (mini SVG bar chart) |
+
+### Momentum Metric (v1)
+
+For each **active** project, compute:
+1. Get all tasks via `getTasksByProject(projectId)`
+2. Bucket task completions (`doneAt`) into 4 calendar weeks: [w-3, w-2, w-1, w0]
+3. Also count: project `updatedAt` falls in which week → +1 activity that week
+4. **`weeklyActivity`**: array of 4 numbers `[w3ago, w2ago, w1ago, thisWeek]`
+5. **`isStalled`**: active project with 0 activity in last 7 days (no task doneAt ≥ 7d ago AND project updatedAt < 7d ago)
+6. **`lastActiveDate`**: max of (latest `task.doneAt`, `project.updatedAt`)
+7. **`score`**: weighted sum → `w[0]*1 + w[1]*2 + w[2]*3 + w[3]*4` (recent weeks weigh more)
+
+### Computation — `src/stores/momentum.js`
+
+New store adapter (pure async, no schema changes). Key exports:
+
+```
+getProjectMomentum(projectId)
+  → { weeklyActivity: number[4], isStalled: boolean, lastActiveDate: string|null, score: number }
+
+getAllProjectsMomentum(mode)
+  → Map<projectId, MomentumData>
+
+getMomentumPulse(mode)
+  → { topActive: [{ id, title, score, weeklyActivity }], stalled: [{ id, title, daysSince }] }
+```
+
+Data sources (read-only):
+- `getActiveProjects(mode)` from projects store
+- `getTasksByProject(projectId)` from tasks store
+- No new IndexedDB stores or schema changes
+
+### UI Placements
+
+#### 1. Dashboard panel (Layer 3 details) — `src/blocks/dashboard/view.js`
+- Enhance existing "Projecten" section in `loadDetails()`
+- Show top 3 most active projects with sparkline + score label
+- Below: stalled projects list with warning indicator + "X dagen stil"
+- Uses `getMomentumPulse(mode)`
+
+#### 2. Project Hub list cards — `src/blocks/project-hub/list.js`
+- Add 4-bar sparkline SVG in card body (between status/ring row and title)
+- Add "Laatst actief: Xd geleden" subtitle below goal text
+- Uses `getAllProjectsMomentum(mode)` (batch call)
+
+#### 3. Project detail header — `src/blocks/project-detail/view.js`
+- Add sparkline + "Laatst actief" text in header, after title/goal
+- Uses `getProjectMomentum(projectId)`
+
+### Sparkline SVG Spec
+
+```
+Width: 48px, Height: 20px
+4 bars, 10px wide, 2px gap
+Colors: var(--color-accent) for normal bars
+        var(--color-text-tertiary) for zero-height bars (1px min)
+        var(--color-error) tint if isStalled
+Bar height: proportional to max(weeklyActivity), min 1px, max 18px
+```
+
+Pure inline SVG — no chart library.
+
+### Styles — `src/blocks/project-hub/styles.css` + `src/blocks/dashboard/styles.css`
+
+- `.momentum-spark` — sparkline container
+- `.momentum-spark__bar` — individual bar
+- `.momentum-stalled` — stalled project row in dashboard
+- `.hub-card__momentum` — sparkline placement in hub card
+- `.hub-card__last-active` — "last active" text
+- No hardcoded colors — CSS variables only
+
+### Checklist
+
+#### 1. Momentum computation — `src/stores/momentum.js`
+- [x] `getProjectMomentum(projectId)` — per-project calculation
+- [x] `getAllProjectsMomentum(mode)` — batch for all active projects
+- [x] `getMomentumPulse(mode)` — dashboard summary (top 3 + stalled)
+- [x] Week bucketing logic (ISO weeks, 4-week window)
+- [x] Stalled detection (7-day threshold)
+- [x] Score computation (weighted recent-first)
+
+#### 2. Sparkline SVG helper — `src/ui/sparkline.js`
+- [x] `renderSparkline(weeklyActivity, { isStalled })` → SVG string
+- [x] Proportional bar heights, 1px minimum
+- [x] Stalled coloring via CSS variable
+
+#### 3. Dashboard enhancement — `src/blocks/dashboard/view.js`
+- [x] Import `getMomentumPulse`
+- [x] Render top 3 active with sparklines in Layer 3
+- [x] Render stalled projects with warning + days count
+
+#### 4. Project Hub cards — `src/blocks/project-hub/list.js`
+- [x] Import `getAllProjectsMomentum`
+- [x] Add sparkline to card body
+- [x] Add "Laatst actief" subtitle
+
+#### 5. Project detail header — `src/blocks/project-detail/view.js`
+- [x] Import `getProjectMomentum`
+- [x] Add sparkline + last active text in header
+
+#### 6. Tests — `tests/stores/momentum.test.js`
+- [x] Week bucketing with known dates (7 tests)
+- [x] Stalled detection (7-day boundary)
+- [x] Score weighting
+- [x] Empty project (updatedAt only) → not stalled
+- [x] Mixed activity across weeks
+- [x] Sparkline SVG rendering (5 tests)
+
+#### 7. Docs
+- [x] `docs/feature-specs/project-momentum.md`
+- [x] Update `docs/demo.md` with QA script
+
+### Acceptance Criteria
+
+1. Momentum sparkline visible on dashboard (top 3 active + stalled list)
+2. Sparkline + "last active" visible on project hub cards
+3. Sparkline + "last active" visible on project detail header
+4. Stalled projects (>7 days inactive) highlighted with warning color
+5. No hardcoded colors — CSS variables only
+6. No new dependencies (pure SVG, no chart library)
+7. All existing tests pass + new momentum tests
+8. Projects data is read-only — no mutations, no data loss risk
+
+---
+
 ## Milestone 2 — Morning Flow Mode
 
 **Branch:** `claude/fix-api-400-error-Bq2kH`

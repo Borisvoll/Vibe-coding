@@ -1,5 +1,5 @@
 export const DB_NAME = 'bpv-tracker';
-export const DB_VERSION = 8;
+export const DB_VERSION = 9;
 
 let dbInstance = null;
 
@@ -230,6 +230,25 @@ export function initDB() {
         const osListItems = db.createObjectStore('os_list_items', { keyPath: 'id' });
         osListItems.createIndex('listId', 'listId', { unique: false });
         osListItems.createIndex('updated_at', 'updated_at', { unique: false });
+      }
+
+      if (oldVersion < 9) {
+        // Habits — user-defined recurring habits per mode
+        const osHabits = db.createObjectStore('os_habits', { keyPath: 'id' });
+        osHabits.createIndex('mode', 'mode', { unique: false });
+        osHabits.createIndex('updated_at', 'updated_at', { unique: false });
+
+        // Habit daily completion logs (composite key: habitId-date)
+        const osHabitLogs = db.createObjectStore('os_habit_logs', { keyPath: 'id' });
+        osHabitLogs.createIndex('habit_id', 'habit_id', { unique: false });
+        osHabitLogs.createIndex('date', 'date', { unique: false });
+        osHabitLogs.createIndex('updated_at', 'updated_at', { unique: false });
+
+        // Pomodoro session history
+        const osPomodoroSessions = db.createObjectStore('os_pomodoro_sessions', { keyPath: 'id' });
+        osPomodoroSessions.createIndex('date', 'date', { unique: false });
+        osPomodoroSessions.createIndex('task_id', 'task_id', { unique: false });
+        osPomodoroSessions.createIndex('updated_at', 'updated_at', { unique: false });
       }
     };
 

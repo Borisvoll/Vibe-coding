@@ -13,6 +13,7 @@ import { createMorningFlow, shouldAutoOpen } from '../ui/morning-flow.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 import { createAgentChat } from '../ui/agent-chat.js';
+import { createPomodoro } from '../ui/pomodoro.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
 
@@ -309,7 +310,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     `;
   }
 
-  // ── Search bar ────────────────────────────────────────────
+  // ── Search bar (with keyboard navigation) ────────────────
   function initSearchBar() {
     const searchEl = routeContainer.querySelector('[data-vandaag-search]');
     if (!searchEl) return;
@@ -318,43 +319,123 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         <svg class="vandaag-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="search" class="vandaag-search__input" placeholder="Zoek in taken, projecten, inbox..." />
+        <input type="search" class="vandaag-search__input"
+          placeholder="Zoek in taken, projecten, inbox..."
+          autocomplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="vandaag-search-listbox" />
       </div>
-      <div class="vandaag-search__results" hidden></div>
+      <div class="vandaag-search__results" id="vandaag-search-listbox" role="listbox" hidden></div>
     `;
     const input = searchEl.querySelector('.vandaag-search__input');
     const results = searchEl.querySelector('.vandaag-search__results');
     let debounceTimer = null;
+    let activeIdx = -1;
+    let currentHits = [];
+
+    function getHitEls() {
+      return Array.from(results.querySelectorAll('.vandaag-search__hit'));
+    }
+
+    function setActiveHit(idx) {
+      const hits = getHitEls();
+      hits.forEach((el, i) => {
+        el.classList.toggle('vandaag-search__hit--active', i === idx);
+        el.setAttribute('aria-selected', String(i === idx));
+      });
+      activeIdx = idx;
+      if (idx >= 0 && hits[idx]) {
+        hits[idx].scrollIntoView({ block: 'nearest' });
+        input.setAttribute('aria-activedescendant', hits[idx].id || '');
+      } else {
+        input.removeAttribute('aria-activedescendant');
+      }
+    }
+
+    function openResults(hitsData) {
+      if (hitsData.length === 0) {
+        results.innerHTML = '<p class="vandaag-search__empty" role="status">Geen resultaten</p>';
+      } else {
+        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        currentHits = hitsData.slice(0, 8);
+        results.innerHTML = currentHits.map((h, i) => {
+          const title = esc(h.title || '');
+          const type = esc(h.type || '');
+          return `<div class="vandaag-search__hit" role="option" id="search-hit-${i}" data-idx="${i}" tabindex="-1">
+            <span class="vandaag-search__hit-store">${type}</span>
+            <span class="vandaag-search__hit-text">${title}</span>
+          </div>`;
+        }).join('');
+
+        // Click to navigate
+        getHitEls().forEach((el) => {
+          el.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // don't blur input
+            const h = currentHits[parseInt(el.dataset.idx, 10)];
+            if (!h) return;
+            input.value = '';
+            results.hidden = true;
+            input.setAttribute('aria-expanded', 'false');
+            activeIdx = -1;
+            // Navigate to the result
+            if (h.tab) setActiveTab(h.tab, { focus: h.focusTarget });
+          });
+        });
+      }
+      results.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      activeIdx = -1;
+    }
+
+    function closeResults() {
+      results.hidden = true;
+      input.setAttribute('aria-expanded', 'false');
+      activeIdx = -1;
+    }
 
     input.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       const q = input.value.trim();
-      if (q.length < 2) { results.hidden = true; results.innerHTML = ''; return; }
+      if (q.length < 2) { closeResults(); results.innerHTML = ''; currentHits = []; return; }
       debounceTimer = setTimeout(async () => {
         try {
           const { globalSearch } = await import('../stores/search.js');
           const hits = await globalSearch(q);
-          if (hits.length === 0) {
-            results.innerHTML = '<p class="vandaag-search__empty">Geen resultaten</p>';
-          } else {
-            const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            results.innerHTML = hits.slice(0, 8).map(h => {
-              const title = esc(h.title || '');
-              const type = esc(h.type || '');
-              return `<div class="vandaag-search__hit"><span class="vandaag-search__hit-store">${type}</span><span class="vandaag-search__hit-text">${title}</span></div>`;
-            }).join('');
-          }
-          results.hidden = false;
-        } catch { results.hidden = true; }
-      }, 300);
+          openResults(hits);
+        } catch { closeResults(); }
+      }, 280);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      const hits = getHitEls();
+      if (results.hidden || hits.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveHit(Math.min(activeIdx + 1, hits.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveHit(Math.max(activeIdx - 1, 0));
+      } else if (e.key === 'Enter' && activeIdx >= 0) {
+        e.preventDefault();
+        hits[activeIdx]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+      } else if (e.key === 'Escape') {
+        closeResults();
+        input.blur();
+      }
     });
 
     input.addEventListener('blur', () => {
-      setTimeout(() => { results.hidden = true; }, 200);
+      setTimeout(() => closeResults(), 200);
     });
 
     input.addEventListener('focus', () => {
-      if (input.value.trim().length >= 2 && results.innerHTML) results.hidden = false;
+      if (input.value.trim().length >= 2 && results.innerHTML && !results.querySelector('.vandaag-search__empty')) {
+        results.hidden = false;
+        input.setAttribute('aria-expanded', 'true');
+      }
     });
   }
 
@@ -722,6 +803,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   document.body.appendChild(agentChat.fab);
   document.body.appendChild(agentChat.panel);
 
+  // ── Pomodoro floating timer ───────────────────────────────
+  const pomodoro = createPomodoro({ eventBus, modeManager });
+  document.body.appendChild(pomodoro.el);
+  pomodoro.init();
+
   // Global keyboard shortcuts
   function handleGlobalKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !e.shiftKey && !e.altKey) {
@@ -846,6 +932,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     morningFlow.destroy();
     focusOverlay.destroy();
     agentChat.destroy();
+    pomodoro.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);

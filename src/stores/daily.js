@@ -1,15 +1,15 @@
-import { getAll, getByKey, put } from '../db.js';
+import { getAll, getByKey, getRecentByIndex, put } from '../db.js';
+import { isValidModeSync } from '../core/modeConfig.js';
 
 const STORE = 'dailyPlans';
 const NOTES_MAX = 500;
-const VALID_MODES = ['BPV', 'School', 'Personal'];
 
 function makeId(date, mode) {
   return `${date}__${mode}`;
 }
 
 export async function getDailyEntry(mode, date) {
-  if (!VALID_MODES.includes(mode)) return null;
+  if (!isValidModeSync(mode)) return null;
   return (await getByKey(STORE, makeId(date, mode))) || null;
 }
 
@@ -18,12 +18,22 @@ export async function getAllDailyEntries() {
   return all.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/**
+ * Get a page of daily entries, sorted newest-first.
+ * Uses reverse cursor on the date index with skip + limit for efficient pagination.
+ */
+export async function getDailyEntriesPage(offset = 0, limit = 20) {
+  const recent = await getRecentByIndex(STORE, 'date', offset + limit);
+  const sorted = recent.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  return sorted.slice(offset, offset + limit);
+}
+
 export async function saveDailyEntry({ mode, date, outcomes, todos, notes }) {
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new Error('date: must be a date string (YYYY-MM-DD)');
   }
-  if (!VALID_MODES.includes(mode)) {
-    throw new Error(`mode: must be one of ${VALID_MODES.join(', ')}`);
+  if (!isValidModeSync(mode)) {
+    throw new Error(`mode: must be a valid mode`);
   }
 
   const normalizedOutcomes = Array.isArray(outcomes)

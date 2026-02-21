@@ -2714,3 +2714,325 @@ LEVEL 3 — ARCHIVE (Reference)
 ---
 
 **STOP. Awaiting approval before implementing any structural changes.**
+
+---
+
+## 5-Year Hardening Roadmap
+
+**Feature branch:** `claude/fix-stability-performance-yeENr`
+**Date:** 2026-02-21
+**Source:** `docs/audit-fix-map.md` (audit points #1–#16 + additional discoveries)
+**Goal:** Fix stability, performance, data safety, and long-term agency issues — without feature creep.
+
+### Completion Summary
+
+| Milestone | Status | Commit | Tests Added | Key Files Changed |
+|-----------|--------|--------|-------------|-------------------|
+| A — Performance | DONE | `e1a88f1` | 20 | db.js, search.js, weekly-review.js, personal.js, daily.js, main.js |
+| B — Backup Safety | DONE | `7110fb8` | 12 | backup.js |
+| C — Modes Mature | DONE | `36e70ee` | 20 | modeConfig.js (new), modeManager.js, modeCaps.js, validate.js, daily.js, main.js |
+| D — UX Softening | DONE | `caec80d` | 19 | tasks/view.js, shell.js, cockpit/view.js, modulePresets.js, history-browser (new) |
+
+**Total new tests:** 71 | **Final suite:** 558 passing, 8 pre-existing date-dependent failures
+
+---
+
+### Milestone A — Performance (CRITICAL)
+
+**Goal:** Eliminate the biggest unbounded scans causing 5-year degradation.
+
+#### Acceptance Criteria
+- [ ] `globalSearch()` stops scanning after reaching result limit (default 30)
+- [ ] `aggregateWeeklyReview()` uses date-range queries instead of full `getAll()` on tasks/wellbeing/inbox
+- [ ] `getRecentEntries()` and `getCreativeSparks()` use bounded queries with early exit
+- [ ] `getAllDailyEntries()` has a paginated variant `getDailyEntriesPage(offset, limit)`
+- [ ] `purgeDeletedOlderThan(days)` exists and is called on app startup (30-day TTL)
+- [ ] `getDbHealthMetrics()` returns record counts per store + estimated export size
+- [ ] Full test suite passes (298+ tests)
+- [ ] No regressions in existing functionality
+
+#### Implementation Tasks
+
+**A.1 — Add `getByDateRange()` helper to db.js**
+- [ ] Add `getByDateRange(storeName, indexName, start, end)` using IDB cursor with key range
+- [ ] Add `getRecentByIndex(storeName, indexName, limit)` using reverse cursor with early exit
+- [ ] Add `countRecords(storeName)` for health metrics
+- [ ] Add tests for all three helpers
+
+**A.2 — Fix globalSearch() (audit #1)**
+- [ ] Add `limit` parameter to `globalSearch(query, { limit = 30 })`
+- [ ] Track total results across stores; stop scanning when limit reached
+- [ ] Replace `safeGetAll('os_tasks')` with date-bounded query (last 365 days for tasks)
+- [ ] Replace `safeGetAll('dailyPlans')` with date-bounded query
+- [ ] Replace `safeGetAll('os_personal_wellbeing')` with date-bounded query
+- [ ] Keep project/inbox full scans (smaller stores, no date index)
+- [ ] Add test: search with limit returns at most N results
+- [ ] Add test: search does not call getAll on tasks store
+
+**A.3 — Fix aggregateWeeklyReview() (audit #A1)**
+- [ ] Replace `getAll('os_tasks')` with date-range query using `doneAt` field (filter in JS if no index)
+- [ ] Replace `getAll('os_personal_wellbeing')` with date-range query (records keyed by date)
+- [ ] Replace `getAll('os_projects')` — keep as-is (small store, need active filter)
+- [ ] Replace `getAll('os_inbox')` with date-range on `updated_at`
+- [ ] Add test proving weekly review does not call full getAll on tasks
+
+**A.4 — Fix personal.js scans (audit #A2)**
+- [ ] Rewrite `getRecentEntries(limit)` to use reverse cursor on wellbeing store (records keyed by date)
+- [ ] Rewrite `getCreativeSparks(limit)` to use reverse cursor on inbox with early exit
+- [ ] Add tests for both functions with mock data
+
+**A.5 — Add paginated daily entries (audit #A3)**
+- [ ] Add `getDailyEntriesPage(offset, limit)` to `src/stores/daily.js`
+- [ ] Keep existing `getAllDailyEntries()` for backward compatibility but mark as deprecated
+- [ ] Add test for pagination
+
+**A.6 — Implement tombstone purge (audit #14)**
+- [ ] Add `purgeDeletedOlderThan(days)` to `src/db.js` using `deletedAt` index range
+- [ ] Call from `src/main.js:init()` with 30-day TTL, fire-and-forget
+- [ ] Add test for purge function
+
+**A.7 — Add db health metrics**
+- [ ] Add `getDbHealthMetrics()` to `src/db.js` returning `{ storeName: count }` map
+- [ ] Add estimated export size calculation (sum of record counts * avg record size)
+- [ ] Expose in settings panel or cockpit (simple text display)
+- [ ] Add test
+
+#### Tests to Add
+- `tests/stores/search-bounded.test.js` — limit behavior, no full scans
+- `tests/stores/weekly-review-perf.test.js` — verify bounded queries
+- `tests/stores/personal-perf.test.js` — verify cursor-based queries
+- `tests/stores/daily-pagination.test.js` — pagination correctness
+- `tests/db-purge.test.js` — tombstone purge by date
+- `tests/db-health.test.js` — health metrics accuracy
+
+#### Manual QA Checklist (docs/demo.md)
+- [ ] Open search bar, type query — results appear within 100ms
+- [ ] Open Vandaag page on Friday — weekly review section loads without visible delay
+- [ ] Personal mode: reflection section loads without delay
+- [ ] Check console: no `getAll` calls on stores with >1000 records
+- [ ] Verify tombstone purge runs on app startup (check deleted store count before/after)
+
+#### What We Will NOT Do
+- No schema migrations (use existing indexes where possible, filter in JS where not)
+- No Web Worker for search (premature — limit + bounded queries solve the problem)
+- No full-text search index (overkill for current scale)
+- No automatic archiving of old tasks (just purge tombstones)
+- No UI changes in this milestone
+
+---
+
+### Milestone B — Backup Safety (CRITICAL)
+
+**Goal:** No silent backup failure. Reliable export/import cycle.
+
+#### Acceptance Criteria
+- [ ] Export produces compact JSON (no pretty-print)
+- [ ] Export shows estimated file size before download
+- [ ] Import validates schema version and app identifier
+- [ ] Import uses write guard for atomicity (no partial imports)
+- [ ] localStorage safety blob is removed
+- [ ] Import shows clear error messages on failure
+- [ ] Export/import roundtrip test passes
+- [ ] Full test suite passes
+
+#### Implementation Tasks
+
+**B.1 — Remove localStorage safety blob (audit #B2)**
+- [ ] Remove `localStorage.setItem('boris_safety_backup', ...)` from `importBundle()`
+- [ ] Remove `restoreFromSafetyBackup()` function
+- [ ] Add pre-import warning: "Exporteer eerst een backup voordat je importeert"
+
+**B.2 — Switch to compact JSON export (audit #B1)**
+- [ ] Change `JSON.stringify(bundle, null, 2)` → `JSON.stringify(bundle)` in `downloadBundle()`
+- [ ] Add estimated size display in settings panel (before download)
+
+**B.3 — Improve import atomicity (audit #5)**
+- [ ] Use existing `acquireWriteGuard()` / `releaseWriteGuard()` from `src/db.js` during import
+- [ ] Wrap clear + import in write guard so no other writes can interleave
+- [ ] If import fails mid-way, log clear error (data may be partially cleared — user should re-import)
+- [ ] Add explicit "Are you sure?" confirmation before import with data count
+
+**B.4 — Strengthen import validation**
+- [ ] Validate `bundle._meta.version` against known APP_VERSION range
+- [ ] Warn (don't reject) if version is newer than current app
+- [ ] Reject if `bundle._meta.app !== 'boris-os'`
+- [ ] Show validation summary before executing import (store count, record count, warnings)
+
+**B.5 — Add export size indicator**
+- [ ] Calculate approximate export size from db health metrics
+- [ ] Show in settings panel: "Geschatte export grootte: ~X MB"
+- [ ] Warn if estimated size > 50MB
+
+#### Tests to Add
+- `tests/stores/backup-roundtrip.test.js` — export then import, verify data equality
+- `tests/stores/backup-compact.test.js` — verify export produces compact JSON
+- `tests/stores/backup-validation.test.js` — reject invalid schema, wrong app, missing meta
+- `tests/stores/backup-atomicity.test.js` — verify write guard is acquired during import
+
+#### Manual QA Checklist (docs/demo.md)
+- [ ] Export → verify downloaded file is compact JSON (no indentation)
+- [ ] Import valid backup → all data restored correctly
+- [ ] Import invalid JSON → clear error message, no data loss
+- [ ] Import backup from "wrong app" → rejected with message
+- [ ] Verify localStorage no longer contains `boris_safety_backup` after import
+
+#### What We Will NOT Do
+- No streaming export (JSON.stringify is fine for <100MB)
+- No encryption of local backups (sync already handles encryption)
+- No automatic scheduled backups (user-initiated only)
+- No cloud backup integration
+- No backup file format change (still JSON)
+
+---
+
+### Milestone C — Mode System Maturity (STRUCTURAL)
+
+**Goal:** Stop being "Boris-the-intern forever." Allow mode lifecycle evolution.
+
+#### Acceptance Criteria
+- [ ] Modes are stored as config in settings store (not hardcoded constant)
+- [ ] Default modes (BPV, School, Personal) are created on first run via migration
+- [ ] BPV mode auto-archives when `today > BPV_END` (user can unarchive)
+- [ ] Archived modes are hidden from mode picker but their data is preserved
+- [ ] Validation uses config instead of hardcoded `VALID_MODES`
+- [ ] Mode rename is possible without breaking existing records (stable internal ID)
+- [ ] Minimal Settings UI: rename mode, archive/unarchive
+- [ ] Full test suite passes
+
+#### Implementation Tasks
+
+**C.1 — Define mode config schema**
+- [ ] Mode config: `{ id: string, name: string, color: string, colorLight: string, emoji: string, status: 'active'|'archived', caps: { tasks: number }, order: number }`
+- [ ] Store in IDB settings as `setting key = 'mode_config'`, value = array of mode objects
+- [ ] Keep internal IDs stable: `'BPV'`, `'School'`, `'Personal'`
+
+**C.2 — Migrate hardcoded modes to config**
+- [ ] On app startup: if `mode_config` setting doesn't exist, seed with default 3 modes
+- [ ] Update `modeManager.js` to read from config
+- [ ] Update `getModes()` to return only active modes
+- [ ] Add `getAllModes()` (including archived) for settings UI
+- [ ] Keep `setMode(id)` working with stable IDs
+
+**C.3 — Update validation to use config**
+- [ ] Replace `VALID_MODES` in `validate.js` with dynamic lookup from mode config
+- [ ] Replace `VALID_MODES` in `daily.js` with import from shared source
+- [ ] Replace `MODE_OPTIONS` in `inbox-screen/view.js`
+- [ ] Replace `MODE_META` in `shell.js` with config-driven metadata
+- [ ] Replace `MODE_TASK_CAPS` in `modeCaps.js` with config-driven caps
+
+**C.4 — BPV retirement**
+- [ ] On app startup: if `today > BPV_END` and BPV status is 'active', set status to 'archived'
+- [ ] Show one-time notification: "Je BPV-periode is afgelopen. BPV-modus is gearchiveerd."
+- [ ] Archived modes: hide from mode picker, but accessible via Settings > Modes
+- [ ] All BPV data remains intact and searchable
+
+**C.5 — Minimal Settings UI for modes**
+- [ ] Add "Modes" section in settings panel
+- [ ] List all modes (active + archived) with status indicator
+- [ ] Rename button (changes display name, keeps internal ID)
+- [ ] Archive/Unarchive toggle
+- [ ] No "Add mode" or "Delete mode" for now (future feature)
+
+#### Tests to Add
+- `tests/core/modeManager-config.test.js` — read from config, fallback to defaults
+- `tests/core/mode-migration.test.js` — seed default modes, verify config structure
+- `tests/core/mode-archive.test.js` — archived mode hidden from picker, data preserved
+- `tests/stores/validate-dynamic.test.js` — validation uses config modes
+
+#### Manual QA Checklist (docs/demo.md)
+- [ ] First run: 3 default modes appear, config created in settings
+- [ ] Rename "School" → "Studie": mode picker shows new name, data still accessible
+- [ ] Archive "BPV": disappears from picker, data intact, settings shows archived
+- [ ] Unarchive "BPV": reappears in picker
+- [ ] Set date past BPV_END: BPV auto-archives on next startup
+
+#### What We Will NOT Do
+- No "Add custom mode" UI (future feature)
+- No "Delete mode" (too dangerous, archive instead)
+- No mode-specific color picker (keep predefined colors)
+- No mode ordering UI (use config order field)
+- No migration of existing records (IDs stay the same)
+
+---
+
+### Milestone D — UX Softening + History (PSYCHOLOGICAL)
+
+**Goal:** Convert oppressive walls into gentle guardrails. Add minimal history browsing.
+
+#### Acceptance Criteria
+- [ ] Task cap shows warning + "Add anyway" override instead of disabling input
+- [ ] Friday banner has snooze (1 week / 1 month) and disable options
+- [ ] Morning flow has configurable strictness (Strict / Gentle / Manual)
+- [ ] Default module preset matches initial mode (not "alles")
+- [ ] Vandaag page uses progressive disclosure defaults
+- [ ] History browser lists daily entries by date with pagination
+- [ ] Full test suite passes
+
+#### Implementation Tasks
+
+**D.1 — Task cap: warning + override (audit #D1)**
+- [ ] In `src/blocks/tasks/view.js`: remove `input.disabled = true`
+- [ ] Show warning message when at cap: "Maximum bereikt — weet je zeker dat je nog een taak wilt toevoegen?"
+- [ ] Add "Toch toevoegen" override button/link
+- [ ] In `src/blocks/school-today/view.js`: same pattern for Add button
+- [ ] Add optional cap adjustment in Settings (value stored in mode config from Milestone C)
+- [ ] Add test for override behavior
+
+**D.2 — Friday banner: snooze/disable (audit #D2)**
+- [ ] Add snooze options to banner: "Herinner me volgende week" / "Herinner me volgende maand"
+- [ ] Store snooze date in settings: `friday_banner_snoozed_until`
+- [ ] Add disable toggle: `friday_banner_disabled`
+- [ ] Check both on banner render in `shell.js`
+- [ ] Add Settings toggle: "Vrijdag weekoverzicht herinnering"
+- [ ] Add test for snooze logic
+
+**D.3 — Morning flow configuration (audit #D5)**
+- [ ] Add setting: `morning_flow` with values `'strict'`, `'gentle'` (default), `'manual'`
+- [ ] Strict: show modal overlay on first visit of the day with cockpit checklist
+- [ ] Gentle (default): current behavior — Vandaag tab with cockpit nudge
+- [ ] Manual: no cockpit auto-display, user clicks to see it
+- [ ] Add Settings toggle: "Ochtend routine" with 3 options
+- [ ] Add test for setting behavior
+
+**D.4 — Default preset per mode (audit #11)**
+- [ ] In `src/core/modulePresets.js`: change default from `'alles'` to mode-appropriate
+- [ ] School → `'school'` preset, BPV → `'bpv'` preset, Personal → `'persoonlijk'` preset
+- [ ] Only apply on first run (don't override existing user preference)
+- [ ] Add test
+
+**D.5 — Vandaag progressive disclosure (audit #D4)**
+- [ ] Reduce default-open sections: only `tasks` and `capture` open by default for School
+- [ ] Add "Meer secties" expander at bottom of Vandaag if collapsed sections exist
+- [ ] Keep existing collapse persistence — user overrides stick
+- [ ] No new sections added
+
+**D.6 — History browser (audit #D3)**
+- [ ] Add "Geschiedenis" tab or section accessible from nav
+- [ ] Use `getDailyEntriesPage(offset, limit)` from Milestone A
+- [ ] Display: date, mode badge, Top 3 summary, todo count (done/total)
+- [ ] Click to expand: view-only full entry display
+- [ ] Quick jump: last 7 days / last 30 days filter buttons
+- [ ] Infinite scroll or "Laad meer" button (not full getAll)
+- [ ] Add test for pagination and display
+
+#### Tests to Add
+- `tests/blocks/tasks-cap-override.test.js` — input not disabled, override works
+- `tests/os/friday-banner-snooze.test.js` — snooze logic, disable toggle
+- `tests/os/morning-flow.test.js` — setting changes behavior
+- `tests/blocks/history-browser.test.js` — pagination, date filtering
+
+#### Manual QA Checklist (docs/demo.md)
+- [ ] Hit task cap → input still works, warning shown, "Toch toevoegen" visible
+- [ ] Friday → banner appears → click snooze 1 week → banner gone → reload → banner gone
+- [ ] Settings: change morning flow to Manual → reload → no cockpit auto-display
+- [ ] New user: default preset matches mode (not "alles")
+- [ ] History: scroll through past entries, click to view, pagination works
+
+#### What We Will NOT Do
+- No batch inbox archive/delete (can be separate future task)
+- No inbox wording changes (current wording is neutral: "Inbox is leeg — goed bezig!")
+- No new Vandaag sections
+- No drag-and-drop section reordering
+- No calendar view for history (list only)
+- No editing past entries (view-only)
+- No full daily entry export (use existing backup for that)

@@ -1,4 +1,5 @@
-const VALID_MODES = ['BPV', 'School', 'Personal'];
+import { isValidModeSync } from '../core/modeConfig.js';
+const VALID_MODES = ['BPV', 'School', 'Personal']; // fallback; actual validation uses config
 const VALID_TASK_STATUSES = ['todo', 'done'];
 const VALID_INBOX_STATUSES = ['inbox', 'promoted', 'archived'];
 const VALID_DAY_TYPES = ['work', 'sick', 'absent', 'holiday'];
@@ -62,14 +63,20 @@ function requireArray(value, field) {
   }
 }
 
+function requireValidMode(value, field) {
+  if (!isValidModeSync(value)) {
+    throw new ValidationError(field, `must be a valid mode`);
+  }
+}
+
 export function validateInboxItem(data) {
   requireString(data.text, 'text');
-  if (data.mode != null) requireOneOf(data.mode, VALID_MODES, 'mode');
+  if (data.mode != null) requireValidMode(data.mode, 'mode');
 }
 
 export function validateTask(data) {
   requireString(data.text, 'text');
-  requireOneOf(data.mode, VALID_MODES, 'mode');
+  requireValidMode(data.mode, 'mode');
   if (data.status != null) requireOneOf(data.status, VALID_TASK_STATUSES, 'status');
   if (data.date != null) requireDate(data.date, 'date');
 }

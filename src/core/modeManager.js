@@ -1,10 +1,12 @@
-const MODES = ['BPV', 'School', 'Personal'];
+import { isValidModeSync } from './modeConfig.js';
+
+const FALLBACK_MODES = ['BPV', 'School', 'Personal'];
 const STORAGE_KEY = 'boris_mode';
 
 function getPersistedMode() {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    return MODES.includes(saved) ? saved : null;
+    return isValidModeSync(saved) ? saved : null;
   } catch {
     return null;
   }
@@ -20,10 +22,13 @@ function isFirstVisit() {
 
 export function createModeManager(eventBus, initialMode = 'School') {
   const persisted = getPersistedMode();
-  let currentMode = persisted || (MODES.includes(initialMode) ? initialMode : 'School');
+  let currentMode = persisted || (isValidModeSync(initialMode) ? initialMode : 'School');
+
+  // Active modes list — updated from config when loadModes() is called
+  let activeModes = [...FALLBACK_MODES];
 
   function setMode(mode) {
-    if (!MODES.includes(mode) || currentMode === mode) return;
+    if (!isValidModeSync(mode) || currentMode === mode) return;
     currentMode = mode;
     // Keep localStorage as fast-startup cache
     try { localStorage.setItem(STORAGE_KEY, currentMode); } catch { /* ignore */ }
@@ -39,8 +44,26 @@ export function createModeManager(eventBus, initialMode = 'School') {
   }
 
   function getModes() {
-    return [...MODES];
+    return [...activeModes];
   }
 
-  return { setMode, getMode, getModes, isFirstVisit };
+  /**
+   * Load active modes from config. Called after DB init.
+   * Updates the modes list and ensures current mode is still active.
+   */
+  async function loadModes() {
+    try {
+      const { getActiveModeIds } = await import('./modeConfig.js');
+      const activeIds = await getActiveModeIds();
+      if (activeIds.length > 0) {
+        activeModes = activeIds;
+        // If current mode was archived, switch to first active mode
+        if (!activeModes.includes(currentMode)) {
+          setMode(activeModes[0]);
+        }
+      }
+    } catch { /* use fallback */ }
+  }
+
+  return { setMode, getMode, getModes, isFirstVisit, loadModes };
 }

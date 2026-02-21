@@ -4,47 +4,87 @@ import { setTheme } from '../core/themeEngine.js';
 import { getSetting, setSetting } from '../db.js';
 import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } from '../core/tutorial.js';
 import { createThemeStudio } from '../ui/theme-studio.js';
+import { getModeConfig, renameMode, archiveMode, unarchiveMode } from '../core/modeConfig.js';
 
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
-
-const MODE_OPTIONS = [
-  { key: 'School',   label: 'School',      emoji: '📚', color: 'var(--color-purple)',  colorLight: 'var(--color-purple-light)' },
-  { key: 'Personal', label: 'Persoonlijk', emoji: '🌱', color: 'var(--color-emerald)', colorLight: 'var(--color-emerald-light)' },
-  { key: 'BPV',      label: 'BPV',         emoji: '🏢', color: 'var(--color-blue)',    colorLight: 'var(--color-blue-light)' },
-];
 
 function getPresets() {
   return ACCENT_COLORS.filter((c) => ACCENT_PRESETS.includes(c.id));
 }
 
 const MODE_STORAGE_KEY = 'boris_mode';
-const VALID_MODES = ['BPV', 'School', 'Personal'];
 
-function getLocalModeManager() {
+function getLocalModeManager(activeModes) {
   return {
     getMode() {
       try {
         const saved = localStorage.getItem(MODE_STORAGE_KEY);
-        return VALID_MODES.includes(saved) ? saved : 'BPV';
-      } catch { return 'BPV'; }
+        return activeModes.includes(saved) ? saved : activeModes[0] || 'School';
+      } catch { return activeModes[0] || 'School'; }
     },
     setMode(mode) {
-      if (!VALID_MODES.includes(mode)) return;
+      if (!activeModes.includes(mode)) return;
       try { localStorage.setItem(MODE_STORAGE_KEY, mode); } catch { /* ignore */ }
     },
   };
 }
 
 export async function renderSettingsBlock(container, { modeManager, eventBus, onChange } = {}) {
+  // Load mode config first so mode pills and management UI are config-driven
+  const allModes = await getModeConfig();
+  const activeModes = allModes.filter((m) => m.status === 'active');
+  const activeModeIds = activeModes.map((m) => m.id);
+
   // Fallback: if no modeManager provided (legacy path), use localStorage directly
-  if (!modeManager) modeManager = getLocalModeManager();
+  if (!modeManager) modeManager = getLocalModeManager(activeModeIds);
 
   const theme = (await getSetting('theme')) || 'system';
   const accentId = (await getSetting('accentColor')) || 'blue';
   const compact = (await getSetting('compact')) || false;
   const reduceMotion = (await getSetting('reduceMotion')) || false;
+  const fridayBannerDisabled = (await getSetting('friday_banner_disabled')) || false;
+  const morningFlow = (await getSetting('morning_flow')) || 'gentle';
   const accents = getPresets();
   const currentMode = modeManager.getMode();
+
+  const archivedModes = allModes.filter((m) => m.status === 'archived');
+
+  function renderModePills() {
+    return activeModes.map((m) => `
+      <button type="button" class="settings-mode-pill ${m.id === currentMode ? 'settings-mode-pill--active' : ''}" data-mode="${m.id}" style="--pill-color:${m.color};--pill-color-light:${m.colorLight}">
+        <span class="settings-mode-pill__dot" style="background:${m.color}"></span>
+        ${m.emoji} ${m.name}
+      </button>
+    `).join('');
+  }
+
+  function renderModeMgmtRows() {
+    const activeRows = activeModes.map((m) => `
+      <div class="settings-mode-mgmt-row" data-mgmt-mode="${m.id}">
+        <span class="settings-mode-mgmt-name" style="color:${m.color}">${m.emoji} <span class="settings-mode-mgmt-label">${m.name}</span></span>
+        <span class="settings-mode-mgmt-desc">${m.description}</span>
+        <div class="settings-mode-mgmt-actions">
+          <button type="button" class="settings-mode-pill" data-action="rename" data-mode="${m.id}" title="Naam wijzigen">✏️</button>
+          ${activeModes.length > 1 ? `<button type="button" class="settings-mode-pill" data-action="archive" data-mode="${m.id}" title="Archiveren">📦</button>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    const archivedRows = archivedModes.length > 0 ? `
+      <div class="settings-mode-mgmt-archived-header">Gearchiveerd</div>
+      ${archivedModes.map((m) => `
+        <div class="settings-mode-mgmt-row settings-mode-mgmt-row--archived" data-mgmt-mode="${m.id}">
+          <span class="settings-mode-mgmt-name" style="opacity:0.5">${m.emoji} ${m.name}</span>
+          <span class="settings-mode-mgmt-desc" style="opacity:0.5">${m.description}</span>
+          <div class="settings-mode-mgmt-actions">
+            <button type="button" class="settings-mode-pill" data-action="unarchive" data-mode="${m.id}" title="Herstellen">↩️</button>
+          </div>
+        </div>
+      `).join('')}
+    ` : '';
+
+    return activeRows + archivedRows;
+  }
 
   container.innerHTML = `
     <section class="settings-block card">
@@ -54,13 +94,18 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
           <div class="settings-desc">Wissel je huidige context</div>
         </div>
         <div class="settings-mode-group" data-setting="mode">
-          ${MODE_OPTIONS.map((m) => `
-            <button type="button" class="settings-mode-pill ${m.key === currentMode ? 'settings-mode-pill--active' : ''}" data-mode="${m.key}" style="--pill-color:${m.color};--pill-color-light:${m.colorLight}">
-              <span class="settings-mode-pill__dot" style="background:${m.color}"></span>
-              ${m.emoji} ${m.label}
-            </button>
-          `).join('')}
+          ${renderModePills()}
         </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Modes beheren</div>
+          <div class="settings-desc">Naam wijzigen of archiveren</div>
+        </div>
+      </div>
+      <div class="settings-mode-mgmt" data-setting="mode-mgmt">
+        ${renderModeMgmtRows()}
       </div>
 
       <div class="settings-row">
@@ -135,6 +180,32 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
             <span class="tutorial-tip-item__text">— ${t.text}</span>
           </div>
         `).join('')}
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Vrijdag herinnering</div>
+          <div class="settings-desc">Weekoverzicht banner op vrijdag</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-2)" data-setting="friday-banner">
+          <button type="button" class="settings-mode-pill ${!fridayBannerDisabled ? 'settings-mode-pill--active' : ''}" data-friday-banner="on">Aan</button>
+          <button type="button" class="settings-mode-pill ${fridayBannerDisabled ? 'settings-mode-pill--active' : ''}" data-friday-banner="off">Uit</button>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Ochtend routine</div>
+          <div class="settings-desc">Hoe de dagchecklist verschijnt</div>
+        </div>
+        <div class="radio-group" data-setting="morning-flow">
+          <label class="radio-option ${morningFlow === 'gentle' ? 'selected' : ''}">
+            <input type="radio" name="morning-flow" value="gentle" ${morningFlow === 'gentle' ? 'checked' : ''}>Rustig
+          </label>
+          <label class="radio-option ${morningFlow === 'manual' ? 'selected' : ''}">
+            <input type="radio" name="morning-flow" value="manual" ${morningFlow === 'manual' ? 'checked' : ''}>Handmatig
+          </label>
+        </div>
       </div>
 
       <div class="settings-row">
@@ -257,6 +328,63 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         o.classList.toggle('selected', o.querySelector('input').value === value);
       });
       onChange?.({ key: 'compact', value: compactMode });
+    });
+  });
+
+  // ── Mode management (rename / archive / unarchive) ──────────
+  container.querySelector('[data-setting="mode-mgmt"]')?.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const modeId = btn.dataset.mode;
+
+    if (action === 'rename') {
+      const current = allModes.find((m) => m.id === modeId);
+      const newName = window.prompt(`Nieuwe naam voor ${current?.name || modeId}:`, current?.name || modeId);
+      if (!newName || !newName.trim() || newName.trim() === current?.name) return;
+      await renameMode(modeId, newName.trim());
+      // Re-render settings to reflect change
+      await renderSettingsBlock(container, { modeManager, eventBus, onChange });
+
+    } else if (action === 'archive') {
+      await archiveMode(modeId);
+      // If we archived the current mode, switch to first remaining active
+      if (modeManager.getMode() === modeId) {
+        const remaining = activeModes.filter((m) => m.id !== modeId);
+        if (remaining.length > 0) {
+          modeManager.setMode(remaining[0].id);
+          eventBus?.emit('mode:changed', { mode: remaining[0].id });
+        }
+      }
+      await renderSettingsBlock(container, { modeManager, eventBus, onChange });
+
+    } else if (action === 'unarchive') {
+      await unarchiveMode(modeId);
+      await renderSettingsBlock(container, { modeManager, eventBus, onChange });
+    }
+  });
+
+  // ── Friday banner toggle ─────────────────────────────────────
+  container.querySelectorAll('[data-friday-banner]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const disabled = btn.dataset.fridayBanner === 'off';
+      await setSetting('friday_banner_disabled', disabled);
+      container.querySelectorAll('[data-friday-banner]').forEach((b) => {
+        b.classList.toggle('settings-mode-pill--active',
+          disabled ? b.dataset.fridayBanner === 'off' : b.dataset.fridayBanner === 'on'
+        );
+      });
+    });
+  });
+
+  // ── Morning flow ─────────────────────────────────────────────
+  container.querySelectorAll('[data-setting="morning-flow"] .radio-option').forEach((opt) => {
+    opt.addEventListener('click', async () => {
+      const value = opt.querySelector('input').value;
+      await setSetting('morning_flow', value);
+      container.querySelectorAll('[data-setting="morning-flow"] .radio-option').forEach((o) => {
+        o.classList.toggle('selected', o.querySelector('input').value === value);
+      });
     });
   });
 

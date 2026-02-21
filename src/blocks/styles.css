@@ -1245,6 +1245,57 @@
   flex-shrink: 0;
 }
 
+/* ── Mode management rows ─────────────────────────────────── */
+.settings-mode-mgmt {
+  padding: 0 var(--space-3) var(--space-3);
+}
+
+.settings-mode-mgmt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-mode-mgmt-row:last-child {
+  border-bottom: none;
+}
+
+.settings-mode-mgmt-row--archived {
+  opacity: 0.6;
+}
+
+.settings-mode-mgmt-name {
+  font-weight: 600;
+  font-size: var(--font-sm);
+  min-width: 100px;
+}
+
+.settings-mode-mgmt-desc {
+  flex: 1;
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+}
+
+.settings-mode-mgmt-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.settings-mode-mgmt-actions .settings-mode-pill {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-sm);
+}
+
+.settings-mode-mgmt-archived-header {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: var(--space-2) 0 var(--space-1);
+}
+
 /* ── Friday review prompt ──────────────────────────────────── */
 .os-friday-prompt {
   display: flex;

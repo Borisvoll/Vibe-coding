@@ -90,7 +90,7 @@ Block contract:
 - `personal.js` — Wellbeing, habits, creative sparks
 - `tracker.js` — Hours and logbook entry helpers
 - `search.js` — Cross-store global search (lazy-loaded in Vandaag search bar)
-- `tags.js` — Tagging system (built, UI integration pending)
+- `tags.js` — Tagging system; `#hashtag` patterns in inbox text are auto-extracted and displayed as accent pills
 - `backup.js` — Export/import bundles
 - `weekly-review.js` — Weekly review aggregation + mailto sending
 - `validate.js` — Shared validation, throws `ValidationError` with field + reason

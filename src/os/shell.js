@@ -1,5 +1,6 @@
 import { getSetting, setSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
+import { mountCuriosityPage } from './curiosity.js';
 import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
@@ -10,7 +11,7 @@ import { createCommandPalette } from '../ui/command-palette.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
 
 const MODE_META = {
   School: {
@@ -90,6 +91,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         eventBus,
         onChange: async () => {},
       });
+    }
+    if (tab === 'curiosity') {
+      const mount = routeContainer.querySelector('#curiosity-route-mount');
+      if (mount) mountCuriosityPage(mount);
     }
 
     // Breadcrumb visibility + handler

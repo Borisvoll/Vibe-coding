@@ -1,3 +1,53 @@
+# Project Momentum — QA Script
+
+Manual QA for the project momentum visualization (Milestone 3).
+
+---
+
+## Prerequisites
+1. `npm run dev` running
+2. Open app in browser, BORIS OS active
+3. Have at least 2-3 projects with some tasks (completed and open)
+
+## 1. Dashboard — Momentum Panel
+
+1. Navigate to **Dashboard** tab
+2. Click "Meer details" to expand Layer 3
+3. **Expected:** "Projecten" section shows top 3 projects with sparkline bars
+4. Each project row: sparkline (4 bars) + project title
+5. If any project has no activity for 7+ days: "Stilgevallen" section appears with warning color
+6. **Verify:** Sparklines use `--color-accent` for active bars, `--color-warning` for stalled
+
+## 2. Project Hub — Cards
+
+1. Navigate to **Projects** tab (Project Hub)
+2. **Expected:** Each project card shows a tiny sparkline below the goal text
+3. Below sparkline: "Vandaag actief" or "Xd geleden" text
+4. **Verify:** Stalled projects show warning-colored "last active" text
+5. Complete a task on a project → refresh → sparkline bar for this week should grow
+
+## 3. Project Detail — Header
+
+1. Navigate to **Planning** tab
+2. Select a project
+3. **Expected:** Sparkline + "Laatst actief" text visible in header below title/goal
+4. **Verify:** Stalled projects show warning-colored text
+
+## 4. Cross-Theme Check
+
+1. Switch between light/dark themes (if available)
+2. **Verify:** Sparkline bars use CSS variables — no hardcoded colors visible
+3. All text remains legible in both themes
+
+## 5. Edge Cases
+
+1. Create a new project with no tasks
+2. **Expected:** Sparkline shows 1 bar (this week, from creation) + "Vandaag actief"
+3. Project with all tasks done long ago
+4. **Expected:** Sparkline shows activity in past weeks, current week may be empty
+
+---
+
 # Morning Flow — QA Script
 
 Manual QA for the morning planning flow (Milestone 2).

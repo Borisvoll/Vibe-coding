@@ -254,6 +254,38 @@
   color: var(--color-text-tertiary);
 }
 
+/* ── Momentum rows (Layer 3 projects) ─────────────────────── */
+.life-dash__momentum-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.life-dash__momentum-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.life-dash__momentum-row--stalled .life-dash__project-item {
+  color: var(--color-text-secondary);
+}
+
+.life-dash__stalled-label {
+  flex-shrink: 0;
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--color-warning);
+  padding: 1px var(--space-1);
+  background: var(--color-amber-light);
+  border-radius: var(--radius-sm);
+}
+
+.life-dash__detail-title--stalled {
+  margin-top: var(--space-2);
+  color: var(--color-warning);
+}
+
 /* ── Shared elements ──────────────────────────────────────── */
 .life-dash__loading {
   font-size: var(--font-base);

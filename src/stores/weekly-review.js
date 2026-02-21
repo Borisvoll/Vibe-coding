@@ -157,6 +157,27 @@ export function isFriday() {
 }
 
 /**
+ * Remove `weekly_review_sent_*` keys from the settings store that are
+ * older than `maxWeeks` weeks. Safe to call at startup.
+ */
+export async function purgeOldReviewMarkers(maxWeeks = 52) {
+  const { getAll, remove } = await import('../db.js');
+  try {
+    const allSettings = await getAll('settings');
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - maxWeeks * 7);
+    const cutoffStr = cutoff.toISOString();
+    for (const record of allSettings) {
+      if (!record.key?.startsWith('weekly_review_sent_')) continue;
+      // value is an ISO timestamp string stored when the review was sent
+      if (typeof record.value === 'string' && record.value < cutoffStr) {
+        await remove('settings', record.key);
+      }
+    }
+  } catch { /* non-critical */ }
+}
+
+/**
  * Send the weekly review by opening the user's email client via mailto:.
  */
 export async function sendWeeklyReview(data) {

@@ -56,6 +56,10 @@ async function init() {
   await checkExportReminder();
   // Purge soft-deleted tombstones older than 30 days (fire-and-forget)
   purgeDeletedOlderThan(30).catch(() => { /* non-critical */ });
+  // Purge weekly-review sent markers older than 52 weeks (fire-and-forget)
+  import('./stores/weekly-review.js').then(m => m.purgeOldReviewMarkers(52)).catch(() => { /* non-critical */ });
+  // Purge completed tasks older than 30 days to keep os_tasks store lean (fire-and-forget)
+  import('./stores/tasks.js').then(m => m.purgeOldDoneTasks(30)).catch(() => { /* non-critical */ });
   await initServiceWorker();
   initBalatro();
 

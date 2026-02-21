@@ -1,5 +1,5 @@
 import { escapeHTML, getToday } from '../../utils.js';
-import { getAll, put } from '../../db.js';
+import { getByIndex, put } from '../../db.js';
 import { generateId } from '../../utils.js';
 
 export function renderDoneList(container, context) {
@@ -11,9 +11,9 @@ export function renderDoneList(container, context) {
   async function render() {
     const today = getToday();
     const mode = modeManager?.getMode() || 'School';
-    const allTasks = await getAll('os_tasks').catch(() => []);
-    const doneTasks = allTasks
-      .filter(t => t.status === 'done' && t.date === today)
+    const todayTasks = await getByIndex('os_tasks', 'date', today).catch(() => []);
+    const doneTasks = todayTasks
+      .filter(t => t.status === 'done')
       .sort((a, b) => (b.doneAt || '').localeCompare(a.doneAt || ''));
 
     const count = doneTasks.length;

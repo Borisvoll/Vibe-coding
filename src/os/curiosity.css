@@ -155,3 +155,13 @@
   font-style: italic;
   line-height: 1.5;
 }
+
+/* ── Reduced motion: disable all animation ──────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .curiosity-page,
+  .curiosity-widget {
+    animation: none;
+    opacity: 1;
+  }
+}

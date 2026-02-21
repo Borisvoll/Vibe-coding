@@ -20,6 +20,8 @@ import { initDB, getSetting } from './db.js';
 import { initTheme } from './core/themeEngine.js';
 import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
+import { createBlockRegistry } from './core/blockRegistry.js';
+import { registerDefaultBlocks } from './blocks/registerBlocks.js';
 import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
 import { initBalatro } from './ui/balatro.js';
@@ -117,9 +119,13 @@ async function initNewOSShell() {
   const eventBus = createEventBus();
   const modeManager = createModeManager(eventBus, savedMode || 'School');
 
+  // Create block registry and register all vanilla blocks
+  const blockRegistry = createBlockRegistry();
+  registerDefaultBlocks(blockRegistry);
+
   // Mount React app
   const root = createRoot(app);
-  root.render(createElement(App, { eventBus, modeManager }));
+  root.render(createElement(App, { eventBus, modeManager, blockRegistry }));
 }
 
 async function initServiceWorker() {

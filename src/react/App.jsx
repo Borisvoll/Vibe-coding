@@ -10,11 +10,13 @@ import { ProjectDetail } from './routes/ProjectDetail.jsx';
 import { Settings } from './routes/Settings.jsx';
 import { ModeProvider } from './hooks/useMode.jsx';
 import { EventBusProvider } from './hooks/useEventBus.jsx';
+import { BlockRegistryProvider } from './hooks/useBlockRegistry.jsx';
 
-export function App({ eventBus, modeManager }) {
+export function App({ eventBus, modeManager, blockRegistry }) {
   return (
     <EventBusProvider eventBus={eventBus}>
       <ModeProvider modeManager={modeManager}>
+        <BlockRegistryProvider blockRegistry={blockRegistry}>
         <HashRouter>
           <Routes>
             <Route element={<Shell />}>
@@ -31,6 +33,7 @@ export function App({ eventBus, modeManager }) {
             </Route>
           </Routes>
         </HashRouter>
+        </BlockRegistryProvider>
       </ModeProvider>
     </EventBusProvider>
   );

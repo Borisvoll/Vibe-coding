@@ -254,9 +254,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // Progressive disclosure: fewer sections open by default for calmer initial view.
   // User overrides persist per mode in localStorage and always take precedence.
   const COLLAPSE_DEFAULTS = {
-    School:   { tasks: true, projects: false, capture: true, reflection: false, mode: false, weekly: false, history: false },
-    Personal: { tasks: true, projects: false, capture: true, reflection: true,  mode: false, weekly: false, history: false },
-    BPV:      { tasks: true, projects: false, capture: true, reflection: false, mode: true,  weekly: false, history: false },
+    School:   { tasks: true, projects: true, capture: true, reflection: false, mode: false, weekly: false, history: false },
+    Personal: { tasks: true, projects: true, capture: true, reflection: true,  mode: false, weekly: false, history: false },
+    BPV:      { tasks: true, projects: true, capture: true, reflection: false, mode: true,  weekly: false, history: false },
   };
 
   const vandaagSections = {};

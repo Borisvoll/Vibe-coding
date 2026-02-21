@@ -1,3 +1,87 @@
+# Morning Flow — QA Script
+
+Manual QA for the morning planning flow (Milestone 2).
+
+---
+
+## Prerequisites
+1. `npm run dev` running
+2. Open app in browser, BORIS OS active
+3. Clear localStorage for clean state: `localStorage.clear()` in console
+
+## 1. Auto-Open
+
+1. Refresh the page (should land on Vandaag tab)
+2. **Expected:** Morning flow overlay opens automatically after ~1 second
+3. Verify: 4 progress dots in header, first dot active
+4. Verify: Step 1 shows "Wat wil je vandaag bereiken?" with 3 input fields
+
+## 2. Step 1 — Top 3 Outcomes
+
+1. Type "Wiskunde afronden" in field 1
+2. Press Enter — cursor moves to field 2
+3. Type "Sporten" in field 2
+4. Leave field 3 empty
+5. Click "Volgende →"
+6. **Expected:** Step advances to "Volgende acties", dot 2 active
+
+## 3. Step 2 — Next Actions
+
+1. **Expected:** Shows active projects with their next action status
+2. If no projects: shows "Geen actieve projecten in deze modus"
+3. Click "Volgende →"
+4. **Expected:** Step 3 — project focus picker
+
+## 4. Step 3 — Project Focus (Optional)
+
+1. **Expected:** Radio list of active projects + "Geen focus vandaag"
+2. Select a project (or leave "Geen focus")
+3. Click "Volgende →"
+4. **Expected:** Step 4 — confirmation summary
+
+## 5. Step 4 — Confirm
+
+1. **Expected:** Summary showing your Top 3 + focus project (if selected)
+2. Click "Start je dag →"
+3. **Expected:** Flow closes, focus card appears on Vandaag page
+
+## 6. Focus Card
+
+1. On Vandaag page, look in the hero area
+2. **Expected:** "Ochtendplan klaar" card with:
+   - Checkmark + green/purple/blue accent (depending on mode)
+   - Your Top 3 outcomes listed
+   - Focus project name (if you selected one)
+3. Navigate away (Dashboard) and back (Vandaag)
+4. **Expected:** Focus card still visible
+
+## 7. Resume After Reload
+
+1. Start the flow (Ctrl+K → "Start ochtendplan")
+2. Advance to step 2
+3. Refresh the page
+4. Open the flow again (Ctrl+K → "Start ochtendplan")
+5. **Expected:** Resumes at step 2 (not step 1)
+
+## 8. Dismiss + No Re-Open
+
+1. Clear localStorage, refresh page
+2. Flow auto-opens
+3. Click × or press Escape
+4. **Expected:** Flow closes, does NOT auto-open again
+5. Refresh page
+6. **Expected:** Flow stays closed (dismissed for today)
+
+## 9. Command Palette Integration
+
+1. Press Ctrl+K
+2. Type "ochtend"
+3. **Expected:** "Start ochtendplan" command appears
+4. Select it, press Enter
+5. **Expected:** Flow opens on Vandaag tab
+
+---
+
 # Command Palette — QA Script
 
 Manual QA for the Ctrl+K command palette (Milestone 1).

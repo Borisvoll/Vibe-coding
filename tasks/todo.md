@@ -2,6 +2,167 @@
 
 ---
 
+## Milestone 2 — Morning Flow Mode
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+A calm, step-by-step morning planning flow that auto-opens once per day. Guides the user through setting their Top 3 outcomes, reviewing next actions, and optionally choosing a project focus. Ends with a summary focus card pinned on the Vandaag page.
+
+### Design Decisions
+
+| Question | Answer |
+|----------|--------|
+| Step order | Top 3 → Next Actions → Project Focus → Confirm |
+| Auto vs manual | Auto-open 1x/day (when outcomes empty), + manual button |
+| Project Focus | Optional — skip or choose |
+| End state | Focus card on Vandaag with clean summary |
+
+### Flow Steps
+
+```
+Step 1: Top 3 Outcomes
+  ┌─────────────────────────────┐
+  │  Wat wil je vandaag bereiken?│
+  │  1. [_________________]     │
+  │  2. [_________________]     │
+  │  3. [_________________]     │
+  │              [Volgende →]   │
+  └─────────────────────────────┘
+
+Step 2: Next Actions
+  ┌─────────────────────────────┐
+  │  Bekijk je volgende acties   │
+  │  📚 Project A → "Actie X"  │
+  │  📚 Project B → geen actie  │
+  │              [Volgende →]   │
+  └─────────────────────────────┘
+
+Step 3: Project Focus (optional)
+  ┌─────────────────────────────┐
+  │  Kies een project als focus  │
+  │  ○ Project A                │
+  │  ○ Project B                │
+  │  ○ Geen focus vandaag       │
+  │              [Volgende →]   │
+  └─────────────────────────────┘
+
+Step 4: Confirm
+  ┌─────────────────────────────┐
+  │  ☀ Je ochtendplan            │
+  │  Top 3: ...                  │
+  │  Focus: Project A            │
+  │         [Start je dag →]     │
+  └─────────────────────────────┘
+```
+
+### Data Model
+
+No schema changes. Uses existing stores:
+
+| Data | Store | API |
+|------|-------|-----|
+| Top 3 outcomes | `dailyPlans` | `saveOutcomes(mode, date, outcomes)` |
+| Project focus | `os_projects` | `setPinned(projectId, mode)` |
+| Flow progress | `localStorage` | `boris_morning_${date}_${mode}` → `{ step, completed }` |
+
+### Resume Logic
+
+- `localStorage` key: `boris_morning_${date}_${mode}`
+- Value: `{ step: 0-3, completed: false, dismissed: false }`
+- On open: reads state, resumes at saved step
+- Each step advance: saves `{ step: newStep }`
+- On complete: saves `{ step: 3, completed: true }`
+- On dismiss (Esc/backdrop): saves `{ dismissed: true }` — won't auto-open again
+
+### Auto-Open Logic (shell.js)
+
+After Vandaag tab mounts (~800ms delay):
+1. Read `boris_morning_${today}_${mode}` from localStorage
+2. If `completed` or `dismissed` → skip
+3. If today's outcomes are all empty → auto-open morning flow
+4. Also registers command in palette: "Start ochtendplan"
+
+### Focus Card (morning-focus block)
+
+Mounted in `vandaag-hero` (after daily-outcomes). Shows ONLY if morning flow is completed today:
+- Clean summary: Top 3 outcomes (read-only, compact)
+- Focus project name + next action (if set)
+- Mode-colored accent
+
+### File Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/ui/morning-flow.js` | **NEW** | Stepper overlay UI + persistence |
+| `src/ui/morning-flow.css` | **NEW** | Stepper styles |
+| `src/blocks/morning-focus/index.js` | **NEW** | Block registration |
+| `src/blocks/morning-focus/view.js` | **NEW** | Focus card after completion |
+| `src/blocks/registerBlocks.js` | **MODIFY** | Register morning-focus block |
+| `src/os/shell.js` | **MODIFY** | Auto-open logic + command registration |
+| `tests/ui/morning-flow.test.js` | **NEW** | Tests for stepper + persistence |
+| `docs/feature-specs/morning-flow.md` | **NEW** | Feature spec |
+| `docs/demo.md` | **MODIFY** | QA script |
+
+### Checklist
+
+#### 1. Morning flow stepper — `src/ui/morning-flow.js`
+- [x] `createMorningFlow({ modeManager, eventBus })` → `{ open, close, destroy }`
+- [x] Step 1: Top 3 input fields, pre-fill from daily entry
+- [x] Step 2: List active projects with next action status (read-only)
+- [x] Step 3: Project picker (radio: projects + "Geen focus"), optional
+- [x] Step 4: Summary card + "Start je dag" button
+- [x] Step navigation: Back/Next buttons, progress dots
+- [x] Keyboard: Escape dismisses, Enter advances
+- [x] Persist step to localStorage on each advance
+- [x] Resume from saved step on re-open
+- [x] Save outcomes after step 1 completion
+- [x] Pin project after step 3 completion
+- [x] Mark completed in localStorage after step 4
+
+#### 2. Morning focus card — `src/blocks/morning-focus/`
+- [x] Block registration: hosts `vandaag-hero`, order 7 (after daily-outcomes)
+- [x] Render only if flow completed today
+- [x] Show: Top 3 compact, focus project, mode accent
+- [x] "Herstart ochtendplan" link to re-open flow
+- [x] Reactive: listens to `daily:changed`, `projects:changed`, `morning:completed`
+
+#### 3. Shell integration — `src/os/shell.js`
+- [x] Auto-open check on Vandaag mount (1s delay, skips first visit)
+- [x] Register "Start ochtendplan" command in palette
+- [x] Morning flow instance created and appended to shell
+
+#### 4. Styles — `src/ui/morning-flow.css`
+- [x] Overlay + backdrop (same z-index pattern as modal)
+- [x] Panel with step content area
+- [x] Progress dots
+- [x] Mode-colored accent on confirm step
+- [x] Smooth step transitions
+- [x] Reduced-motion support
+
+#### 5. Tests
+- [x] `tests/ui/morning-flow.test.js` — 13 tests: persistence, resume, auto-open, data integration
+
+#### 6. Docs
+- [x] `docs/feature-specs/morning-flow.md`
+- [x] Update `docs/demo.md` with QA script
+
+### Acceptance Criteria
+
+1. Morning flow auto-opens 1x/day on Vandaag (when outcomes empty)
+2. Flow has 4 steps: Top 3 → Next Actions → Focus (optional) → Confirm
+3. Each step persists to localStorage — resume works after reload
+4. Dismissing (Esc/backdrop) prevents re-auto-open that day
+5. Completing saves outcomes + pins project + shows focus card
+6. Focus card on Vandaag shows clean summary of morning plan
+7. "Start ochtendplan" available in command palette
+8. All existing tests pass (499+)
+9. No hardcoded colors — CSS variables only
+
+---
+
 ## Milestone 1 — Command Palette Enhancement
 
 **Branch:** `claude/fix-api-400-error-Bq2kH`

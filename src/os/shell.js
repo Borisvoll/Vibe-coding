@@ -8,6 +8,7 @@ import { setTheme } from '../core/themeEngine.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
 import { createCommandRegistry } from '../core/commands.js';
+import { createMorningFlow, shouldAutoOpen } from '../ui/morning-flow.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 
@@ -682,6 +683,18 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     },
   });
 
+  // Morning flow command
+  commandRegistry.register('flow:morning', {
+    label: 'Start ochtendplan',
+    icon: '☀',
+    group: 'create',
+    keywords: ['ochtend', 'morning', 'plan', 'top 3', 'flow'],
+    handler: () => {
+      setActiveTab('today');
+      setTimeout(() => morningFlow.open(), 100);
+    },
+  });
+
   const cmdPalette = createCommandPalette({
     onNavigate: ({ tab, focus }) => {
       setActiveTab(tab, { focus });
@@ -690,6 +703,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     commands: commandRegistry,
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
+
+  // ── Morning Flow ────────────────────────────────────────
+  const morningFlow = createMorningFlow({ modeManager, eventBus });
+  app.querySelector('#new-os-shell')?.appendChild(morningFlow.el);
 
   // Global keyboard shortcuts
   function handleGlobalKeydown(e) {
@@ -750,6 +767,17 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
   setTimeout(() => startTutorial(), tutorialDelay);
 
+  // ── Morning flow auto-open ──────────────────────────────
+  if (activeTab === 'today' && !modeManager.isFirstVisit?.()) {
+    setTimeout(async () => {
+      try {
+        if (await shouldAutoOpen(modeManager)) {
+          morningFlow.open();
+        }
+      } catch { /* non-critical */ }
+    }, 1000);
+  }
+
   // ── Friday prompt ─────────────────────────────────────────
   (async () => {
     try {
@@ -785,6 +813,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     unsubscribeInboxOpen?.();
     Object.values(vandaagSections).forEach(s => s?.destroy());
     cmdPalette.destroy();
+    morningFlow.destroy();
     focusOverlay.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);

@@ -1,4 +1,4 @@
-import { getAll, getByKey, put } from '../db.js';
+import { getAll, getByKey, getRecentByIndex, put } from '../db.js';
 
 const STORE = 'dailyPlans';
 const NOTES_MAX = 500;
@@ -16,6 +16,16 @@ export async function getDailyEntry(mode, date) {
 export async function getAllDailyEntries() {
   const all = await getAll(STORE);
   return all.sort((a, b) => b.date.localeCompare(a.date));
+}
+
+/**
+ * Get a page of daily entries, sorted newest-first.
+ * Uses reverse cursor on the date index with skip + limit for efficient pagination.
+ */
+export async function getDailyEntriesPage(offset = 0, limit = 20) {
+  const recent = await getRecentByIndex(STORE, 'date', offset + limit);
+  const sorted = recent.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  return sorted.slice(offset, offset + limit);
 }
 
 export async function saveDailyEntry({ mode, date, outcomes, todos, notes }) {

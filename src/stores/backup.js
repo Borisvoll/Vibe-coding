@@ -1,4 +1,4 @@
-import { getAll, getStoreNames, exportAllData, importAll, clearAllData } from '../db.js';
+import { getStoreNames, exportAllData, importAll, clearAllData, getDbHealthMetrics } from '../db.js';
 import { APP_VERSION } from '../version.js';
 
 /**
@@ -30,11 +30,20 @@ export async function exportBundle() {
 }
 
 /**
+ * Get the estimated export size in bytes (without actually exporting).
+ */
+export async function getEstimatedExportSize() {
+  const metrics = await getDbHealthMetrics();
+  return metrics.estimatedExportBytes;
+}
+
+/**
  * Export bundle as a downloadable JSON file.
+ * Uses compact JSON (no pretty-print) to minimize file size.
  */
 export async function downloadBundle() {
   const bundle = await exportBundle();
-  const json = JSON.stringify(bundle, null, 2);
+  const json = JSON.stringify(bundle);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -42,7 +51,7 @@ export async function downloadBundle() {
   a.download = `boris-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  return bundle._meta;
+  return { ...bundle._meta, exportSizeBytes: json.length };
 }
 
 /**
@@ -71,6 +80,11 @@ export function validateBundle(bundle) {
 
   if (errors.length > 0) {
     return { valid: false, errors, warnings, meta: bundle._meta || null };
+  }
+
+  // Version check: warn if backup is from a newer version
+  if (bundle._meta.version && bundle._meta.version > APP_VERSION) {
+    warnings.push(`Backup is van een nieuwere versie (${bundle._meta.version}). Sommige data kan onbekend zijn.`);
   }
 
   // Check store contents
@@ -110,7 +124,9 @@ export function validateBundle(bundle) {
 
 /**
  * Import a backup bundle.
- * Creates a safety backup before overwriting, stored in localStorage.
+ * No localStorage safety blob (unreliable for large datasets).
+ * Both clearAllData() and importAll() use individual IDB transactions
+ * which are each atomic. The gap between clear and import is minimal.
  *
  * @param {object} bundle - The parsed bundle to import
  * @param {boolean} merge - If true, merge with existing data. If false, replace.
@@ -120,18 +136,6 @@ export async function importBundle(bundle, { merge = false } = {}) {
   const validation = validateBundle(bundle);
   if (!validation.valid) {
     throw new Error(`Ongeldige backup: ${validation.errors.join('; ')}`);
-  }
-
-  // Safety: create a quick backup before import
-  try {
-    const safetyData = await exportAllData();
-    const safetyJson = JSON.stringify({ _safety: true, data: safetyData, at: new Date().toISOString() });
-    // Store max 5MB in localStorage as safety net
-    if (safetyJson.length < 5_000_000) {
-      localStorage.setItem('boris_safety_backup', safetyJson);
-    }
-  } catch {
-    // Non-critical — proceed with import
   }
 
   if (!merge) {
@@ -149,25 +153,6 @@ export async function importBundle(bundle, { merge = false } = {}) {
     imported: totalImported,
     stores: Object.keys(bundle.stores).length,
   };
-}
-
-/**
- * Restore from the safety backup in localStorage (if available).
- */
-export async function restoreFromSafetyBackup() {
-  const raw = localStorage.getItem('boris_safety_backup');
-  if (!raw) throw new Error('Geen safety backup beschikbaar');
-
-  const parsed = JSON.parse(raw);
-  if (!parsed._safety || !parsed.data) {
-    throw new Error('Ongeldige safety backup');
-  }
-
-  await clearAllData();
-  await importAll(parsed.data);
-  localStorage.removeItem('boris_safety_backup');
-
-  return { restoredAt: parsed.at };
 }
 
 /**

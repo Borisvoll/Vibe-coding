@@ -4,6 +4,7 @@ import { setTheme } from '../core/themeEngine.js';
 import { getSetting, setSetting } from '../db.js';
 import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } from '../core/tutorial.js';
 import { createThemeStudio } from '../ui/theme-studio.js';
+import { getApiKey, setApiKey } from '../ai/client.js';
 
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
 
@@ -43,6 +44,7 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
   const accentId = (await getSetting('accentColor')) || 'blue';
   const compact = (await getSetting('compact')) || false;
   const reduceMotion = (await getSetting('reduceMotion')) || false;
+  const apiKeySet = Boolean(await getApiKey());
   const accents = getPresets();
   const currentMode = modeManager.getMode();
 
@@ -150,6 +152,28 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         </div>
       </div>
       <div data-theme-studio-mount></div>
+    </section>
+
+    <section class="settings-block card" style="margin-top:var(--space-5)">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">AI-assistent</div>
+          <div class="settings-desc">Claude AI voor inbox triage en BPV-logboek</div>
+        </div>
+        ${apiKeySet ? '<span class="badge badge-success">✓ Actief</span>' : ''}
+      </div>
+      <div class="settings-row" style="flex-wrap:wrap;gap:var(--space-2)">
+        <input type="password" class="form-input" data-ai-key-input
+          placeholder="sk-ant-api03-…" autocomplete="off"
+          style="flex:1;min-width:200px"
+          value="${apiKeySet ? '••••••••••••' : ''}">
+        <button type="button" class="btn btn-primary btn-sm" data-ai-key-save>Opslaan</button>
+      </div>
+      <p class="settings-desc" style="margin-top:var(--space-1)">
+        Sleutel wordt lokaal opgeslagen in de browser.
+        Haal een sleutel op via
+        <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.
+      </p>
     </section>
   `;
 
@@ -266,4 +290,21 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
     const studio = createThemeStudio();
     themeStudioMount.appendChild(studio.el);
   }
+
+  // ── AI API Key ──────────────────────────────────────────────
+  const aiKeyInput = container.querySelector('[data-ai-key-input]');
+  container.querySelector('[data-ai-key-save]')?.addEventListener('click', async () => {
+    const val = aiKeyInput?.value.trim();
+    if (!val || /^•+$/.test(val)) return;
+    await setApiKey(val);
+    aiKeyInput.value = '••••••••••••';
+    // Show active badge if not already present
+    const row = aiKeyInput.closest('.settings-row')?.previousElementSibling;
+    if (row && !row.querySelector('.badge-success')) {
+      const badge = document.createElement('span');
+      badge.className = 'badge badge-success';
+      badge.textContent = '✓ Actief';
+      row.appendChild(badge);
+    }
+  });
 }

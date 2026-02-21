@@ -24,7 +24,7 @@ export function renderPersonalToday(container, context) {
         <input class="form-input" data-field="task" placeholder="Nieuwe taak">
         <button class="btn btn-secondary btn-sm" data-action="add-task" ${tasks.length >= cap ? 'disabled' : ''}>Taak toevoegen</button>
       </div>
-      <ul class="personal-list">${tasks.map((t) => `<li>${escapeHTML(t.text)} <button class="btn btn-ghost btn-sm" data-action="del-task" data-id="${t.id}">x</button></li>`).join('') || '<li><small>Geen taken.</small></li>'}</ul>
+      <ul class="personal-list">${tasks.map((t) => `<li>${escapeHTML(t.text)} <button class="btn btn-ghost btn-sm" data-action="del-task" data-id="${t.id}">×</button></li>`).join('') || '<li><small>Geen taken.</small></li>'}</ul>
 
       <div class="school-inline-form">
         <input class="form-input" data-field="agenda-start" type="time">
@@ -32,7 +32,7 @@ export function renderPersonalToday(container, context) {
         <input class="form-input" data-field="agenda-title" placeholder="Agenda blok">
         <button class="btn btn-secondary btn-sm" data-action="add-agenda">Blok toevoegen</button>
       </div>
-      <ul class="personal-list">${agenda.map((a) => `<li>${escapeHTML(a.start || '--:--')}–${escapeHTML(a.end || '--:--')} ${escapeHTML(a.title || '')} <button class="btn btn-ghost btn-sm" data-action="del-agenda" data-id="${a.id}">x</button></li>`).join('') || '<li><small>Geen agendablokken.</small></li>'}</ul>
+      <ul class="personal-list">${agenda.map((a) => `<li>${escapeHTML(a.start || '--:--')}–${escapeHTML(a.end || '--:--')} ${escapeHTML(a.title || '')} <button class="btn btn-ghost btn-sm" data-action="del-agenda" data-id="${a.id}">×</button></li>`).join('') || '<li><small>Geen agendablokken.</small></li>'}</ul>
 
       <label class="school-block__field"><span>Energie/stemming + dankbaarheid (1 regel)</span><input class="form-input" data-field="wellbeing" value="${escapeHTML(wellbeingLine)}" placeholder="Bijv. 7/10, rustig, dankbaar voor ..."></label>
       <label class="school-block__field"><span>Eén betekenisvolle actie</span><input class="form-input" data-field="meaningful" value="${escapeHTML(action?.text || '')}"></label>

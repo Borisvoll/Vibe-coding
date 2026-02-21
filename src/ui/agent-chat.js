@@ -15,9 +15,14 @@ import { getApiKey, saveApiKey, removeApiKey, sendMessage } from '../agent/agent
 
 // ── SVG icons (inline, zero deps) ────────────────────────────────────────────
 
-const ICON_AGENT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <circle cx="12" cy="12" r="3"/>
-  <path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+const ICON_AGENT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="4" y="8" width="16" height="12" rx="2"/>
+  <circle cx="8" cy="5" r="1.5" fill="currentColor" stroke="none"/>
+  <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none"/>
+  <circle cx="16" cy="5" r="1.5" fill="currentColor" stroke="none"/>
+  <line x1="8" y1="6.5" x2="8" y2="8"/>
+  <line x1="12" y1="6.5" x2="12" y2="8"/>
+  <line x1="16" y1="6.5" x2="16" y2="8"/>
 </svg>`;
 
 const ICON_CLOSE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">

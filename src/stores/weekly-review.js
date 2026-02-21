@@ -1,5 +1,5 @@
 import { getAll, getSetting, setSetting } from '../db.js';
-import { getToday, getISOWeek, getWeekDates, formatMinutes, formatDateShort } from '../utils.js';
+import { getToday, getISOWeek, getWeekRange, formatMinutes, formatDateShort } from '../utils.js';
 import { getWeeklyOverview } from './bpv.js';
 
 const WELLBEING_STORE = 'os_personal_wellbeing';
@@ -35,9 +35,7 @@ export function getWeeklyPrompt(weekStr) {
 export async function aggregateWeeklyReview(weekStr = null) {
   const today = getToday();
   const week = weekStr || getISOWeek(today);
-  const weekDates = getWeekDates(week);
-  const weekStart = weekDates[0];
-  const weekEnd = weekDates[4];
+  const { start: weekStart, end: weekEnd } = getWeekRange(week);
 
   // Tasks completed this week
   const allTasks = await getAll(TASKS_STORE);

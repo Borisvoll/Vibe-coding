@@ -21,9 +21,9 @@ export function getISOWeek(dateStr) {
 }
 
 /**
- * Get array of 5 weekday date strings (Mon-Fri) for a given week string "YYYY-Wnn"
+ * Get the Monday of a given ISO week string "YYYY-Wnn" as a Date object.
  */
-export function getWeekDates(weekStr) {
+function getMondayOfWeek(weekStr) {
   const [year, weekPart] = weekStr.split('-W');
   const weekNum = parseInt(weekPart, 10);
 
@@ -36,7 +36,14 @@ export function getWeekDates(weekStr) {
   // Go to the requested week
   const monday = new Date(mondayOfWeek1);
   monday.setDate(mondayOfWeek1.getDate() + (weekNum - 1) * 7);
+  return monday;
+}
 
+/**
+ * Get array of 5 weekday date strings (Mon-Fri) for a given week string "YYYY-Wnn"
+ */
+export function getWeekDates(weekStr) {
+  const monday = getMondayOfWeek(weekStr);
   const dates = [];
   for (let i = 0; i < 5; i++) {
     const d = new Date(monday);
@@ -44,6 +51,17 @@ export function getWeekDates(weekStr) {
     dates.push(formatDateISO(d));
   }
   return dates;
+}
+
+/**
+ * Get the full week range (Mon–Sun) for a given ISO week string "YYYY-Wnn".
+ * Returns { start: 'YYYY-MM-DD', end: 'YYYY-MM-DD' }
+ */
+export function getWeekRange(weekStr) {
+  const monday = getMondayOfWeek(weekStr);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { start: formatDateISO(monday), end: formatDateISO(sunday) };
 }
 
 /**
@@ -168,14 +186,8 @@ export function getToday() {
  * Get the ISO week string for the week before a given "YYYY-Wnn"
  */
 export function getPrevWeek(weekStr) {
-  const [year, weekPart] = weekStr.split('-W');
-  const weekNum = parseInt(weekPart, 10);
-  // Move back 7 days from the Monday of the given week
-  const jan4 = new Date(parseInt(year, 10), 0, 4);
-  const mondayOfWeek1 = new Date(jan4);
-  mondayOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  const monday = new Date(mondayOfWeek1);
-  monday.setDate(mondayOfWeek1.getDate() + (weekNum - 1) * 7 - 7);
+  const monday = getMondayOfWeek(weekStr);
+  monday.setDate(monday.getDate() - 7);
   return getISOWeek(formatDateISO(monday));
 }
 
@@ -183,13 +195,8 @@ export function getPrevWeek(weekStr) {
  * Get the ISO week string for the week after a given "YYYY-Wnn"
  */
 export function getNextWeek(weekStr) {
-  const [year, weekPart] = weekStr.split('-W');
-  const weekNum = parseInt(weekPart, 10);
-  const jan4 = new Date(parseInt(year, 10), 0, 4);
-  const mondayOfWeek1 = new Date(jan4);
-  mondayOfWeek1.setDate(jan4.getDate() - ((jan4.getDay() + 6) % 7));
-  const monday = new Date(mondayOfWeek1);
-  monday.setDate(mondayOfWeek1.getDate() + (weekNum - 1) * 7 + 7);
+  const monday = getMondayOfWeek(weekStr);
+  monday.setDate(monday.getDate() + 7);
   return getISOWeek(formatDateISO(monday));
 }
 

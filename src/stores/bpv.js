@@ -118,7 +118,8 @@ export async function getWeeklyOverview(weekStr) {
     };
   });
 
-  const totalMinutes = days.reduce((sum, d) => sum + d.netMinutes, 0);
+  // Sum ALL hours records for the week (including weekends)
+  const totalMinutes = hoursRecords.reduce((sum, r) => sum + (r.netMinutes || 0), 0);
   const percentComplete = Math.min(100, Math.round((totalMinutes / WEEKLY_TARGET_MINUTES) * 100));
 
   const highlights = logbookRecords

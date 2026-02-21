@@ -29,6 +29,7 @@ import './project-hub/styles.css';
 import './history-browser/styles.css';
 import '../ui/theme-studio.css';
 import '../ui/morning-flow.css';
+import '../ui/agent-chat.css';
 import { registerMorningFocusBlock } from './morning-focus/index.js';
 import { registerBPVTodayBlock } from './bpv-today/index.js';
 import { registerSchoolDashboardBlock } from './school-dashboard/index.js';

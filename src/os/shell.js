@@ -12,6 +12,7 @@ import { createCommandRegistry } from '../core/commands.js';
 import { createMorningFlow, shouldAutoOpen } from '../ui/morning-flow.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
+import { createAgentChat } from '../ui/agent-chat.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
 
@@ -716,6 +717,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const morningFlow = createMorningFlow({ modeManager, eventBus });
   app.querySelector('#new-os-shell')?.appendChild(morningFlow.el);
 
+  // ── Agent Chat ────────────────────────────────────────────
+  const agentChat = createAgentChat({ modeManager, eventBus });
+  document.body.appendChild(agentChat.fab);
+  document.body.appendChild(agentChat.panel);
+
   // Global keyboard shortcuts
   function handleGlobalKeydown(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !e.shiftKey && !e.altKey) {
@@ -734,6 +740,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (e.altKey && e.key === 'g' && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       setActiveTab('projects');
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !e.shiftKey && !e.altKey) {
+      // Only intercept when not inside a text input / textarea
+      if (document.activeElement?.tagName !== 'INPUT' &&
+          document.activeElement?.tagName !== 'TEXTAREA' &&
+          !document.activeElement?.isContentEditable) {
+        e.preventDefault();
+        agentChat.toggle();
+      }
     }
   }
   document.addEventListener('keydown', handleGlobalKeydown);
@@ -830,6 +845,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     cmdPalette.destroy();
     morningFlow.destroy();
     focusOverlay.destroy();
+    agentChat.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);

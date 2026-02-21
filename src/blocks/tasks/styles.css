@@ -73,6 +73,11 @@
   color: var(--color-text-tertiary);
 }
 
+.tasks-block__cap-hint--warning {
+  color: var(--color-amber, #b45309);
+  font-style: italic;
+}
+
 .tasks-block__empty {
   margin: 0;
   color: var(--color-text-secondary);

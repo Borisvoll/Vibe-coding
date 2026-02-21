@@ -142,6 +142,11 @@ async function initNewOSShell() {
   const eventBus = createEventBus();
   const modeManager = createModeManager(eventBus, savedMode || 'School');
   await modeManager.loadModes();
+
+  // Set mode-appropriate preset on first run (before blocks mount)
+  const { applyDefaultPresetForMode } = await import('./core/modulePresets.js');
+  applyDefaultPresetForMode(modeManager.getMode());
+
   const blockRegistry = createBlockRegistry();
   registerDefaultBlocks(blockRegistry);
 

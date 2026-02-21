@@ -49,6 +49,7 @@ export function renderDashboard(container, context) {
       <div class="life-dash__top3" data-life-top3>
         <p class="life-dash__loading">Laden\u2026</p>
       </div>
+      <div class="life-dash__stat-strip" data-life-stats></div>
     </div>
 
     <div class="life-dash__layer life-dash__layer--snapshot">
@@ -145,6 +146,29 @@ export function renderDashboard(container, context) {
         }
       }
 
+      // Stat strip — quick numbers at a glance
+      const statStripEl = wrapper.querySelector('[data-life-stats]');
+      if (statStripEl) {
+        const tasksDone = today.tasksDone || 0;
+        const tasksTotal = today.tasksTotal || 0;
+        const openProjects = projects.activeCount || 0;
+        const inboxBadge = inboxCount > 0 ? inboxCount : '✓';
+        statStripEl.innerHTML = `
+          <div class="life-dash__stat">
+            <span class="life-dash__stat-num" style="color:${meta.color}">${tasksDone}/${tasksTotal}</span>
+            <span class="life-dash__stat-label">Taken</span>
+          </div>
+          <div class="life-dash__stat">
+            <span class="life-dash__stat-num">${openProjects}</span>
+            <span class="life-dash__stat-label">Projecten</span>
+          </div>
+          <div class="life-dash__stat">
+            <span class="life-dash__stat-num" style="${inboxCount > 5 ? 'color:var(--color-warning)' : ''}">${inboxBadge}</span>
+            <span class="life-dash__stat-label">Inbox</span>
+          </div>
+        `;
+      }
+
       // Layer 2: Snapshot Overview
       const pulsesEl = wrapper.querySelector('[data-life-pulses]');
       if (pulsesEl) {
@@ -205,8 +229,11 @@ export function renderDashboard(container, context) {
         pulsesEl.innerHTML = pulseRows.map((row) => `
           <button type="button" class="life-dash__pulse" data-nav-tab="${row.tab}" ${row.focus ? `data-nav-focus="${row.focus}"` : ''}>
             <span class="life-dash__pulse-emoji">${row.emoji}</span>
-            <span class="life-dash__pulse-label">${escapeHTML(row.label)}</span>
-            <span class="life-dash__pulse-value${row.warn ? ' life-dash__pulse-value--warn' : ''}">${escapeHTML(row.value)}</span>
+            <span class="life-dash__pulse-body">
+              <span class="life-dash__pulse-label">${escapeHTML(row.label)}</span>
+              <span class="life-dash__pulse-value${row.warn ? ' life-dash__pulse-value--warn' : ''}">${escapeHTML(row.value)}</span>
+            </span>
+            <span class="life-dash__pulse-arrow" aria-hidden="true">›</span>
           </button>
         `).join('');
 

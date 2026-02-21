@@ -168,3 +168,122 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* ── Habit streak badge ────────────────────────────────────── */
+.pd-streak {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,160,0,0.15);
+  color: #f97316;
+  padding: 1px 6px;
+  border-radius: 99px;
+  margin-left: var(--space-1);
+}
+
+/* ── Weekly goals ──────────────────────────────────────────── */
+.pd-goals-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.pd-goals-count {
+  font-size: var(--font-sm);
+  color: var(--color-emerald);
+  font-weight: 600;
+}
+
+.pd-goals-add {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.pd-goals-empty {
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  margin: 0;
+}
+
+.pd-goals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pd-goal {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-left: 3px solid var(--color-emerald);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  transition: box-shadow 150ms var(--ease);
+}
+
+.pd-goal:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.pd-goal--done {
+  opacity: 0.55;
+  border-left-color: var(--color-border);
+}
+
+.pd-goal__check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-emerald);
+  transition: border-color 150ms, background 150ms;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.pd-goal__check:hover {
+  border-color: var(--color-emerald);
+  background: var(--color-emerald-light);
+}
+
+.pd-goal--done .pd-goal__check {
+  background: var(--color-emerald);
+  border-color: var(--color-emerald);
+  color: #fff;
+}
+
+.pd-goal__text {
+  flex: 1;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+
+.pd-goal--done .pd-goal__text {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+
+.pd-goal__del {
+  opacity: 0;
+  transition: opacity 150ms;
+  color: var(--color-text-tertiary);
+}
+
+.pd-goal:hover .pd-goal__del {
+  opacity: 1;
+}

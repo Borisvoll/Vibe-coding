@@ -1,71 +1,137 @@
+/* ── Daily Todos — card-heavy visual hierarchy ──────────────── */
+
+.daily-todos {
+  padding: 0;
+  overflow: hidden;
+}
+
 .daily-todos__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .daily-todos__title {
   margin: 0;
-  font-size: var(--font-lg);
-  font-weight: 600;
+  font-size: var(--font-base);
+  font-weight: 700;
+  letter-spacing: -0.01em;
   transition: color 200ms var(--ease);
 }
 
 .daily-todos__count {
   font-size: var(--font-sm);
-  font-weight: 600;
-  transition: color 200ms var(--ease);
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 99px;
+  background: var(--color-border-light);
+  transition: background 200ms var(--ease), color 200ms var(--ease);
 }
 
+/* Add row */
 .daily-todos__add-row {
   display: flex;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  gap: 0;
+  border-bottom: 1px solid var(--color-border-light);
 }
 
 .daily-todos__input {
   flex: 1;
-  font-size: var(--font-md);
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: var(--space-3) var(--space-4) !important;
+  font-size: var(--font-base) !important;
+  color: var(--color-text);
+  font-family: var(--font-sans);
+}
+
+.daily-todos__input::placeholder {
+  color: var(--color-text-tertiary);
 }
 
 .daily-todos__add-btn {
   flex-shrink: 0;
-  width: 32px;
+  width: 40px;
   font-size: 1.25rem;
   line-height: 1;
   padding: 0;
+  border-radius: 0;
+  border: none;
+  border-left: 1px solid var(--color-border-light);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 150ms var(--ease), color 150ms var(--ease);
 }
 
+.daily-todos__add-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--todo-color, var(--color-accent));
+}
+
+/* Task list */
 .daily-todos__list {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: var(--space-2) var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
 }
 
+/* Task item — card style */
 .daily-todos__item {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-1);
-  border-radius: var(--radius-sm);
-  transition: background 120ms var(--ease);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
+  transition: box-shadow 150ms var(--ease), background 120ms var(--ease), opacity 200ms var(--ease);
+  position: relative;
 }
 
 .daily-todos__item:hover {
-  background: var(--color-surface-hover);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
 }
 
+.daily-todos__item--done {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+/* Left accent bar via pseudo element */
+.daily-todos__item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--todo-color, var(--color-accent));
+  opacity: 0.6;
+  transition: opacity 200ms;
+}
+
+.daily-todos__item--done::before {
+  opacity: 0.2;
+}
+
+/* Checkbox */
 .daily-todos__check {
-  width: 20px;
-  height: 20px;
-  border-radius: var(--radius-full);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   border: 2px solid var(--todo-color, var(--color-accent));
   background: transparent;
   color: var(--todo-color, var(--color-accent));
@@ -76,29 +142,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 150ms var(--ease), color 150ms var(--ease);
+  transition: background 150ms var(--ease), color 150ms var(--ease),
+              transform 100ms var(--ease);
+}
+
+.daily-todos__check:hover {
+  background: color-mix(in srgb, var(--todo-color, var(--color-accent)) 15%, transparent);
+  transform: scale(1.08);
 }
 
 .daily-todos__item--done .daily-todos__check {
   background: var(--todo-color, var(--color-accent));
-  color: var(--color-accent-text);
+  color: #fff;
+  border-color: var(--todo-color, var(--color-accent));
 }
 
+/* Task text */
 .daily-todos__text {
   flex: 1;
-  font-size: var(--font-md);
+  font-size: var(--font-base);
+  font-weight: 500;
   line-height: 1.4;
+  color: var(--color-text);
   transition: opacity 150ms var(--ease);
 }
 
 .daily-todos__item--done .daily-todos__text {
   text-decoration: line-through;
-  opacity: 0.45;
+  color: var(--color-text-tertiary);
 }
 
+/* Delete */
 .daily-todos__delete {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -109,8 +186,10 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 120ms var(--ease), color 120ms var(--ease);
+  transition: opacity 120ms var(--ease), color 120ms var(--ease),
+              background 120ms var(--ease);
   flex-shrink: 0;
+  padding: 0;
 }
 
 .daily-todos__item:hover .daily-todos__delete {
@@ -118,5 +197,15 @@
 }
 
 .daily-todos__delete:hover {
-  color: var(--color-error);
+  color: var(--color-error, #ef4444);
+  background: color-mix(in srgb, var(--color-error, #ef4444) 10%, transparent);
+}
+
+/* Empty state */
+.daily-todos__empty {
+  text-align: center;
+  padding: var(--space-4) var(--space-3);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  font-style: italic;
 }

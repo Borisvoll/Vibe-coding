@@ -1,6 +1,8 @@
 import './styles.css';
+import './habits/styles.css';
 import '../ui/collapsible-section.css';
 import '../ui/command-palette.css';
+import '../ui/pomodoro.css';
 import './inbox/styles.css';
 import './inbox-screen/styles.css';
 import './bpv-log-summary/styles.css';
@@ -60,6 +62,7 @@ import { registerContextChecklistBlock } from './context-checklist/index.js';
 import { registerProjectDetailBlock } from './project-detail/index.js';
 import { registerProjectHubBlock } from './project-hub/index.js';
 import { registerHistoryBrowserBlock } from './history-browser/index.js';
+import { registerHabitsBlock } from './habits/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
@@ -81,6 +84,7 @@ export function registerDefaultBlocks(registry) {
   registerWorryDumpBlock(registry);
 
   // Level 3 — Context & Review: mode-specific + reflection + archive
+  registerHabitsBlock(registry);
   registerDailyReflectionBlock(registry);
   registerConversationDebriefBlock(registry);
   registerWeeklyReviewBlock(registry);

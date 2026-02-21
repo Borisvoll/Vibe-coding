@@ -56,6 +56,7 @@ export function renderDailyTodos(container, context) {
           ${todo.done ? '✓' : ''}
         </button>
         <span class="daily-todos__text">${escapeHTML(todo.text)}</span>
+        <button type="button" class="daily-todos__pomo-btn" aria-label="Focus op deze taak met Pomodoro" title="🍅 Focus">🍅</button>
         <button type="button" class="daily-todos__delete" aria-label="Verwijder taak">×</button>
       </li>
     `).join('');
@@ -75,6 +76,16 @@ export function renderDailyTodos(container, context) {
         const currentMode = modeManager.getMode();
         await deleteTodo(currentMode, today, id);
         eventBus.emit('daily:changed', { mode: currentMode, date: today });
+      });
+    });
+
+    // Pomodoro link buttons — emit event so the floating widget can pick it up
+    listEl.querySelectorAll('.daily-todos__pomo-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.daily-todos__item');
+        const id = item.dataset.id;
+        const text = item.querySelector('.daily-todos__text')?.textContent || '';
+        eventBus.emit('pomodoro:link-task', { id, text });
       });
     });
   }

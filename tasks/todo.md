@@ -2,6 +2,195 @@
 
 ---
 
+## Milestone: Vandaag MVP — True Home Screen
+
+**Date:** 2026-02-21
+**Docs:** `docs/vandaag-spec.md`, `docs/demo.md` (Section A–G)
+**Branch:** `claude/audit-react-app-docs-UdBBt`
+
+### Overview
+
+Make `#today` the default landing tab and wire up 5 must-have widgets:
+VandaagHeader (date + mode selector), DailyOutcomes (Top 3), DailyTodos
+(Next actions, existing), QuickCapture (existing), BPVQuickLog (School/BPV only).
+All state persists through hard reload via IndexedDB.
+
+---
+
+### Phase V0 — Default Tab
+
+- [ ] **V0** `src/os/shell.js` — confirm or change the initial tab default to `'today'`:
+  - Find the line that sets `activeTab` (around line 45)
+  - If it is `'dashboard'`, change to `'today'`
+  - If it already is `'today'`, no change needed — add a comment confirming it
+
+---
+
+### Phase V1 — VandaagHeader Component
+
+- [ ] **V1a** Create `src/ui/vandaag-header.js`:
+  - Export `mountVandaagHeader(container, { modeManager, eventBus })`
+    returning `{ unmount() }`
+  - Render: Dutch long date (left) + mode pills (right)
+  - Date: `formatDateLong(getToday())` from `src/utils.js`
+  - Pills: one `<button>` per `modeManager.getModes()`, `aria-pressed="true"` on active
+  - Click: `modeManager.setMode(m)` — no confirmation dialog
+  - Active pill: `--color-accent` bg + white text; inactive: surface bg + muted text
+
+- [ ] **V1b** Subscribe to `mode:changed` on `eventBus` — re-render pills only (not date)
+
+- [ ] **V1c** `src/os/shell.js` — after cloning the `[data-route="today"]` template,
+  call `mountVandaagHeader(section.querySelector('[data-vandaag-header]'), { modeManager, eventBus })`
+  and store the returned handle for `unmount()` on tab change
+
+- [ ] **V1d** `src/ui/vandaag-header.css` — styles ≤ 40 lines:
+  - `.vandaag-header` — flex, space-between, align-center, `padding: var(--space-4) 0`
+  - `.vandaag-header__date` — `font-size: var(--font-base)`, `color: var(--color-text-secondary)`
+  - `.vandaag-header__pills` — flex, `gap: var(--space-2)`
+  - `.mode-pill` — `border-radius: var(--radius-sm)`, `padding: var(--space-1) var(--space-3)`
+  - `.mode-pill[aria-pressed="true"]` — `background: var(--color-accent); color: #fff`
+  - Focus ring: `focus-visible:outline: 2px solid var(--color-accent); outline-offset: 2px`
+
+---
+
+### Phase V2 — DailyOutcomes Block
+
+- [ ] **V2a** Create `src/blocks/daily-outcomes/index.js`:
+  - Export `registerDailyOutcomesBlock(registry)`
+  - Register: `id: 'daily-outcomes'`, `hosts: ['vandaag-hero']`, `modes: []`, `order: 1`
+
+- [ ] **V2b** Create `src/blocks/daily-outcomes/view.js`:
+  - Export `mountDailyOutcomes(container, context)` → `{ unmount() }`
+  - Load: `getDailyEntry(mode, getToday())` from `src/stores/daily.js`
+  - During load: render 3 shimmer bars
+  - Render: 3 `<input type="text">` elements with `<label>` ("Doel 1/2/3")
+  - Prefill from `entry?.outcomes ?? ['', '', '']`
+  - On blur OR Enter: `saveOutcomes(mode, getToday(), [v1, v2, v3])` → emit `daily:changed`
+  - Enter: save and `focus()` next input; on Doel 3 Enter, no-op focus change
+  - On `mode:changed`: reload for new mode, repopulate inputs
+  - `aria-label` on section wrapper: `"Top 3 doelen voor vandaag"`
+  - Error: `showToast('Kon niet opslaan — probeer opnieuw', 'error')` from `src/toast.js`
+  - All text via `escapeHTML()` — inputs use `.value`, not `.innerHTML`
+
+- [ ] **V2c** Create `src/blocks/daily-outcomes/styles.css` (≤ 50 lines):
+  - `.outcomes-card` — `var(--ui-surface)`, `var(--shadow-sm)`, `var(--radius-lg)`, `p: var(--space-5)`
+  - `.outcome-row` — flex, align-center, `gap: var(--space-3)`, `+ .outcome-row { margin-top: var(--space-2) }`
+  - `.outcome-label` — `font-size: var(--font-xs)`, uppercase, muted, fixed `width: 48px`
+  - `.outcome-input` — `flex: 1`, no border (only bottom border on focus), bg transparent
+  - `.skeleton` — shimmer animation
+
+- [ ] **V2d** `src/blocks/registerBlocks.js` — import + call `registerDailyOutcomesBlock(registry)`
+
+---
+
+### Phase V3 — BPV Quick Log Block
+
+- [ ] **V3a** Create `src/blocks/bpv-quick-log/index.js`:
+  - Export `registerBPVQuickLogBlock(registry)`
+  - Register: `id: 'bpv-quick-log'`, `hosts: ['vandaag-mode']`,
+    `modes: ['School', 'BPV']`, `order: 10`
+
+- [ ] **V3b** Create `src/blocks/bpv-quick-log/view.js`:
+  - Export `mountBPVQuickLog(container, context)` → `{ unmount() }`
+  - Load: `getHoursEntry(getToday())` from `src/stores/bpv.js`
+  - During load: shimmer on input fields
+  - Render: `<input type="time">` for Start + Einde, `<input type="number">` for
+    Pauze (min 0, max 480, step 5), `<input type="text">` for Notitie (max 120 chars)
+  - Net hours label: computed on every `input` event via `calcNetMinutes()` from
+    `src/utils.js`; formatted with `formatMinutes()`; shows `"—"` if net ≤ 0
+  - `aria-live="polite"` on net label
+  - Prefill all fields if `getHoursEntry` returns an existing entry
+  - "Opslaan" button: disabled if `netMinutes ≤ 0`
+  - On save: `updateHoursEntry(entry.id, ...)` if entry exists, else
+    `addHoursEntry(getToday(), ...)` — emit `bpv:changed`
+  - Button states: saving → spinner + `disabled`; saved → "✓ Opgeslagen" for 1 s then reset
+  - Error: toast "Kon niet opslaan — probeer opnieuw"
+  - Validation: start required if end present; clamp break to 0–480
+
+- [ ] **V3c** Create `src/blocks/bpv-quick-log/styles.css` (≤ 60 lines):
+  - `.bpv-log-card` — card chrome (`var(--ui-surface)`, shadow, radius, padding)
+  - `.bpv-log-grid` — 2-column grid for Start/Einde row; single col for Pauze + Notitie
+  - `.bpv-log__label` — `font-size: var(--font-xs)`, uppercase, muted
+  - `.bpv-log__net` — right-aligned, `font-size: var(--font-lg)`, `font-weight: 600`
+  - `.bpv-log__save` — primary button, `background: var(--color-accent)`
+  - `input[type="time"]`, `input[type="number"]` — consistent border, radius, padding
+
+- [ ] **V3d** `src/blocks/registerBlocks.js` — import + call `registerBPVQuickLogBlock(registry)`
+
+---
+
+### Phase V4 — Verify Existing Blocks
+
+- [ ] **V4a** Verify `daily-todos` block is registered with `hosts: ['vandaag-tasks']`,
+  `modes: []`, emits `daily:changed` on all mutations, respects `getTaskCap(mode)` cap
+
+- [ ] **V4b** Verify capture block is registered with `hosts: ['vandaag-capture']`,
+  calls `addInboxItem(text, mode)` on Enter, emits `inbox:changed`, clears input
+
+- [ ] **V4c** If either block has a bug found during verify — fix in a single targeted
+  change to the existing file; no rewrites
+
+---
+
+### Phase V5 — Tests
+
+- [ ] **V5a** `tests/ui/vandaag-header.test.js`:
+  - Renders date text (contains current year)
+  - Renders one button per mode from `modeManager.getModes()`
+  - Active mode button has `aria-pressed="true"`
+  - Click inactive pill → `modeManager.setMode()` called with correct mode
+  - `mode:changed` event → active pill updates
+
+- [ ] **V5b** `tests/blocks/daily-outcomes/view.test.js`:
+  - Renders 3 inputs with labels "Doel 1/2/3"
+  - Prefills from `getDailyEntry` result
+  - Blur on input → `saveOutcomes` called with correct args
+  - Enter on Doel 1 → focus moves to Doel 2
+  - `mode:changed` → reloads and repopulates with new mode data
+  - Empty entry (first visit) → all inputs empty, no error
+
+- [ ] **V5c** `tests/blocks/bpv-quick-log/view.test.js`:
+  - Renders time inputs + Pauze + Notitie + Netto label + Opslaan button
+  - Prefills from existing `getHoursEntry` result
+  - No existing entry → all fields blank, Netto = "—"
+  - Start + End set, Break 30 → Netto computed correctly
+  - Net ≤ 0 → Opslaan button disabled
+  - Net > 0 → Opslaan enabled; click → `addHoursEntry` or `updateHoursEntry` called
+  - Valid save → `bpv:changed` emitted
+
+- [ ] **V5d** `npm test` — all tests pass (658 baseline + new tests)
+
+---
+
+### Phase V6 — Manual QA
+
+Run `docs/demo.md` Sections A–G. All 30 steps must pass.
+
+- [ ] Section A — Default home screen (2 checks)
+- [ ] Section B — Date header + mode selector (4 checks)
+- [ ] Section C — Top 3 outcomes (4 checks)
+- [ ] Section D — Next actions (6 checks)
+- [ ] Section E — Quick capture (4 checks)
+- [ ] Section F — BPV quick log (7 checks)
+- [ ] Section G — Cross-cutting (3 checks)
+
+---
+
+### Definition of Done
+
+- [ ] `npm test` passes (all tests)
+- [ ] `npm run build` produces valid `dist/`
+- [ ] App opens on Vandaag by default (no hash)
+- [ ] Hard reload restores: outcomes, todos (with done state), hours entry
+- [ ] Mode switch re-renders all 5 widgets with the new mode's data
+- [ ] BPV quick log absent in Personal mode; present in School + BPV
+- [ ] All new files within line-count limits (spec: `docs/vandaag-spec.md` §Component Size)
+- [ ] All user text through `escapeHTML()`
+- [ ] All event subscriptions cleaned up in `unmount()`
+- [ ] 0 console errors during QA run
+
+---
+
 ## Milestone: Dashboard Redesign — Never Empty, Always Useful
 
 **Date:** 2026-02-21

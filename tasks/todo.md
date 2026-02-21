@@ -2,6 +2,116 @@
 
 ---
 
+## Milestone 1 — Command Palette Enhancement
+
+**Branch:** `claude/fix-api-400-error-Bq2kH`
+**Date:** 2026-02-21
+
+### Summary
+
+Enhance the existing Ctrl+K command palette with **navigation commands** and **create actions**. Currently the palette is search-only. After this milestone it becomes a true command palette: keyboard-first hub for navigation and quick creation.
+
+### Architecture Decision
+
+The project is a zero-dependency vanilla JS monolith. Rather than introducing React (3 new deps + build config changes) for a single component, we extend the existing `command-palette.js` with a new kernel module `src/core/commands.js`. This follows the established kernel pattern (`{ db, eventBus, modeManager, blockRegistry }`) and delivers all functional requirements as a small increment.
+
+### File Changes
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/core/commands.js` | **NEW** | Command registry — register, filter, execute commands |
+| `src/ui/command-palette.js` | **MODIFY** | Add commands section (empty-state + mixed results) |
+| `src/ui/command-palette.css` | **MODIFY** | Styles for command items (icon, label, shortcut hint) |
+| `src/os/shell.js` | **MODIFY** | Register nav + create commands, pass commands to palette |
+| `tests/core/commands.test.js` | **NEW** | Tests for command registry |
+| `tests/ui/command-palette.test.js` | **MODIFY** | Tests for command filtering + execution |
+| `docs/feature-specs/command-palette.md` | **NEW** | Feature spec |
+| `docs/demo.md` | **MODIFY** | Add manual QA script |
+
+### Component Structure
+
+```
+src/core/commands.js (kernel module)
+├── createCommandRegistry()
+│   ├── register(id, { label, icon, keywords, group, handler, shortcut? })
+│   ├── getAll() → Command[]
+│   ├── filter(query) → Command[] (uses fuzzyScore from search.js)
+│   └── execute(id) → Promise<void>
+│
+src/ui/command-palette.js (enhanced)
+├── Empty state → shows all commands grouped by type
+├── Typing → commands filtered first, then search results below
+├── Command groups: "Navigatie" and "Aanmaken"
+└── Keyboard: arrows navigate, Enter executes, Esc closes
+```
+
+### Commands v1
+
+| ID | Group | Label | Icon | Action |
+|----|-------|-------|------|--------|
+| `nav:dashboard` | Navigatie | Ga naar Dashboard | `◫` | `setActiveTab('dashboard')` |
+| `nav:today` | Navigatie | Ga naar Vandaag | `☀` | `setActiveTab('today')` |
+| `nav:projects` | Navigatie | Ga naar Projecten | `🚀` | `setActiveTab('projects')` |
+| `nav:settings` | Navigatie | Ga naar Instellingen | `⚙` | `setActiveTab('settings')` |
+| `nav:inbox` | Navigatie | Ga naar Inbox | `📥` | `setActiveTab('inbox')` |
+| `nav:planning` | Navigatie | Ga naar Planning | `📋` | `setActiveTab('planning')` |
+| `create:task` | Aanmaken | Nieuwe taak | `+` | `showPrompt → addTask()` |
+| `create:project` | Aanmaken | Nieuw project | `+` | `showPrompt → addProject()` |
+
+### Checklist
+
+#### 1. Command registry — `src/core/commands.js`
+- [x] Create `createCommandRegistry()` factory
+- [x] `register(id, opts)` — add command to registry
+- [x] `getAll()` — return all commands
+- [x] `filter(query)` — fuzzy filter using `fuzzyScore`
+- [x] `execute(id)` — run handler, return result
+
+#### 2. Enhanced command palette — `src/ui/command-palette.js`
+- [x] Accept `commands` option (command registry instance)
+- [x] Empty state: render all commands grouped by `group` field
+- [x] Typing mode: show filtered commands above search results
+- [x] Command items: distinct styling (icon + label + optional shortcut hint)
+- [x] Click + Enter executes command
+- [x] Escape closes palette
+
+#### 3. Shell integration — `src/os/shell.js`
+- [x] Create command registry instance
+- [x] Register 6 navigation commands
+- [x] Register 2 create commands (task + project via `showPrompt`)
+- [x] Pass `commands` to `createCommandPalette()`
+- [x] Emit `tasks:changed` / `projects:changed` after creates
+
+#### 4. Styles — `src/ui/command-palette.css`
+- [x] `.cmd-palette__item--command` — command item styling
+- [x] `.cmd-palette__command-icon` — icon display
+- [x] `.cmd-palette__command-shortcut` — keyboard hint (muted)
+- [x] Group headers via existing `.cmd-palette__group-header`
+
+#### 5. Tests
+- [x] `tests/core/commands.test.js` — 12 tests (registry CRUD, filter, execute)
+- [x] `tests/ui/command-palette.test.js` — 28 existing tests pass (no regressions)
+
+#### 6. Docs
+- [x] `docs/feature-specs/command-palette.md` — feature spec
+- [x] Update `docs/demo.md` — manual QA script
+- [x] Update this todo with completion status
+
+### Acceptance Criteria
+
+1. Ctrl+K / Cmd+K opens palette
+2. Empty state shows all commands grouped (Navigatie, Aanmaken)
+3. Typing filters commands + searches data simultaneously
+4. Arrow keys navigate, Enter executes, Esc closes
+5. Navigate commands switch tabs correctly
+6. Create Task: prompts for text, creates task in current mode, emits `tasks:changed`
+7. Create Project: prompts for title, creates project in current mode, emits `projects:changed`
+8. All existing tests pass (298 tests)
+9. New tests pass for commands module
+10. No hardcoded colors — uses CSS variables only
+
+---
+
 ## UI Fixes + Theme Studio — Implementation Plan
 
 **Feature branch:** `claude/design-personal-os-ui-1hX66`

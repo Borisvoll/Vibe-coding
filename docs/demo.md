@@ -1,3 +1,71 @@
+# Command Palette — QA Script
+
+Manual QA for the Ctrl+K command palette (Milestone 1).
+
+---
+
+## Prerequisites
+1. `npm run dev` running
+2. Open app in browser, BORIS OS active
+
+## 1. Open / Close
+
+1. Press `Ctrl+K` (or `Cmd+K` on Mac)
+2. **Expected:** Palette opens with smooth animation, input focused
+3. Verify two groups visible: **Navigatie** (6 commands) and **Aanmaken** (2 commands)
+4. Press `Escape`
+5. **Expected:** Palette closes
+6. Press `Ctrl+K` again, click the backdrop
+7. **Expected:** Palette closes
+
+## 2. Navigate Commands
+
+1. Open palette (`Ctrl+K`)
+2. Press `↓` to select "Ga naar Dashboard"
+3. Press `Enter`
+4. **Expected:** Palette closes, Dashboard tab is active
+5. Open palette, type "inbox"
+6. **Expected:** "Ga naar Inbox" command appears, filtered from other commands
+7. Press `Enter`
+8. **Expected:** Inbox tab is active
+
+## 3. Create Task
+
+1. Open palette, type "taak"
+2. **Expected:** "Nieuwe taak" command visible
+3. Select it and press `Enter`
+4. **Expected:** Prompt dialog appears asking "Wat moet er gebeuren?"
+5. Type "Test taak via palette" and press Enter
+6. **Expected:** Task created, visible in Vandaag → Taken section
+7. Refresh page — task persists
+
+## 4. Create Project
+
+1. Open palette, type "project"
+2. Select "Nieuw project" and press `Enter`
+3. **Expected:** Prompt dialog with "Projectnaam:"
+4. Type "Palette project" and confirm
+5. **Expected:** Project created in current mode
+6. Navigate to Projecten tab — project is visible
+
+## 5. Mixed Results
+
+1. Create a task with text "Wiskunde huiswerk"
+2. Open palette, type "wiskunde"
+3. **Expected:** Commands matching "wiskunde" (if any) shown first, then search result showing the task below
+4. Arrow-key down to the task result, press `Enter`
+5. **Expected:** Navigates to Vandaag → Taken section
+
+## 6. Keyboard Navigation
+
+1. Open palette (empty state shows all commands)
+2. Press `↓` multiple times — selection wraps around
+3. Press `↑` — moves up, wraps to bottom
+4. Hover mouse over a different item — selection follows mouse
+5. Click an item — executes it
+
+---
+
 # Inbox Processing — Demo Script
 
 Manual walkthrough to verify the Inbox screen and processing flow.

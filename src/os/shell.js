@@ -7,6 +7,7 @@ import { WEEKDAY_FULL } from '../constants.js';
 import { setTheme } from '../core/themeEngine.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
+import { createCommandRegistry } from '../core/commands.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 
@@ -602,12 +603,91 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setActiveTab('inbox');
   });
 
-  // ── Command palette ───────────────────────────────────────
+  // ── Command registry + palette ──────────────────────────────
+  const commandRegistry = createCommandRegistry();
+
+  // Navigation commands
+  commandRegistry.register('nav:dashboard', {
+    label: 'Ga naar Dashboard',
+    icon: '◫',
+    group: 'navigate',
+    keywords: ['dashboard', 'home', 'overzicht'],
+    handler: () => setActiveTab('dashboard'),
+  });
+  commandRegistry.register('nav:today', {
+    label: 'Ga naar Vandaag',
+    icon: '☀',
+    group: 'navigate',
+    keywords: ['vandaag', 'today', 'taken'],
+    handler: () => setActiveTab('today'),
+  });
+  commandRegistry.register('nav:inbox', {
+    label: 'Ga naar Inbox',
+    icon: '📥',
+    group: 'navigate',
+    keywords: ['inbox', 'capture', 'idee'],
+    shortcut: 'Ctrl+I',
+    handler: () => setActiveTab('inbox'),
+  });
+  commandRegistry.register('nav:projects', {
+    label: 'Ga naar Projecten',
+    icon: '🚀',
+    group: 'navigate',
+    keywords: ['projecten', 'projects', 'hub'],
+    shortcut: 'Alt+G',
+    handler: () => setActiveTab('projects'),
+  });
+  commandRegistry.register('nav:planning', {
+    label: 'Ga naar Planning',
+    icon: '📋',
+    group: 'navigate',
+    keywords: ['planning', 'week', 'schema'],
+    handler: () => setActiveTab('planning'),
+  });
+  commandRegistry.register('nav:settings', {
+    label: 'Ga naar Instellingen',
+    icon: '⚙',
+    group: 'navigate',
+    keywords: ['instellingen', 'settings', 'configuratie'],
+    handler: () => setActiveTab('settings'),
+  });
+
+  // Create commands
+  commandRegistry.register('create:task', {
+    label: 'Nieuwe taak',
+    icon: '✓',
+    group: 'create',
+    keywords: ['taak', 'task', 'nieuw', 'toevoegen', 'add'],
+    handler: async () => {
+      const { showPrompt } = await import('../ui/modal.js');
+      const text = await showPrompt('Wat moet er gebeuren?', '', { title: 'Nieuwe taak' });
+      if (!text?.trim()) return;
+      const { addTask } = await import('../stores/tasks.js');
+      await addTask(text.trim(), modeManager.getMode());
+      eventBus.emit('tasks:changed');
+    },
+  });
+  commandRegistry.register('create:project', {
+    label: 'Nieuw project',
+    icon: '🚀',
+    group: 'create',
+    keywords: ['project', 'nieuw', 'toevoegen', 'add'],
+    handler: async () => {
+      const { showPrompt } = await import('../ui/modal.js');
+      const title = await showPrompt('Projectnaam:', '', { title: 'Nieuw project' });
+      if (!title?.trim()) return;
+      const { addProject } = await import('../stores/projects.js');
+      await addProject(title.trim(), '', modeManager.getMode());
+      eventBus.emit('projects:changed');
+    },
+  });
+
   const cmdPalette = createCommandPalette({
     onNavigate: ({ tab, focus }) => {
       setActiveTab(tab, { focus });
     },
     eventBus,
+    commands: commandRegistry,
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
 

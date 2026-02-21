@@ -1,4 +1,5 @@
 import { getCockpitItems } from '../../os/cockpitData.js';
+import { getSetting } from '../../db.js';
 
 /**
  * Deep link handlers per action type.
@@ -42,6 +43,19 @@ export function renderDailyCockpit(container, context) {
       <ul class="daily-cockpit__list"></ul>
     </div>
   `);
+
+  // Morning flow setting: 'manual' hides cockpit until user clicks
+  getSetting('morning_flow').then((flow) => {
+    if (flow === 'manual') {
+      el.style.display = 'none';
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'daily-cockpit__show-toggle';
+      toggle.textContent = 'Toon dagchecklist';
+      toggle.addEventListener('click', () => { el.style.display = ''; toggle.remove(); });
+      container.insertBefore(toggle, el);
+    }
+  }).catch(() => {});
 
   const el = container.querySelector(`[data-mount-id="${mountId}"]`);
   const pillEl = el.querySelector('.daily-cockpit__pill');

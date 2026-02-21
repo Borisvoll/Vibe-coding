@@ -61,6 +61,12 @@ export const PRESETS = {
 const STORAGE_KEY = 'boris_active_preset';
 const DISABLED_PREFIX = 'block_off_';
 
+const MODE_DEFAULT_PRESET = {
+  School: 'school',
+  BPV: 'bpv',
+  Personal: 'persoonlijk',
+};
+
 /**
  * Get the currently active preset name.
  * @returns {string}
@@ -71,6 +77,20 @@ export function getActivePreset() {
   } catch {
     return 'alles';
   }
+}
+
+/**
+ * Set mode-appropriate preset on first run (no existing user preference).
+ * Called once during init — does nothing if user already chose a preset.
+ */
+export function applyDefaultPresetForMode(mode) {
+  try {
+    if (localStorage.getItem(STORAGE_KEY)) return; // user already chose
+    const preset = MODE_DEFAULT_PRESET[mode];
+    if (preset && PRESETS[preset]) {
+      localStorage.setItem(STORAGE_KEY, preset);
+    }
+  } catch { /* ignore */ }
 }
 
 /**

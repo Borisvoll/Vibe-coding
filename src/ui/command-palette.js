@@ -1,17 +1,43 @@
 import { escapeHTML, debounce } from '../utils.js';
 
+// ── Default commands ─────────────────────────────────────────
+const DEFAULT_COMMANDS = [
+  { id: 'nav:dashboard',    type: 'navigate', label: 'Dashboard',     icon: '🏠', keywords: 'home overzicht',      tab: 'dashboard', focus: null },
+  { id: 'nav:today',        type: 'navigate', label: 'Vandaag',       icon: '☀️', keywords: 'today dag',            tab: 'today',     focus: null },
+  { id: 'nav:projects',     type: 'navigate', label: 'Projecten',     icon: '📁', keywords: 'project map',          tab: 'projects',  focus: null },
+  { id: 'nav:settings',     type: 'navigate', label: 'Instellingen',  icon: '⚙️', keywords: 'settings opties thema', tab: 'settings',  focus: null },
+  { id: 'create:task',      type: 'create',   label: 'Nieuwe taak',   icon: '✏️', keywords: 'task add maak' },
+  { id: 'create:project',   type: 'create',   label: 'Nieuw project', icon: '📂', keywords: 'project add maak' },
+];
+
 /**
- * Ctrl+K command palette — global search overlay with grouped results.
+ * Simple command filter: matches label or keywords against query.
+ * @param {string} query — user input (lowercased externally)
+ * @returns {Array} matching commands
+ */
+export function getFilteredCommands(query) {
+  if (!query) return [...DEFAULT_COMMANDS];
+  const q = query.toLowerCase();
+  return DEFAULT_COMMANDS.filter((cmd) => {
+    const haystack = `${cmd.label} ${cmd.keywords}`.toLowerCase();
+    return haystack.includes(q);
+  });
+}
+
+/**
+ * Ctrl+K command palette — global search overlay with grouped results + quick commands.
  *
  * @param {Object} opts
- * @param {Function}  opts.onNavigate  - Called with { tab, focus } to navigate
- * @param {Object}    [opts.eventBus]  - EventBus instance for worker invalidation
+ * @param {Function}  opts.onNavigate   - Called with { tab, focus } to navigate
+ * @param {Object}    [opts.eventBus]   - EventBus instance for worker invalidation
+ * @param {Object}    [opts.modeManager] - ModeManager for create actions (current mode)
  * @returns {{ el, open, close, destroy, notifyRebuild, isOpen }}
  */
-export function createCommandPalette({ onNavigate, eventBus }) {
+export function createCommandPalette({ onNavigate, eventBus, modeManager }) {
   let isOpen = false;
-  let currentGroups = [];  // grouped search results
-  let flatItems = [];       // flattened for keyboard navigation
+  let currentCommands = [];  // filtered commands
+  let currentGroups = [];    // grouped search results
+  let flatItems = [];        // flattened for keyboard navigation
   let selectedFlatIndex = -1;
 
   // ── Web Worker setup ──────────────────────────────────────
@@ -76,7 +102,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
         <input type="search" class="cmd-palette__input"
-               placeholder="Zoek in projecten, taken, inbox..."
+               placeholder="Zoek of typ een commando..."
                autocomplete="off" spellcheck="false" aria-autocomplete="list"
                aria-controls="cmd-palette-results" aria-label="Zoeken" />
         <kbd class="cmd-palette__kbd" aria-label="Escape om te sluiten">Esc</kbd>
@@ -123,35 +149,44 @@ export function createCommandPalette({ onNavigate, eventBus }) {
   }
 
   const doSearch = debounce(async (query) => {
+    // Always update commands for current query
+    currentCommands = getFilteredCommands(query);
+
     if (query.length < 2) {
-      showEmpty('Begin met typen om te zoeken\u2026');
+      // Short query: show commands only
+      currentGroups = [];
+      rebuildFlat();
+      renderAll();
       return;
     }
     try {
       const groups = await runSearch(query);
       currentGroups = groups;
       rebuildFlat();
-      renderResults();
+      renderAll();
     } catch {
-      showEmpty('Zoeken mislukt');
+      currentGroups = [];
+      rebuildFlat();
+      renderAll();
     }
   }, 200);
-
-  function showEmpty(msg) {
-    currentGroups = [];
-    flatItems = [];
-    selectedFlatIndex = -1;
-    resultsList.innerHTML = `<p class="cmd-palette__empty">${escapeHTML(msg)}</p>`;
-  }
 
   // ── Flat item list for keyboard navigation ────────────────
   function rebuildFlat() {
     flatItems = [];
+    // Commands first
+    for (const cmd of currentCommands) {
+      flatItems.push({ command: cmd });
+    }
+    // Then search results
     for (const group of currentGroups) {
       const visible = group.items.slice(0, group.visibleCount);
       for (const item of visible) {
         flatItems.push({ item, group });
       }
+    }
+    if (flatItems.length > 0 && selectedFlatIndex < 0) {
+      selectedFlatIndex = 0;
     }
     if (selectedFlatIndex >= flatItems.length) {
       selectedFlatIndex = flatItems.length > 0 ? 0 : -1;
@@ -159,23 +194,50 @@ export function createCommandPalette({ onNavigate, eventBus }) {
   }
 
   // ── Render ────────────────────────────────────────────────
-  function renderResults() {
-    if (currentGroups.length === 0) {
+  function renderAll() {
+    if (currentCommands.length === 0 && currentGroups.length === 0) {
       resultsList.innerHTML = '<p class="cmd-palette__empty">Geen resultaten gevonden</p>';
       return;
     }
 
+    let html = '';
     let flatIdx = 0;
-    const html = currentGroups.map((group) => {
-      const visible = group.items.slice(0, group.visibleCount);
-      const remaining = group.items.length - group.visibleCount;
 
-      const itemsHtml = visible.map((item) => {
+    // Render commands section
+    if (currentCommands.length > 0) {
+      const commandsHtml = currentCommands.map((cmd) => {
         const idx = flatIdx++;
         const isSelected = idx === selectedFlatIndex;
-        const title = escapeHTML(item.title || '');
-        const subtitle = escapeHTML(item.subtitle || '');
         return `
+          <div class="cmd-palette__item cmd-palette__item--cmd${isSelected ? ' cmd-palette__item--selected' : ''}"
+               role="option" aria-selected="${isSelected}"
+               data-flat-index="${idx}" data-cmd-id="${escapeHTML(cmd.id)}">
+            <span class="cmd-palette__cmd-icon" aria-hidden="true">${cmd.icon}</span>
+            <span class="cmd-palette__item-title">${escapeHTML(cmd.label)}</span>
+          </div>`;
+      }).join('');
+
+      html += `
+        <div class="cmd-palette__group cmd-palette__group--cmds" data-group-type="commands">
+          <div class="cmd-palette__group-header" aria-hidden="true">
+            <span class="cmd-palette__group-label">Commando\u2019s</span>
+          </div>
+          ${commandsHtml}
+        </div>`;
+    }
+
+    // Render search result groups
+    if (currentGroups.length > 0) {
+      html += currentGroups.map((group) => {
+        const visible = group.items.slice(0, group.visibleCount);
+        const remaining = group.items.length - group.visibleCount;
+
+        const itemsHtml = visible.map((item) => {
+          const idx = flatIdx++;
+          const isSelected = idx === selectedFlatIndex;
+          const title = escapeHTML(item.title || '');
+          const subtitle = escapeHTML(item.subtitle || '');
+          return `
           <div class="cmd-palette__item${isSelected ? ' cmd-palette__item--selected' : ''}"
                role="option" aria-selected="${isSelected}"
                data-flat-index="${idx}" data-item-id="${escapeHTML(item.id || '')}"
@@ -185,15 +247,15 @@ export function createCommandPalette({ onNavigate, eventBus }) {
               <span class="cmd-palette__item-sub">${subtitle}</span>
             </div>
           </div>`;
-      }).join('');
+        }).join('');
 
-      const moreHtml = remaining > 0
-        ? `<button type="button" class="cmd-palette__show-more" data-group-type="${escapeHTML(group.type)}" aria-label="Laad meer ${escapeHTML(group.label)} resultaten">
-             Toon meer <span class="cmd-palette__show-more-count">${remaining} meer</span>
-           </button>`
-        : '';
+        const moreHtml = remaining > 0
+          ? `<button type="button" class="cmd-palette__show-more" data-group-type="${escapeHTML(group.type)}" aria-label="Laad meer ${escapeHTML(group.label)} resultaten">
+               Toon meer <span class="cmd-palette__show-more-count">${remaining} meer</span>
+             </button>`
+          : '';
 
-      return `
+        return `
         <div class="cmd-palette__group" data-group-type="${escapeHTML(group.type)}">
           <div class="cmd-palette__group-header" aria-hidden="true">
             <span class="cmd-palette__group-icon">${group.icon}</span>
@@ -203,17 +265,56 @@ export function createCommandPalette({ onNavigate, eventBus }) {
           ${itemsHtml}
           ${moreHtml}
         </div>`;
-    }).join('');
+      }).join('');
+    }
 
     resultsList.innerHTML = html;
   }
 
+  // ── Execute command ────────────────────────────────────────
+  async function executeCommand(cmd) {
+    close();
+
+    if (cmd.type === 'navigate') {
+      onNavigate({ tab: cmd.tab, focus: cmd.focus });
+      return;
+    }
+
+    if (cmd.type === 'create') {
+      const { showPrompt } = await import('./modal.js');
+      const mode = modeManager?.getMode() || 'School';
+
+      if (cmd.id === 'create:task') {
+        const text = await showPrompt('Nieuwe taak:', '', { placeholder: 'Wat moet je doen?' });
+        if (text?.trim()) {
+          const { addTask } = await import('../stores/tasks.js');
+          await addTask(text.trim(), mode);
+          eventBus?.emit('tasks:changed');
+        }
+      } else if (cmd.id === 'create:project') {
+        const title = await showPrompt('Nieuw project:', '', { placeholder: 'Projectnaam' });
+        if (title?.trim()) {
+          const { addProject } = await import('../stores/projects.js');
+          await addProject(title.trim(), '', mode);
+          eventBus?.emit('projects:changed');
+        }
+      }
+    }
+  }
+
   // ── Navigation ────────────────────────────────────────────
-  function navigateToResult(flatIndex, { altKey = false } = {}) {
+  function activateItem(flatIndex, { altKey = false } = {}) {
     const entry = flatItems[flatIndex];
     if (!entry) return;
-    const { item, group } = entry;
 
+    // Command item
+    if (entry.command) {
+      executeCommand(entry.command);
+      return;
+    }
+
+    // Search result item
+    const { item, group } = entry;
     close();
 
     if (altKey && item.type === 'project' && item.id) {
@@ -244,7 +345,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
       e.preventDefault();
       if (flatItems.length > 0) {
         selectedFlatIndex = (selectedFlatIndex + 1) % flatItems.length;
-        renderResults();
+        renderAll();
       }
       return;
     }
@@ -253,7 +354,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
       e.preventDefault();
       if (flatItems.length > 0) {
         selectedFlatIndex = selectedFlatIndex <= 0 ? flatItems.length - 1 : selectedFlatIndex - 1;
-        renderResults();
+        renderAll();
       }
       return;
     }
@@ -261,7 +362,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
     if (e.key === 'Enter') {
       e.preventDefault();
       if (selectedFlatIndex >= 0) {
-        navigateToResult(selectedFlatIndex, { altKey: e.altKey });
+        activateItem(selectedFlatIndex, { altKey: e.altKey });
       }
       return;
     }
@@ -271,7 +372,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
     const item = e.target.closest('.cmd-palette__item');
     if (item) {
       const idx = parseInt(item.dataset.flatIndex, 10);
-      if (!isNaN(idx)) navigateToResult(idx);
+      if (!isNaN(idx)) activateItem(idx);
       return;
     }
 
@@ -282,7 +383,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
       if (group) {
         group.visibleCount = Math.min(group.visibleCount + 6, group.items.length);
         rebuildFlat();
-        renderResults();
+        renderAll();
         // Re-focus the input so keyboard nav continues working
         input.focus();
       }
@@ -295,7 +396,7 @@ export function createCommandPalette({ onNavigate, eventBus }) {
     const idx = parseInt(item.dataset.flatIndex, 10);
     if (!isNaN(idx) && idx !== selectedFlatIndex) {
       selectedFlatIndex = idx;
-      renderResults();
+      renderAll();
     }
   }
 
@@ -307,7 +408,12 @@ export function createCommandPalette({ onNavigate, eventBus }) {
     requestAnimationFrame(() => {
       overlay.classList.add('cmd-palette--visible');
       input.value = '';
-      showEmpty('Begin met typen om te zoeken\u2026');
+      // Show all commands on open
+      currentCommands = getFilteredCommands('');
+      currentGroups = [];
+      selectedFlatIndex = 0;
+      rebuildFlat();
+      renderAll();
     });
     // Warm up the worker (builds index in background without blocking)
     const worker = getOrCreateWorker();

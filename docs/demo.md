@@ -841,3 +841,154 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 - [ ] Card top border is 4px (prominent accent)
 - [ ] Mode hero banner has 4px left border
 - [ ] All tests pass (`npm test`)
+
+---
+
+---
+
+# Command Palette — Demo Script
+
+Manual walkthrough to verify the enhanced command palette with navigation commands and create actions.
+
+## Prerequisites
+
+1. `npm run dev` is running
+2. Open the app in browser
+3. BORIS OS is active (default)
+
+---
+
+## CP1. Open Palette with Ctrl+K
+
+1. From any tab, press **Ctrl+K** (or **Cmd+K** on Mac)
+2. A search overlay appears centered near the top of the screen
+3. The input field is focused and ready for typing
+4. **6 default commands** are visible immediately:
+   - Dashboard, Vandaag, Projecten, Instellingen (navigate)
+   - Nieuwe taak, Nieuw project (create)
+
+**Expected:** Palette opens with smooth animation. Commands listed under "Commando's" group header. First command is highlighted.
+
+---
+
+## CP2. Close Palette
+
+1. Press **Esc** — palette closes
+2. Open again with Ctrl+K, click the dark backdrop — palette closes
+3. Open again, press Ctrl+K again — palette closes (toggle)
+
+**Expected:** Clean close animation each time. No orphaned overlays.
+
+---
+
+## CP3. Navigate via Command
+
+1. Open palette (Ctrl+K)
+2. Press **Enter** with "Dashboard" highlighted → navigates to Dashboard tab
+3. Open palette again, press **Arrow Down** twice to highlight "Projecten"
+4. Press **Enter** → navigates to Projects tab
+
+**Expected:** Tab switches immediately. Palette closes on selection.
+
+---
+
+## CP4. Filter Commands by Typing
+
+1. Open palette, type `dash`
+2. Only "Dashboard" command should remain visible
+3. Clear and type `instel`
+4. Only "Instellingen" command should remain
+5. Type `maak`
+6. Both "Nieuwe taak" and "Nieuw project" should appear
+
+**Expected:** Commands filter in real-time as you type. Non-matching commands disappear.
+
+---
+
+## CP5. Search + Commands Together
+
+1. Open palette, type `project`
+2. You should see:
+   - **Commando's** section with "Projecten" and "Nieuw project" commands
+   - **Projecten** search results section (if any projects exist)
+3. Arrow keys navigate across both sections seamlessly
+
+**Expected:** Commands appear above search results. Single unified keyboard navigation.
+
+---
+
+## CP6. Create Task via Palette
+
+1. Open palette, type `taak` or arrow to "Nieuwe taak"
+2. Press **Enter**
+3. A prompt dialog appears asking "Nieuwe taak:"
+4. Type `Test taak vanuit palette` and press Enter
+5. Navigate to the **Vandaag** tab
+6. Verify the new task appears in the Taken block
+
+**Expected:** Task created in current mode. Palette closes before prompt opens.
+
+---
+
+## CP7. Create Project via Palette
+
+1. Open palette, select "Nieuw project"
+2. Press **Enter**
+3. A prompt dialog appears asking "Nieuw project:"
+4. Type `Palette project` and press Enter
+5. Navigate to the **Projecten** tab
+6. Verify the new project appears
+
+**Expected:** Project created in current mode with "active" status.
+
+---
+
+## CP8. Cancel Create
+
+1. Open palette, select "Nieuwe taak", press Enter
+2. In the prompt dialog, press **Esc** (or click cancel)
+3. No task should be created
+
+**Expected:** Prompt dismissed cleanly. No data written.
+
+---
+
+## CP9. Keyboard Navigation
+
+1. Open palette (shows 6 commands)
+2. Press **Arrow Down** 6 times → selection wraps to first item
+3. Press **Arrow Up** → selection wraps to last item
+4. Hover mouse over a different command → selection follows mouse
+5. Click a command → it activates
+
+**Expected:** Smooth keyboard and mouse navigation. Visual highlight follows selection.
+
+---
+
+## CP10. Dark Mode
+
+1. Go to Settings, switch theme to Dark
+2. Open palette with Ctrl+K
+3. Verify: dark surface, correct text colors, no white flashes
+4. Commands and search results both render correctly
+
+**Expected:** Full dark mode support using CSS tokens.
+
+---
+
+## Command Palette Verification Checklist
+
+- [ ] Ctrl+K / Cmd+K opens palette
+- [ ] Esc, backdrop click, and Ctrl+K toggle all close palette
+- [ ] 6 default commands shown on empty state
+- [ ] Commands filter by label and keywords
+- [ ] Search results appear alongside matching commands
+- [ ] Arrow keys navigate across commands + results
+- [ ] Enter activates selected command
+- [ ] Navigate commands switch to correct tab
+- [ ] "Nieuwe taak" creates task in current mode via prompt
+- [ ] "Nieuw project" creates project in current mode via prompt
+- [ ] Cancel on prompt creates nothing
+- [ ] Dark mode fully supported
+- [ ] No hardcoded colors in CSS
+- [ ] All 38 command palette tests pass

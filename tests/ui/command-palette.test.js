@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { initDB } from '../../src/db.js';
 import { globalSearch, globalSearchGrouped, fuzzyScore } from '../../src/stores/search.js';
-import { addTask } from '../../src/stores/tasks.js';
+import { getFilteredCommands } from '../../src/ui/command-palette.js';
+import { addTask, getTasksByMode } from '../../src/stores/tasks.js';
 import { addInboxItem } from '../../src/stores/inbox.js';
-import { addProject } from '../../src/stores/projects.js';
+import { addProject, getProjects } from '../../src/stores/projects.js';
 
 /**
- * Command palette tests — search logic + grouping.
+ * Command palette tests — search logic + grouping + commands.
  * DOM rendering is verified via build + manual inspection.
  */
 
@@ -243,5 +244,84 @@ describe('Command palette — navigation mapping', () => {
   it('BPV results navigate to mode context zone', () => {
     expect(TYPE_META.hours.focus).toBe('mode');
     expect(TYPE_META.logbook.focus).toBe('mode');
+  });
+});
+
+describe('Command palette — command filtering', () => {
+  it('returns all 6 commands for empty query', () => {
+    const cmds = getFilteredCommands('');
+    expect(cmds).toHaveLength(6);
+  });
+
+  it('returns all commands for undefined/null query', () => {
+    expect(getFilteredCommands(undefined)).toHaveLength(6);
+    expect(getFilteredCommands(null)).toHaveLength(6);
+  });
+
+  it('filters by partial label match (case-insensitive)', () => {
+    const cmds = getFilteredCommands('dash');
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0].id).toBe('nav:dashboard');
+  });
+
+  it('filters by keyword match', () => {
+    const cmds = getFilteredCommands('thema');
+    expect(cmds).toHaveLength(1);
+    expect(cmds[0].id).toBe('nav:settings');
+  });
+
+  it('returns empty for non-matching query', () => {
+    const cmds = getFilteredCommands('xyznonexistent');
+    expect(cmds).toHaveLength(0);
+  });
+
+  it('matches create commands by keyword', () => {
+    const cmds = getFilteredCommands('maak');
+    expect(cmds).toHaveLength(2);
+    const ids = cmds.map((c) => c.id);
+    expect(ids).toContain('create:task');
+    expect(ids).toContain('create:project');
+  });
+
+  it('commands have required shape', () => {
+    const cmds = getFilteredCommands('');
+    for (const cmd of cmds) {
+      expect(typeof cmd.id).toBe('string');
+      expect(typeof cmd.label).toBe('string');
+      expect(typeof cmd.icon).toBe('string');
+      expect(typeof cmd.type).toBe('string');
+      expect(['navigate', 'create']).toContain(cmd.type);
+    }
+  });
+
+  it('navigate commands have valid tab property', () => {
+    const validTabs = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
+    const navCmds = getFilteredCommands('').filter((c) => c.type === 'navigate');
+    expect(navCmds.length).toBeGreaterThanOrEqual(4);
+    for (const cmd of navCmds) {
+      expect(validTabs).toContain(cmd.tab);
+    }
+  });
+});
+
+describe('Command palette — create actions (integration)', () => {
+  it('addTask creates a task in the given mode', async () => {
+    const task = await addTask('Palette taak', 'School');
+    expect(task.text).toBe('Palette taak');
+    expect(task.mode).toBe('School');
+    expect(task.status).toBe('todo');
+
+    const tasks = await getTasksByMode('School');
+    expect(tasks.some((t) => t.text === 'Palette taak')).toBe(true);
+  });
+
+  it('addProject creates a project in the given mode', async () => {
+    const project = await addProject('Palette project', '', 'Personal');
+    expect(project.title).toBe('Palette project');
+    expect(project.mode).toBe('Personal');
+    expect(project.status).toBe('active');
+
+    const projects = await getProjects('Personal');
+    expect(projects.some((p) => p.title === 'Palette project')).toBe(true);
   });
 });

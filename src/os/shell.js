@@ -608,6 +608,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       setActiveTab(tab, { focus });
     },
     eventBus,
+    modeManager,
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
 

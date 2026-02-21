@@ -2,6 +2,98 @@
 
 ---
 
+## Milestone 1 — Command Palette Enhancement
+
+**Feature branch:** `claude/fix-tool-use-ids-Jno8n`
+**Date:** 2026-02-21
+
+### Summary
+
+Enhance the existing command palette (`src/ui/command-palette.js`) with static navigation commands and create actions. The palette currently only does data search — this milestone adds quick-action commands.
+
+### File Changes
+
+| File | Change |
+|------|--------|
+| `src/ui/command-palette.js` | Add default commands array, command filtering, create action handlers |
+| `src/ui/command-palette.css` | Add command item styling (icon + label + shortcut hint) |
+| `src/os/shell.js` | Pass `modeManager` + `eventBus` to command palette for create actions |
+| `tests/ui/command-palette.test.js` | Add tests for command filtering, navigation mapping, create actions |
+| `docs/demo.md` | Add Command Palette manual QA section |
+| `docs/feature-specs/command-palette.md` | New: feature spec |
+| `docs/design-principles.md` | Add Command Palette design rules section |
+
+### Component Structure
+
+```
+createCommandPalette({ onNavigate, eventBus, modeManager })
+│
+├── DEFAULT_COMMANDS[]           ← static command definitions
+│   ├── Navigate: Dashboard, Vandaag, Projecten, Instellingen
+│   └── Create: Nieuwe taak, Nieuw project
+│
+├── getFilteredCommands(query)   ← fuzzy-match commands by label/keywords
+│
+├── renderCommands(commands)     ← render command items (distinct from search results)
+│
+├── executeCommand(cmd)          ← dispatch: navigate or create
+│   ├── navigate → onNavigate({ tab, focus })
+│   └── create:task → showPrompt() → addTask() → eventBus.emit('tasks:changed')
+│   └── create:project → showPrompt() → addProject() → eventBus.emit('projects:changed')
+│
+└── Existing: runSearch(), renderResults(), handleKeydown()
+```
+
+**Default view (empty query):** Show all 6 commands.
+**With query:** Show matching commands first, then search results below.
+**Keyboard:** Same arrows/enter/esc. Commands and search results share one flat list.
+
+### Acceptance Criteria
+
+- [x] Ctrl+K / Cmd+K opens palette (already works)
+- [x] Empty palette shows 6 default commands
+- [x] Typing filters commands by label match (e.g. "dash" → Dashboard)
+- [x] Typing also triggers data search (existing behavior)
+- [x] Commands appear above search results, visually separated
+- [x] Arrow keys navigate across both commands and results
+- [x] Enter on a navigate command → switches tab
+- [x] Enter on "Nieuwe taak" → showPrompt → creates task in current mode
+- [x] Enter on "Nieuw project" → showPrompt → creates project in current mode
+- [x] After create, eventBus emits changed event (UI refreshes)
+- [x] Esc closes palette (already works)
+- [x] No hardcoded colors — uses CSS tokens
+- [x] All existing tests still pass (38 palette tests pass; 8 pre-existing failures in unrelated files)
+- [x] New tests cover command filtering and create flow (10 new tests added)
+
+### Tests to Add
+
+1. `getFilteredCommands` returns all commands for empty query
+2. `getFilteredCommands` filters by partial label match
+3. `getFilteredCommands` returns empty for non-matching query
+4. Command definitions have required shape (id, label, icon, type, action)
+5. Navigate commands map to valid tabs
+6. Create task integration: prompt → addTask → verify in DB
+7. Create project integration: prompt → addProject → verify in DB
+
+### Manual QA (→ docs/demo.md)
+
+See docs/demo.md "Command Palette" section.
+
+### Implementation Steps
+
+1. Add `DEFAULT_COMMANDS` array + `getFilteredCommands()` to command-palette.js
+2. Update `open()` to render commands on empty state (instead of "Begin met typen...")
+3. Update `doSearch()` to prepend matching commands before search results
+4. Add `executeCommand()` with navigate + create handlers
+5. Update `renderResults()` to render command items with distinct styling
+6. Add command item CSS
+7. Pass `modeManager` from shell.js
+8. Write tests
+9. Write docs
+10. Run full suite, verify, commit
+
+---
+
 ## UI Fixes + Theme Studio — Implementation Plan
 
 **Feature branch:** `claude/design-personal-os-ui-1hX66`

@@ -1,5 +1,7 @@
 import { getProjects, addProject, getPinnedProject } from '../../stores/projects.js';
 import { getTasksByProject } from '../../stores/tasks.js';
+import { getAllProjectsMomentum } from '../../stores/momentum.js';
+import { renderSparkline } from '../../ui/sparkline.js';
 import { escapeHTML } from '../../utils.js';
 
 const PAGE_SIZE = 3;
@@ -89,8 +91,11 @@ export function renderProjectList(container, context, onOpen) {
       return;
     }
 
-    // Load task counts + pin state
-    const pinned = await getPinnedProject(mode);
+    // Load task counts + pin state + momentum
+    const [pinned, momentumMap] = await Promise.all([
+      getPinnedProject(mode),
+      getAllProjectsMomentum(mode),
+    ]);
     const pinnedId = pinned?.id || null;
 
     const cardData = await Promise.all(slice.map(async (project, idx) => {
@@ -106,6 +111,16 @@ export function renderProjectList(container, context, onOpen) {
       const circ = 2 * Math.PI * r;
       const dash = ((pct / 100) * circ).toFixed(2);
       const stagger = idx * 60;
+
+      // Momentum sparkline + last active
+      const momentum = momentumMap.get(project.id);
+      const sparkHtml = momentum ? renderSparkline(momentum.weeklyActivity, { isStalled: momentum.isStalled }) : '';
+      let lastActiveHtml = '';
+      if (momentum?.lastActiveDate) {
+        const daysAgo = Math.floor((Date.now() - new Date(momentum.lastActiveDate + 'T00:00:00').getTime()) / (24 * 60 * 60 * 1000));
+        const label = daysAgo === 0 ? 'Vandaag actief' : daysAgo === 1 ? '1 dag geleden' : `${daysAgo}d geleden`;
+        lastActiveHtml = `<span class="hub-card__last-active${momentum.isStalled ? ' hub-card__last-active--stalled' : ''}">${escapeHTML(label)}</span>`;
+      }
 
       return {
         project,
@@ -136,6 +151,10 @@ export function renderProjectList(container, context, onOpen) {
               </div>
               <h4 class="hub-card__title">${escapeHTML(project.title)}</h4>
               ${project.goal ? `<p class="hub-card__goal">${escapeHTML(project.goal.slice(0, 90))}${project.goal.length > 90 ? '…' : ''}</p>` : ''}
+              <div class="hub-card__momentum">
+                ${sparkHtml}
+                ${lastActiveHtml}
+              </div>
             </div>
           </article>
         `,

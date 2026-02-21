@@ -1,5 +1,6 @@
 /**
- * Theme Studio — Simplified preset-based theming UI.
+ * Theme Studio — Preset-based theming UI with advanced knobs,
+ * harmony suggestions, and progressive disclosure.
  * Renders into a container, returns { el, destroy }.
  */
 
@@ -8,6 +9,7 @@ import {
   getTheme, setTheme, resetTheme,
   exportThemeJson, importThemeJson,
   THEME_PRESETS,
+  generateHarmonySuggestions,
 } from '../core/themeEngine.js';
 import { ACCENT_COLORS } from '../constants.js';
 import { setSetting } from '../db.js';
@@ -20,13 +22,54 @@ function getActivePresetId(theme) {
   return null;
 }
 
+/** Color knob definitions for advanced mode */
+const COLOR_KNOBS = [
+  { key: 'accent',      label: 'Accentkleur',      placeholder: '#4f6ef7' },
+  { key: 'appBg',       label: 'Achtergrondkleur',  placeholder: '#f6f7f8' },
+  { key: 'blockBg',     label: 'Blok achtergrond',   placeholder: '#ffffff' },
+  { key: 'blockFg',     label: 'Tekstkleur',         placeholder: '#1f1f1f' },
+  { key: 'mutedFg',     label: 'Gedempte tekst',     placeholder: '#6b6b6b' },
+];
+
+const SLIDER_KNOBS = [
+  { key: 'tintStrength',   label: 'Tint sterkte',    min: 0, max: 100 },
+  { key: 'shadowStrength', label: 'Schaduw sterkte',  min: 0, max: 100 },
+];
+
 export function createThemeStudio() {
   const el = document.createElement('div');
   el.className = 'theme-studio';
+  let advancedOpen = false;
+  let feedbackMsg = null;
+  let feedbackTimeout = null;
+
+  function showFeedback(msg, isError) {
+    feedbackMsg = { text: msg, isError };
+    renderFeedback();
+    clearTimeout(feedbackTimeout);
+    feedbackTimeout = setTimeout(() => {
+      feedbackMsg = null;
+      renderFeedback();
+    }, 3000);
+  }
+
+  function renderFeedback() {
+    const fbEl = el.querySelector('[data-feedback]');
+    if (!fbEl) return;
+    if (feedbackMsg) {
+      fbEl.textContent = feedbackMsg.text;
+      fbEl.className = `theme-studio__feedback ${feedbackMsg.isError ? 'theme-studio__feedback--error' : 'theme-studio__feedback--success'}`;
+      fbEl.style.display = '';
+    } else {
+      fbEl.style.display = 'none';
+      fbEl.textContent = '';
+    }
+  }
 
   function render() {
     const theme = getTheme();
     const activePresetId = getActivePresetId(theme);
+    const harmony = generateHarmonySuggestions(theme.accent);
 
     el.innerHTML = `
       <div class="theme-studio__section">
@@ -39,6 +82,14 @@ export function createThemeStudio() {
             </button>
           `).join('')}
         </div>
+      </div>
+
+      <div class="theme-studio__section">
+        <button type="button" class="theme-studio__advanced-toggle" data-toggle-advanced>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theme-studio__chevron ${advancedOpen ? 'theme-studio__chevron--open' : ''}"><polyline points="6 9 12 15 18 9"/></svg>
+          Geavanceerd
+        </button>
+        ${advancedOpen ? renderAdvanced(theme, harmony) : ''}
       </div>
 
       <div class="theme-studio__section">
@@ -75,11 +126,62 @@ export function createThemeStudio() {
             Importeer thema
           </button>
         </div>
+        <div data-feedback style="display:none"></div>
         <input type="file" accept=".json" class="theme-studio__import-input" data-import-input />
       </div>
     `;
 
     bindEvents();
+    renderFeedback();
+  }
+
+  function renderAdvanced(theme, harmony) {
+    return `
+      <div class="theme-studio__knobs">
+        ${COLOR_KNOBS.map(knob => {
+          const val = theme[knob.key] || '';
+          return `
+            <div class="theme-studio__knob">
+              <label class="theme-studio__knob-label">${escapeHTML(knob.label)}</label>
+              <div class="theme-studio__color-input">
+                <input type="color" value="${escapeHTML(val || knob.placeholder)}" data-knob-color="${escapeHTML(knob.key)}" class="theme-studio__color-picker" />
+                <input type="text" value="${escapeHTML(val)}" placeholder="${escapeHTML(knob.placeholder)}" data-knob-text="${escapeHTML(knob.key)}" class="theme-studio__hex-input" maxlength="7" spellcheck="false" />
+                ${knob.key !== 'accent' && val ? `<button type="button" class="theme-studio__knob-clear" data-knob-clear="${escapeHTML(knob.key)}" title="Herstel standaard">&times;</button>` : ''}
+              </div>
+            </div>
+          `;
+        }).join('')}
+
+        ${SLIDER_KNOBS.map(knob => `
+          <div class="theme-studio__knob">
+            <label class="theme-studio__knob-label">${escapeHTML(knob.label)} <span class="theme-studio__knob-value" data-slider-value="${escapeHTML(knob.key)}">${theme[knob.key] ?? 50}</span></label>
+            <input type="range" min="${knob.min}" max="${knob.max}" value="${theme[knob.key] ?? 50}" data-knob-range="${escapeHTML(knob.key)}" class="theme-studio__range" />
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="theme-studio__section" style="margin-top:var(--space-3)">
+        <h4 class="theme-studio__section-title">Harmonie suggesties</h4>
+        <div class="theme-studio__harmony">
+          <div class="theme-studio__harmony-group">
+            <span class="theme-studio__harmony-label">Analoog</span>
+            <div class="theme-studio__harmony-dots">
+              ${harmony.analogous.map(hex => `
+                <button type="button" class="theme-studio__harmony-dot" data-harmony-hex="${escapeHTML(hex)}" style="background:${escapeHTML(hex)}" title="${escapeHTML(hex)}"></button>
+              `).join('')}
+            </div>
+          </div>
+          <div class="theme-studio__harmony-group">
+            <span class="theme-studio__harmony-label">Split-comp.</span>
+            <div class="theme-studio__harmony-dots">
+              ${harmony.splitComplementary.map(hex => `
+                <button type="button" class="theme-studio__harmony-dot" data-harmony-hex="${escapeHTML(hex)}" style="background:${escapeHTML(hex)}" title="${escapeHTML(hex)}"></button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function bindEvents() {
@@ -90,10 +192,8 @@ export function createThemeStudio() {
         const preset = THEME_PRESETS[id];
         if (!preset) return;
         await setTheme({ ...preset.theme });
-        // Sync old accentColor setting for backwards compatibility
         const match = ACCENT_COLORS.find(c => c.hex === preset.theme.accent);
         if (match) await setSetting('accentColor', match.id);
-        // Sync the settings panel's theme toggle if preferDark changed
         if (preset.theme.preferDark === true) {
           await setSetting('theme', 'dark');
         } else if (preset.theme.preferDark === false) {
@@ -101,6 +201,88 @@ export function createThemeStudio() {
         } else {
           await setSetting('theme', 'system');
         }
+        render();
+      });
+    });
+
+    // Advanced toggle
+    el.querySelector('[data-toggle-advanced]')?.addEventListener('click', () => {
+      advancedOpen = !advancedOpen;
+      render();
+    });
+
+    // Color knobs — color picker
+    el.querySelectorAll('[data-knob-color]').forEach(input => {
+      input.addEventListener('input', async () => {
+        const key = input.dataset.knobColor;
+        const hex = input.value;
+        await setTheme({ [key]: hex });
+        // Sync text input
+        const textInput = el.querySelector(`[data-knob-text="${key}"]`);
+        if (textInput) textInput.value = hex;
+        // Sync accent-color setting for backwards compat
+        if (key === 'accent') {
+          const match = ACCENT_COLORS.find(c => c.hex === hex);
+          if (match) await setSetting('accentColor', match.id);
+          // Re-render harmony suggestions
+          render();
+        }
+      });
+    });
+
+    // Color knobs — hex text input
+    el.querySelectorAll('[data-knob-text]').forEach(input => {
+      input.addEventListener('change', async () => {
+        const key = input.dataset.knobText;
+        let hex = input.value.trim();
+        if (!hex) {
+          // Clear to default
+          await setTheme({ [key]: null });
+          render();
+          return;
+        }
+        if (!hex.startsWith('#')) hex = '#' + hex;
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+        await setTheme({ [key]: hex });
+        // Sync color picker
+        const colorInput = el.querySelector(`[data-knob-color="${key}"]`);
+        if (colorInput) colorInput.value = hex;
+        if (key === 'accent') {
+          const match = ACCENT_COLORS.find(c => c.hex === hex);
+          if (match) await setSetting('accentColor', match.id);
+          render();
+        }
+      });
+    });
+
+    // Color knob clear buttons
+    el.querySelectorAll('[data-knob-clear]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.dataset.knobClear;
+        await setTheme({ [key]: null });
+        render();
+      });
+    });
+
+    // Slider knobs
+    el.querySelectorAll('[data-knob-range]').forEach(input => {
+      input.addEventListener('input', async () => {
+        const key = input.dataset.knobRange;
+        const val = parseInt(input.value, 10);
+        // Update display value
+        const valEl = el.querySelector(`[data-slider-value="${key}"]`);
+        if (valEl) valEl.textContent = val;
+        await setTheme({ [key]: val });
+      });
+    });
+
+    // Harmony suggestions
+    el.querySelectorAll('[data-harmony-hex]').forEach(dot => {
+      dot.addEventListener('click', async () => {
+        const hex = dot.dataset.harmonyHex;
+        await setTheme({ accent: hex });
+        const match = ACCENT_COLORS.find(c => c.hex === hex);
+        if (match) await setSetting('accentColor', match.id);
         render();
       });
     });
@@ -121,6 +303,7 @@ export function createThemeStudio() {
       a.download = 'boris-theme.json';
       a.click();
       URL.revokeObjectURL(url);
+      showFeedback('Thema geëxporteerd', false);
     });
 
     el.querySelector('[data-action="import"]')?.addEventListener('click', () => {
@@ -133,8 +316,15 @@ export function createThemeStudio() {
       try {
         const text = await file.text();
         const ok = await importThemeJson(text);
-        if (ok) render();
-      } catch { /* ignore */ }
+        if (ok) {
+          showFeedback('Thema geïmporteerd', false);
+          render();
+        } else {
+          showFeedback('Ongeldig themabestand', true);
+        }
+      } catch {
+        showFeedback('Fout bij importeren', true);
+      }
       e.target.value = '';
     });
   }
@@ -144,6 +334,7 @@ export function createThemeStudio() {
   return {
     el,
     destroy() {
+      clearTimeout(feedbackTimeout);
       el.innerHTML = '';
     },
   };

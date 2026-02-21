@@ -1,4 +1,6 @@
 import { getActiveProjects, getProjectById } from '../../stores/projects.js';
+import { getProjectMomentum } from '../../stores/momentum.js';
+import { renderSparkline } from '../../ui/sparkline.js';
 import { escapeHTML } from '../../utils.js';
 import { renderMonthGrid } from './agenda.js';
 import { renderProjectTasks } from './task-list.js';
@@ -76,10 +78,28 @@ export function renderProjectDetail(container, context) {
     const project = await getProjectById(selectedProjectId);
     if (!project) return;
 
+    // Momentum data (non-blocking)
+    let momentumHtml = '';
+    try {
+      const momentum = await getProjectMomentum(project.id, project);
+      const spark = renderSparkline(momentum.weeklyActivity, { isStalled: momentum.isStalled });
+      let lastLabel = '';
+      if (momentum.lastActiveDate) {
+        const daysAgo = Math.floor((Date.now() - new Date(momentum.lastActiveDate + 'T00:00:00').getTime()) / (24 * 60 * 60 * 1000));
+        lastLabel = daysAgo === 0 ? 'Vandaag actief' : daysAgo === 1 ? '1 dag geleden' : `${daysAgo}d geleden`;
+      }
+      momentumHtml = `
+        <div class="project-detail__momentum">
+          ${spark}
+          ${lastLabel ? `<span class="project-detail__last-active${momentum.isStalled ? ' project-detail__last-active--stalled' : ''}">${escapeHTML(lastLabel)}</span>` : ''}
+        </div>`;
+    } catch { /* non-critical */ }
+
     contentEl.innerHTML = `
       <div class="project-detail__header">
         <h3 class="project-detail__title">${escapeHTML(project.title)}</h3>
         ${project.goal ? `<p class="project-detail__goal">${escapeHTML(project.goal)}</p>` : ''}
+        ${momentumHtml}
       </div>
       <div class="project-detail__agenda" data-section="agenda"></div>
       <div class="project-detail__tasks" data-section="tasks"></div>

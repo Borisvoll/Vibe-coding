@@ -2,6 +2,152 @@
 
 ---
 
+## Milestone: Quality Pass — Consistency, A11y, Layout
+
+**Date:** 2026-02-21
+**Docs:** `docs/qa.md` (findings), `docs/components.md` (canonical primitives)
+**Branch:** `claude/audit-react-app-docs-UdBBt`
+
+### Overview
+
+Work through three priority tiers from the audit. P1 is accessibility — fix
+before any new feature ships. P2 is consistency — fix when touching a file for
+another reason. P3 is polish — do opportunistically.
+
+---
+
+### Phase QA-P1 — Accessibility (Critical)
+
+- [ ] **QA-P1a** Add `type="button"` to 28 buttons across 12 files:
+  - `src/blocks/bpv-today/view.js` (~24–34)
+  - `src/blocks/personal-energy/view.js` (~17)
+  - `src/blocks/personal-today/view.js` (~25, 27, 33, 35, 39)
+  - `src/blocks/personal-week-planning/view.js` (~19, 22)
+  - `src/blocks/personal-weekly-reflection/view.js` (~18)
+  - `src/blocks/school-concept-vault/view.js` (~27, 39)
+  - `src/blocks/school-current-project/view.js` (~29)
+  - `src/blocks/school-dashboard/view.js` (~62)
+  - `src/blocks/school-milestones/view.js` (~21, 30)
+  - `src/blocks/school-skill-tracker/view.js` (~22)
+  - `src/blocks/school-today/view.js` (~24, 27, 33)
+  - `src/blocks/tasks/view.js` (~80)
+  - Verify with: `grep -rn '<button' src/blocks/ | grep -v 'type='`
+
+- [ ] **QA-P1b** Fix missing focus indicators (10 CSS locations — add
+  `box-shadow: 0 0 0 3px var(--color-accent-light); border-color: var(--color-accent)` after each `outline: none`):
+  - `src/ui/command-palette.css` (~line 66)
+  - `src/ui/theme-studio.css` (~lines 163, 197)
+  - `src/blocks/personal-dashboard/styles.css` (~line 80)
+  - `src/blocks/conversation-debrief/styles.css` (~line 64)
+  - `src/blocks/worry-dump/styles.css` (~line 48)
+  - `src/blocks/lijsten-screen/styles.css` (~line 220)
+  - `src/blocks/project-hub/styles.css` (~lines 1050, 1438)
+  - `src/blocks/done-list/styles.css` (~line 45)
+  - `src/blocks/tasks/styles.css` (~line 29)
+  - Verify with: `grep -rn 'outline: none\|outline: 0' src/blocks/*/styles.css src/ui/*.css`
+
+- [ ] **QA-P1c** Add `aria-label` to 14+ unlabelled inputs (prefer `aria-label`
+  for inline add-inputs; use `<label for=...>` where space allows):
+  - `src/blocks/conversation-debrief/view.js`
+  - `src/blocks/daily-reflection/view.js`
+  - `src/blocks/daily-todos/view.js`
+  - `src/blocks/done-list/view.js`
+  - `src/blocks/inbox/view.js`
+  - `src/blocks/inbox-screen/view.js`
+  - `src/blocks/lijsten/view.js` (2 inputs)
+  - `src/blocks/lijsten-screen/view.js` (4 inputs)
+  - `src/blocks/personal-today/view.js` (4 inputs)
+  - `src/blocks/personal-week-planning/view.js`
+  - `src/blocks/projects/view.js` (3 inputs)
+  - `src/blocks/school-concept-vault/view.js` (4 inputs)
+  - `src/blocks/school-milestones/view.js` (2 inputs)
+  - `src/blocks/school-today/view.js`
+  - `src/blocks/tasks/view.js`
+  - `src/blocks/worry-dump/view.js`
+
+- [ ] **QA-P1d** Add `aria-label` to unlabelled select and checkbox:
+  - `src/blocks/personal-week-planning/view.js` `<select>` (~line 17)
+  - `src/blocks/context-checklist/view.js` `<input type="checkbox">` (~line 72)
+
+- [ ] **QA-P1e** Fix z-index collisions — align to approved scale
+  (see `docs/components.md §5`):
+  - `src/styles/base.css` — toast container: `9999` → `1100`; toast backdrop: `9998` → `1099`
+  - `src/ui/modal.css` — modal overlay: `9999` → `1000`
+  - `src/styles/components.css` — tooltip: `999` → `200`
+  - `src/blocks/styles.css` — mode wash decoration: `999` → `10`
+  - `src/ui/morning-flow.css` — already at `2000`, keep as-is
+  - After change: test that modals open correctly over page content, toasts
+    appear above modals, morning flow appears above everything
+
+- [ ] **QA-P1f** Run full test suite and confirm 0 regressions: `npm test`
+
+- [ ] **QA-P1g** Manual keyboard test (see `docs/qa.md §Testing Guidance`):
+  - Tab through Vandaag: every input gets visible focus ring
+  - Tab through BPV log form: all 4 inputs reachable by keyboard
+  - Open morning flow: Tab stays inside the overlay
+  - Ctrl+K palette: arrow keys navigate results, Enter executes
+
+---
+
+### Phase QA-P2 — Consistency (Incremental, When Touching Files)
+
+These are NOT a dedicated migration sprint. Fix each item the next time the
+file is opened for another reason.
+
+- [ ] **QA-P2a** Replace hardcoded `#fff`, `white` in 8 CSS files with
+  `var(--color-accent-text)` (see `docs/qa.md §P2-A` for exact file/line list)
+  - Verify: `grep -rn 'color: #fff\|color: white\|color: #ffffff' src/blocks/*/styles.css`
+
+- [ ] **QA-P2b** Standardise card padding: change `.os-mini-card` horizontal
+  padding from `var(--space-6)` to `var(--space-5)` (uniform all sides):
+  - `src/blocks/styles.css` — find `.os-mini-card` padding rule, change to `padding: var(--space-5)`
+  - Visual regression: spot-check Vandaag, Dashboard, Settings in browser
+
+- [ ] **QA-P2c** Confirm `--ui-card-radius` is aliased to `--radius-lg` in
+  `src/styles/variables.css`. If not, add: `--ui-card-radius: var(--radius-lg);`
+
+- [ ] **QA-P2d** When editing any block button, replace block-specific class with
+  `btn btn-{variant}` (tracked per-block in `docs/qa.md §P2-B`)
+
+- [ ] **QA-P2e** Remove `button:focus { outline: none }` from any block CSS
+  that has it without a visible replacement (check: project-hub, personal-dashboard)
+
+---
+
+### Phase QA-P3 — Polish (Opportunistic)
+
+- [ ] **QA-P3a** Add `aria-live="polite"` to reactive count labels:
+  - DailyTodos cap counter ("3/3 taken")
+  - Inbox nav badge
+  - Cockpit stats counts
+  - BPVQuickLog netto label
+
+- [ ] **QA-P3b** Add `aria-label` to the 8 `<form>` elements that lack one,
+  or replace with `<div>` where form semantics add no value
+
+- [ ] **QA-P3c** Add `aria-controls` to collapsible section header buttons
+  in `src/ui/collapsible-section.js`
+
+- [ ] **QA-P3d** Add focus trap to morning flow overlay in
+  `src/ui/morning-flow.js` (Tab/Shift+Tab cycles within; restore on close)
+
+- [ ] **QA-P3e** Add combobox ARIA pattern to command palette
+  (`role="combobox"` + `aria-controls` + `aria-activedescendant` + `role="listbox/option"`)
+
+---
+
+### Definition of Done (QA Milestone)
+
+- [ ] `npm test` passes
+- [ ] `grep -rn '<button' src/blocks/ | grep -v 'type='` returns 0 results
+- [ ] `grep -rn 'outline: none\|outline: 0' src/blocks/*/styles.css src/ui/*.css` returns only lines with visible replacements
+- [ ] `grep -rn 'color: #fff\|color: white' src/blocks/*/styles.css` returns 0 results
+- [ ] Manual keyboard tab-through of Vandaag and Dashboard: every element has visible focus ring
+- [ ] axe DevTools scan on Vandaag: 0 critical, 0 serious issues
+- [ ] z-index: Modal appears above page; Toast appears above modal; Morning flow appears above toast
+
+---
+
 ## Milestone: Vandaag MVP — True Home Screen
 
 **Date:** 2026-02-21

@@ -2180,3 +2180,55 @@ LEVEL 3 — ARCHIVE (Reference)
 ---
 
 **STOP. Awaiting approval before implementing any structural changes.**
+
+---
+
+## Theme & Readability Fixes — 2026-02-21
+
+### Milestone 1: Immediate UI Fixes (Small, Safe)
+
+#### Fix 1: Date Header "??"
+- [ ] Expand `WEEKDAYS` in `src/constants.js` to include all 7 days (`za`, `zo`)
+- [ ] Verify `formatDateShort()` in `src/utils.js` handles all days correctly
+- [ ] Confirm shell.js renders date on weekends
+- [ ] Run tests — ensure no regressions
+
+#### Fix 2: "Hoe voelt je hoofd" Readability
+- [ ] Fix text contrast in `src/blocks/brain-state/view.js` and `styles.css`
+- [ ] Ensure all three states (green/orange/red) pass WCAG AA (4.5:1) in light mode
+- [ ] Add dark-mode overrides for brain-state action backgrounds
+- [ ] Manual check: open Personal page in each preset, verify readability
+- [ ] Run tests — ensure no regressions
+
+#### Verification
+- [ ] `npm test` passes (298 tests)
+- [ ] Manual: date renders correctly on weekday and weekend
+- [ ] Manual: brain-state readable in all presets (light + dark)
+- [ ] Update `docs/a11y-contrast.md`
+- [ ] Commit with specific message
+
+---
+
+### Milestone 2: Theme Studio Redesign (Pending Decision Questions)
+
+> Blocked: waiting for user answers to Phase 2 questions before planning details.
+
+- [ ] Design Theme Model (pure functions, no DOM)
+- [ ] Implement color-wheel harmony rules
+- [ ] Add contrast guardrails (auto-fix or warn+fix)
+- [ ] Redesign Theme Studio UI (progressive disclosure)
+- [ ] Preserve existing token system
+- [ ] Add export/import with validation
+- [ ] Write `docs/theme-studio.md`
+- [ ] Update `docs/design-principles.md`
+- [ ] Run tests + manual verification
+
+---
+
+### Milestone 3: Clean-Up (After Milestone 2)
+
+- [ ] Sweep for orphaned CSS vars and unused preset configs
+- [ ] Find components bypassing tokens (hardcoded colors/inline styles)
+- [ ] Write `docs/audit/theme-orphans.md`
+- [ ] Optional: CI check for forbidden Tailwind color utilities
+- [ ] Full test suite + manual preset/accent verification

@@ -7,6 +7,9 @@ const STATES = {
     emoji: '🟢',
     color: '#10b981',
     colorLight: '#d1fae5',
+    colorDark: '#064e3b',
+    colorLightDark: '#0d3026',
+    actionText: '#065f46',
     action: 'Top! Pak je belangrijkste taak.',
   },
   orange: {
@@ -14,6 +17,9 @@ const STATES = {
     emoji: '🟠',
     color: '#f59e0b',
     colorLight: '#fef3c7',
+    colorDark: '#92400e',
+    colorLightDark: '#3b2308',
+    actionText: '#78350f',
     action: 'Even ademhalen. Kleine taak eerst.',
   },
   red: {
@@ -21,6 +27,9 @@ const STATES = {
     emoji: '🔴',
     color: '#ef4444',
     colorLight: '#fee2e2',
+    colorDark: '#991b1b',
+    colorLightDark: '#3b1010',
+    actionText: '#991b1b',
     action: '10 min weg. Oorkappen. Simpele handeling.',
   },
 };
@@ -47,14 +56,14 @@ export function renderBrainState(container) {
       <div class="brain-state__buttons">
         ${Object.entries(STATES).map(([key, s]) => `
           <button type="button" class="brain-state__btn${current === key ? ' brain-state__btn--active' : ''}"
-            data-state="${key}" style="--state-color:${s.color};--state-light:${s.colorLight}">
+            data-state="${key}" style="--state-color:${s.color};--state-light:${s.colorLight};--state-color-dark:${s.colorDark};--state-light-dark:${s.colorLightDark}">
             <span class="brain-state__emoji">${s.emoji}</span>
             <span class="brain-state__label">${s.label}</span>
           </button>
         `).join('')}
       </div>
       ${stateInfo ? `
-        <div class="brain-state__action" style="--action-color:${stateInfo.color};--action-light:${stateInfo.colorLight}">
+        <div class="brain-state__action" style="--action-color:${stateInfo.color};--action-light:${stateInfo.colorLight};--action-text:${stateInfo.actionText};--action-color-dark:${stateInfo.colorDark};--action-light-dark:${stateInfo.colorLightDark}">
           <span class="brain-state__action-text">${stateInfo.action}</span>
         </div>
       ` : ''}

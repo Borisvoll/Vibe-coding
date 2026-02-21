@@ -61,6 +61,39 @@
 
 .brain-state__action-text {
   font-size: var(--font-sm, 0.8125rem);
-  color: var(--color-text, #1f2937);
+  color: var(--action-text, #1f2937);
   font-weight: 500;
+}
+
+/* Dark mode: invert to dark-tinted backgrounds with light text */
+[data-theme="dark"] .brain-state__btn:hover,
+[data-theme="dark"] .brain-state__btn--active {
+  border-color: var(--state-color-dark);
+  background: var(--state-light-dark);
+}
+
+[data-theme="dark"] .brain-state__action {
+  background: var(--action-light-dark);
+  border-left-color: var(--action-color-dark);
+}
+
+[data-theme="dark"] .brain-state__action-text {
+  color: var(--color-text, #e8e8e8);
+}
+
+@media (prefers-color-scheme: dark) {
+  :not([data-theme="light"]) .brain-state__btn:hover,
+  :not([data-theme="light"]) .brain-state__btn--active {
+    border-color: var(--state-color-dark);
+    background: var(--state-light-dark);
+  }
+
+  :not([data-theme="light"]) .brain-state__action {
+    background: var(--action-light-dark);
+    border-left-color: var(--action-color-dark);
+  }
+
+  :not([data-theme="light"]) .brain-state__action-text {
+    color: var(--color-text, #e8e8e8);
+  }
 }

@@ -220,8 +220,9 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
     opt.addEventListener('click', async () => {
       const value = opt.querySelector('input').value;
       await setSetting('theme', value);
-      if (value === 'system') document.documentElement.removeAttribute('data-theme');
-      else document.documentElement.setAttribute('data-theme', value);
+      // Sync preferDark in theme engine so applyTheme stays consistent
+      const preferDark = value === 'dark' ? true : value === 'light' ? false : null;
+      await setTheme({ preferDark });
       // Update selected state visually
       container.querySelectorAll('[data-setting="theme"] .radio-option').forEach((o) => {
         o.classList.toggle('selected', o.querySelector('input').value === value);

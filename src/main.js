@@ -29,12 +29,7 @@ let updateBanner = null;
 let swControllerChangeBound = false;
 
 async function applyUserSettings() {
-  const theme = await getSetting('theme');
-  if (theme && theme !== 'system') {
-    document.documentElement.setAttribute('data-theme', theme);
-  }
-
-  // Theme engine handles accent + all derived tokens (backwards-compatible)
+  // Theme engine handles accent, dark/light mode, and all derived tokens
   await initTheme();
 
   const compact = await getSetting('compact');

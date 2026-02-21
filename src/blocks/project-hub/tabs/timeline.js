@@ -15,17 +15,19 @@ const PHASE_COLORS = [
 ];
 
 /**
- * Timeline tab — week-strip (default) ↔ month-view toggle.
- * Milestone drag via mouse events.
+ * Timeline tab — week-strip (default) ↔ month-view ↔ gantt-view toggle.
+ * Gantt: phases shown as draggable horizontal bars.
+ * Milestone drag via HTML5 dragdrop in week view.
  */
 export function renderTimelineTab(host, project, context) {
   const { eventBus } = context;
-  let view = 'week';  // 'week' | 'month'
+  let view = 'week';  // 'week' | 'month' | 'gantt'
   let weekOffset = 0; // weeks from current
   let monthOffset = 0;
   let showMilestoneForm = false;
   let showPhaseForm = false;
   let dragState = null; // { milestoneId, startX, origDate }
+  let ganttDrag = null; // { phaseId, type: 'move'|'resize', startX, origStart, origEnd }
 
   async function render() {
     const milestones = project.milestones || [];
@@ -34,19 +36,25 @@ export function renderTimelineTab(host, project, context) {
 
     const toggleLabel = view === 'week' ? 'Maandoverzicht' : 'Weekoverzicht';
 
+    const viewCycleLabel = view === 'week' ? 'Maand' : view === 'month' ? 'Gantt' : 'Week';
+
     host.innerHTML = `
       <div class="hub-timeline">
         <div class="hub-timeline__header">
           <h4 class="hub-timeline__title">Tijdlijn</h4>
           <div class="hub-timeline__controls">
-            <button type="button" class="btn btn-ghost btn-sm" data-toggle-view>${toggleLabel}</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-toggle-view>${viewCycleLabel} →</button>
             <button type="button" class="btn btn-ghost btn-sm" data-add-milestone>+ Mijlpaal</button>
             <button type="button" class="btn btn-ghost btn-sm" data-add-phase>+ Fase</button>
           </div>
         </div>
         ${renderForms()}
-        ${view === 'week' ? renderWeekView(today, milestones, phases) : renderMonthView(today, milestones)}
-        ${phases.length > 0 ? renderPhaseLegend(phases) : ''}
+        ${view === 'week'
+          ? renderWeekView(today, milestones, phases)
+          : view === 'month'
+            ? renderMonthView(today, milestones)
+            : renderGanttView(today, milestones, phases)}
+        ${phases.length > 0 && view !== 'gantt' ? renderPhaseLegend(phases) : ''}
       </div>
     `;
 
@@ -185,6 +193,126 @@ export function renderTimelineTab(host, project, context) {
     `;
   }
 
+  /**
+   * Gantt view — horizontal bars for phases, diamonds for milestones.
+   * Time window: from earliest phase start to latest phase end (min 4 weeks shown).
+   */
+  function renderGanttView(today, milestones, phases) {
+    if (phases.length === 0 && milestones.length === 0) {
+      return `<div class="hub-gantt__empty">Voeg fases of mijlpalen toe om de Gantt-weergave te zien.</div>`;
+    }
+
+    // Compute time window
+    const allDates = [
+      ...phases.flatMap((p) => [p.startDate, p.endDate]),
+      ...milestones.map((m) => m.date),
+      today,
+    ].filter(Boolean);
+
+    let windowStart = allDates.reduce((a, b) => a < b ? a : b);
+    let windowEnd = allDates.reduce((a, b) => a > b ? a : b);
+
+    // Ensure minimum 28-day window
+    const startD = new Date(windowStart + 'T00:00:00');
+    const endD = new Date(windowEnd + 'T00:00:00');
+    if ((endD - startD) / 86400000 < 28) {
+      endD.setDate(endD.getDate() + 28);
+      windowEnd = endD.toISOString().slice(0, 10);
+    }
+    // Pad 3 days on each side
+    startD.setDate(startD.getDate() - 3);
+    endD.setDate(endD.getDate() + 3);
+    windowStart = startD.toISOString().slice(0, 10);
+    windowEnd = endD.toISOString().slice(0, 10);
+
+    const totalDays = Math.round((endD - startD) / 86400000);
+
+    function pct(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return Math.max(0, Math.min(100, ((d - startD) / (endD - startD)) * 100));
+    }
+
+    // Week headers
+    const weekHeaders = [];
+    const cur = new Date(startD);
+    cur.setDate(cur.getDate() - ((cur.getDay() + 6) % 7)); // snap to Monday
+    while (cur <= endD) {
+      weekHeaders.push({
+        label: cur.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' }),
+        pct: Math.max(0, ((cur - startD) / (endD - startD)) * 100),
+      });
+      cur.setDate(cur.getDate() + 7);
+    }
+
+    const todayPct = pct(today);
+    const showTodayMarker = today >= windowStart && today <= windowEnd;
+
+    return `
+      <div class="hub-gantt" data-gantt>
+        <!-- Time axis -->
+        <div class="hub-gantt__axis">
+          ${weekHeaders.map((w) => `
+            <span class="hub-gantt__week-label" style="left:${w.pct.toFixed(2)}%">${w.label}</span>
+          `).join('')}
+          ${showTodayMarker ? `
+            <span class="hub-gantt__today-marker" style="left:${todayPct.toFixed(2)}%" title="Vandaag">
+              <span class="hub-gantt__today-line"></span>
+              <span class="hub-gantt__today-dot"></span>
+            </span>` : ''}
+        </div>
+
+        <!-- Phase bars -->
+        <div class="hub-gantt__rows">
+          ${phases.map((phase) => {
+            if (!phase.startDate || !phase.endDate) return '';
+            const left = pct(phase.startDate);
+            const right = 100 - pct(phase.endDate);
+            const width = Math.max(1, 100 - left - right);
+            const isOverdue = phase.endDate < today;
+            return `
+              <div class="hub-gantt__row">
+                <div class="hub-gantt__row-label" title="${escapeHTML(phase.title)}">${escapeHTML(phase.title)}</div>
+                <div class="hub-gantt__track">
+                  <div class="hub-gantt__bar ${isOverdue ? 'hub-gantt__bar--overdue' : ''}"
+                    data-gantt-phase="${phase.id}"
+                    style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%;--phase-color:${phase.color || 'var(--color-accent)'}"
+                    title="${escapeHTML(phase.title)}: ${phase.startDate} → ${phase.endDate}">
+                    <span class="hub-gantt__bar-label">${escapeHTML(phase.title)}</span>
+                    <span class="hub-gantt__bar-dates">${phase.startDate} – ${phase.endDate}</span>
+                    <span class="hub-gantt__resize-handle" data-gantt-resize="${phase.id}" title="Sleep om einddatum aan te passen"></span>
+                  </div>
+                  ${showTodayMarker ? `<span class="hub-gantt__today-overlay" style="left:${todayPct.toFixed(2)}%"></span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+
+          <!-- Milestone diamonds row -->
+          ${milestones.length > 0 ? `
+            <div class="hub-gantt__row">
+              <div class="hub-gantt__row-label">Mijlpalen</div>
+              <div class="hub-gantt__track hub-gantt__track--ms">
+                ${milestones.map((m) => {
+                  if (!m.date || m.date < windowStart || m.date > windowEnd) return '';
+                  const p = pct(m.date);
+                  return `
+                    <span class="hub-gantt__milestone" style="left:${p.toFixed(2)}%" title="${escapeHTML(m.title)} (${m.date})">
+                      ◆
+                      <span class="hub-gantt__ms-label">${escapeHTML(m.title)}</span>
+                    </span>
+                  `;
+                }).join('')}
+                ${showTodayMarker ? `<span class="hub-gantt__today-overlay" style="left:${todayPct.toFixed(2)}%"></span>` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+
+        <p class="hub-gantt__hint">Sleep de balk om te verplaatsen · sleep de rechterrand om de einddatum aan te passen</p>
+      </div>
+    `;
+  }
+
   function renderPhaseLegend(phases) {
     return `
       <div class="hub-timeline__phase-legend">
@@ -201,11 +329,16 @@ export function renderTimelineTab(host, project, context) {
   }
 
   function bindEvents(today, milestones, phases) {
-    // Toggle view
+    // Toggle view (cycle: week → month → gantt → week)
     host.querySelector('[data-toggle-view]')?.addEventListener('click', () => {
-      view = view === 'week' ? 'month' : 'week';
+      view = view === 'week' ? 'month' : view === 'month' ? 'gantt' : 'week';
       render();
     });
+
+    // Gantt drag handlers
+    if (view === 'gantt') {
+      bindGanttDrag(phases);
+    }
 
     // Week navigation
     host.querySelector('[data-week-prev]')?.addEventListener('click', () => { weekOffset--; render(); });
@@ -335,9 +468,144 @@ export function renderTimelineTab(host, project, context) {
     });
   }
 
+  function bindGanttDrag(phases) {
+    const ganttEl = host.querySelector('[data-gantt]');
+    if (!ganttEl) return;
+
+    function dateFromOffset(refDateStr, deltaDays) {
+      const d = new Date(refDateStr + 'T00:00:00');
+      d.setDate(d.getDate() + Math.round(deltaDays));
+      return d.toISOString().slice(0, 10);
+    }
+
+    function getTrackWidth(bar) {
+      return bar.closest('.hub-gantt__track')?.getBoundingClientRect().width || 1;
+    }
+
+    function daysPerPx(bar) {
+      // Get total days in the gantt window from the time axis
+      const axis = ganttEl.querySelector('.hub-gantt__axis');
+      const labels = ganttEl.querySelectorAll('.hub-gantt__week-label');
+      if (labels.length < 2) return 1;
+      const axisRect = axis.getBoundingClientRect();
+      const weeks = labels.length - 1;
+      return (weeks * 7) / axisRect.width;
+    }
+
+    // Drag bar to move phase (both start and end shift)
+    ganttEl.querySelectorAll('[data-gantt-phase]').forEach((bar) => {
+      bar.addEventListener('mousedown', (e) => {
+        // Ignore if clicking the resize handle
+        if (e.target.hasAttribute('data-gantt-resize')) return;
+        e.preventDefault();
+        const phaseId = bar.dataset.ganttPhase;
+        const phase = (project.phases || []).find((p) => p.id === phaseId);
+        if (!phase) return;
+        ganttDrag = {
+          phaseId, type: 'move',
+          startX: e.clientX,
+          origStart: phase.startDate,
+          origEnd: phase.endDate,
+          dpx: daysPerPx(bar),
+        };
+        bar.classList.add('hub-gantt__bar--dragging');
+      });
+    });
+
+    // Drag resize handle (only end date shifts)
+    ganttEl.querySelectorAll('[data-gantt-resize]').forEach((handle) => {
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const phaseId = handle.dataset.ganttResize;
+        const phase = (project.phases || []).find((p) => p.id === phaseId);
+        if (!phase) return;
+        const bar = ganttEl.querySelector(`[data-gantt-phase="${phaseId}"]`);
+        ganttDrag = {
+          phaseId, type: 'resize',
+          startX: e.clientX,
+          origStart: phase.startDate,
+          origEnd: phase.endDate,
+          dpx: daysPerPx(bar),
+        };
+        bar?.classList.add('hub-gantt__bar--dragging');
+      });
+    });
+
+    function onMouseMove(e) {
+      if (!ganttDrag) return;
+      const deltaPx = e.clientX - ganttDrag.startX;
+      const deltaDays = deltaPx * ganttDrag.dpx;
+      const bar = ganttEl.querySelector(`[data-gantt-phase="${ganttDrag.phaseId}"]`);
+
+      if (ganttDrag.type === 'move') {
+        const newStart = dateFromOffset(ganttDrag.origStart, deltaDays);
+        const newEnd = dateFromOffset(ganttDrag.origEnd, deltaDays);
+        if (bar) {
+          const datesEl = bar.querySelector('.hub-gantt__bar-dates');
+          if (datesEl) datesEl.textContent = `${newStart} – ${newEnd}`;
+        }
+      } else {
+        const newEnd = dateFromOffset(ganttDrag.origEnd, deltaDays);
+        const safEnd = newEnd > ganttDrag.origStart ? newEnd : ganttDrag.origStart;
+        if (bar) {
+          const datesEl = bar.querySelector('.hub-gantt__bar-dates');
+          if (datesEl) datesEl.textContent = `${ganttDrag.origStart} – ${safEnd}`;
+        }
+      }
+    }
+
+    async function onMouseUp(e) {
+      if (!ganttDrag) return;
+      const deltaPx = e.clientX - ganttDrag.startX;
+      const deltaDays = deltaPx * ganttDrag.dpx;
+
+      let newStart = ganttDrag.origStart;
+      let newEnd = ganttDrag.origEnd;
+
+      if (ganttDrag.type === 'move') {
+        newStart = dateFromOffset(ganttDrag.origStart, deltaDays);
+        newEnd = dateFromOffset(ganttDrag.origEnd, deltaDays);
+      } else {
+        newEnd = dateFromOffset(ganttDrag.origEnd, deltaDays);
+        if (newEnd <= newStart) newEnd = dateFromOffset(newStart, 1);
+      }
+
+      const phaseId = ganttDrag.phaseId;
+      ganttDrag = null;
+
+      const bar = ganttEl.querySelector(`[data-gantt-phase="${phaseId}"]`);
+      bar?.classList.remove('hub-gantt__bar--dragging');
+
+      // Save to store
+      const updatedPhases = (project.phases || []).map((p) =>
+        p.id === phaseId ? { ...p, startDate: newStart, endDate: newEnd } : p
+      );
+      const { updateProject } = await import('../../../stores/projects.js');
+      const result = await updateProject(project.id, { phases: updatedPhases });
+      if (result) project.phases = result.phases;
+      eventBus.emit('projects:changed');
+      await render();
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // Store cleanup handlers so we can remove them
+    ganttEl._cleanupDrag = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+  }
+
   render();
 
   return {
-    unmount() { host.innerHTML = ''; },
+    unmount() {
+      // Clean up any dangling Gantt drag listeners
+      const ganttEl = host.querySelector('[data-gantt]');
+      ganttEl?._cleanupDrag?.();
+      host.innerHTML = '';
+    },
   };
 }

@@ -78,12 +78,55 @@ export async function getRecentEntries(limit = 7) {
 }
 
 /**
+ * Calculate the current streak for a single habit key.
+ * Looks back through recent entries and counts consecutive days
+ * (starting from yesterday or today) where the habit was done.
+ */
+export async function getHabitStreak(habitKey) {
+  // Fetch last 90 days of entries (enough for any reasonable streak)
+  const entries = await getRecentByIndex(WELLBEING_STORE, 'updated_at', 90);
+  const today = getToday();
+
+  // Build a set of dates where this habit was completed
+  const doneSet = new Set();
+  for (const e of entries) {
+    const date = e.date || e.id;
+    if (e.habits && e.habits[habitKey]) {
+      doneSet.add(date);
+    }
+  }
+
+  // Count streak going backwards from today (include today if done)
+  let streak = 0;
+  const cur = new Date(today + 'T00:00:00');
+  while (true) {
+    const key = cur.toISOString().slice(0, 10);
+    if (doneSet.has(key)) {
+      streak++;
+      cur.setDate(cur.getDate() - 1);
+    } else {
+      // Allow one "grace" day gap (yesterday not done but today done)
+      // Only for today itself — stop streak if day before yesterday missed
+      break;
+    }
+  }
+  return streak;
+}
+
+/**
  * Aggregate data for the Personal Dashboard.
  */
 export async function getPersonalDashboardData() {
   const today = await getTodayEntry();
   const sparks = await getCreativeSparks(5);
   const recentEntries = await getRecentEntries(3);
+
+  // Compute streaks for all habits
+  const habitKeys = ['water', 'movement', 'focus'];
+  const streaks = {};
+  for (const key of habitKeys) {
+    streaks[key] = await getHabitStreak(key);
+  }
 
   return {
     today,
@@ -93,5 +136,6 @@ export async function getPersonalDashboardData() {
       ? Object.values(today.habits).filter(Boolean).length
       : 0,
     habitsTotal: 3,
+    streaks,
   };
 }

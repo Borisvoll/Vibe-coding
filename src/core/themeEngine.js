@@ -71,6 +71,25 @@ export function isDark(hex) {
   return relativeLuminance(hex) < 0.179;
 }
 
+/**
+ * Auto-fix a foreground color to meet a minimum contrast ratio against a background.
+ * Adjusts lightness up or down until the ratio is met.
+ */
+export function autoFixContrast(fgHex, bgHex, minRatio = 4.5) {
+  if (contrastRatio(fgHex, bgHex) >= minRatio) return fgHex;
+  const bgDark = isDark(bgHex);
+  const fgHsl = hexToHSL(fgHex);
+  // Move lightness toward white (if bg is dark) or black (if bg is light)
+  const direction = bgDark ? 1 : -1;
+  for (let step = 1; step <= 100; step++) {
+    const newL = Math.max(0, Math.min(100, fgHsl.l + direction * step));
+    const candidate = hslToHex(fgHsl.h, fgHsl.s, newL);
+    if (contrastRatio(candidate, bgHex) >= minRatio) return candidate;
+  }
+  // Fallback: pure white or black
+  return bgDark ? '#ffffff' : '#000000';
+}
+
 // ── Default theme ─────────────────────────────────────────────
 
 const DEFAULT_THEME = {
@@ -84,30 +103,65 @@ const DEFAULT_THEME = {
   success: null,
   tintStrength: 50,   // 0–100
   shadowStrength: 50,  // 0–100
+  preferDark: null,    // null = follow system, true/false = force
 };
 
-// ── Theme presets ─────────────────────────────────────────────
+// ── Theme presets (full themes) ──────────────────────────────
 
 export const THEME_PRESETS = {
   default: {
     label: 'Standaard',
-    theme: { ...DEFAULT_THEME },
+    theme: {
+      accent: '#4f6ef7',
+      appBg: null, blockBg: null, blockFg: null, mutedFg: null,
+      blockBorder: null, danger: null, success: null,
+      tintStrength: 50, shadowStrength: 50,
+      preferDark: null,
+    },
   },
   calm: {
     label: 'Rustig',
-    theme: { accent: '#6366f1', tintStrength: 30, shadowStrength: 30 },
+    theme: {
+      accent: '#6366f1',
+      appBg: '#f8f8fc', blockBg: '#ffffff', blockFg: '#2e2e3a',
+      mutedFg: '#7c7c8a', blockBorder: '#e8e8f0',
+      danger: null, success: null,
+      tintStrength: 30, shadowStrength: 30,
+      preferDark: false,
+    },
   },
   contrast: {
     label: 'Hoog Contrast',
-    theme: { accent: '#2563eb', tintStrength: 70, shadowStrength: 70 },
+    theme: {
+      accent: '#2563eb',
+      appBg: '#ffffff', blockBg: '#ffffff', blockFg: '#111111',
+      mutedFg: '#4b4b4b', blockBorder: '#d1d5db',
+      danger: '#dc2626', success: '#059669',
+      tintStrength: 70, shadowStrength: 70,
+      preferDark: false,
+    },
   },
   midnight: {
     label: 'Middernacht',
-    theme: { accent: '#8b5cf6', tintStrength: 40, shadowStrength: 40 },
+    theme: {
+      accent: '#8b5cf6',
+      appBg: '#0f0f1a', blockBg: '#1a1a2e', blockFg: '#e8e8f0',
+      mutedFg: '#9898a8', blockBorder: '#2a2a40',
+      danger: '#fb7185', success: '#34d399',
+      tintStrength: 40, shadowStrength: 40,
+      preferDark: true,
+    },
   },
   warm: {
     label: 'Warm',
-    theme: { accent: '#f97316', tintStrength: 45, shadowStrength: 45 },
+    theme: {
+      accent: '#f97316',
+      appBg: '#fefcf8', blockBg: '#fffdf8', blockFg: '#2a2018',
+      mutedFg: '#8a7a68', blockBorder: '#e8ddd0',
+      danger: null, success: null,
+      tintStrength: 45, shadowStrength: 45,
+      preferDark: false,
+    },
   },
 };
 
@@ -120,9 +174,10 @@ export function getTheme() {
   return { ...currentTheme };
 }
 
-/** Merge partial values into theme, apply, and persist */
+/** Merge partial values into theme, auto-fix contrast, apply, and persist */
 export async function setTheme(partial) {
   currentTheme = { ...currentTheme, ...partial };
+  currentTheme = enforceContrast(currentTheme);
   applyTheme(currentTheme);
   await setSetting('boris_theme', currentTheme);
 }
@@ -132,7 +187,6 @@ export async function resetTheme() {
   currentTheme = { ...DEFAULT_THEME };
   applyTheme(currentTheme);
   await setSetting('boris_theme', currentTheme);
-  // Clear old accent setting for clean state
   await setSetting('accentColor', 'blue');
 }
 
@@ -146,7 +200,6 @@ export async function importThemeJson(json) {
   try {
     const parsed = JSON.parse(json);
     if (!parsed || typeof parsed !== 'object') throw new Error('Invalid theme');
-    // Only accept known keys
     const safe = {};
     for (const key of Object.keys(DEFAULT_THEME)) {
       if (key in parsed) safe[key] = parsed[key];
@@ -174,10 +227,31 @@ export async function initTheme() {
         }
       }
     }
+    // Migrate old 'theme' setting into preferDark if not yet set
+    if (currentTheme.preferDark === undefined || currentTheme.preferDark === null) {
+      const oldTheme = await getSetting('theme');
+      if (oldTheme === 'dark') currentTheme.preferDark = true;
+      else if (oldTheme === 'light') currentTheme.preferDark = false;
+      // 'system' or missing → keep null (follow system)
+    }
     applyTheme(currentTheme);
+    listenForColorSchemeChanges();
   } catch {
     applyTheme(DEFAULT_THEME);
   }
+}
+
+// ── Dark mode listener ───────────────────────────────────────
+
+let darkModeMediaQuery = null;
+
+function listenForColorSchemeChanges() {
+  if (darkModeMediaQuery || typeof window === 'undefined') return;
+  darkModeMediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+  if (!darkModeMediaQuery) return;
+  darkModeMediaQuery.addEventListener('change', () => {
+    applyTheme(currentTheme);
+  });
 }
 
 // ── Apply theme to DOM ────────────────────────────────────────
@@ -190,7 +264,17 @@ export function applyTheme(theme) {
   const tint = (t.tintStrength ?? 50) / 100;     // 0–1
   const shadow = (t.shadowStrength ?? 50) / 100;  // 0–1
 
-  // Check if we're in dark mode
+  // Apply preferDark: set data-theme when theme has an opinion
+  if (t.preferDark === true) {
+    root.setAttribute('data-theme', 'dark');
+  } else if (t.preferDark === false) {
+    root.setAttribute('data-theme', 'light');
+  } else {
+    // null = follow system — remove forced theme
+    root.removeAttribute('data-theme');
+  }
+
+  // Check if we're in dark mode (after applying preferDark)
   const darkMode = root.getAttribute('data-theme') === 'dark' ||
     (root.getAttribute('data-theme') !== 'light' &&
      typeof window !== 'undefined' &&
@@ -245,14 +329,30 @@ export function applyTheme(theme) {
   }
 }
 
-// ── Contrast safeguard ────────────────────────────────────────
+// ── Auto-fix contrast enforcement ────────────────────────────
+
+/** Silently fix any theme colors that fail WCAG AA contrast */
+function enforceContrast(theme) {
+  const t = { ...theme };
+  const bg = t.blockBg || '#ffffff';
+
+  if (t.blockFg) {
+    t.blockFg = autoFixContrast(t.blockFg, bg, 4.5);
+  }
+  if (t.mutedFg) {
+    t.mutedFg = autoFixContrast(t.mutedFg, bg, 3);
+  }
+
+  return t;
+}
+
+// ── Legacy checkContrast (kept for tests + diagnostics) ──────
 
 /** Check readability and return warnings */
 export function checkContrast(theme) {
   const t = { ...DEFAULT_THEME, ...theme };
   const warnings = [];
 
-  // Only check if custom colors are set
   if (t.blockBg && t.blockFg) {
     const ratio = contrastRatio(t.blockBg, t.blockFg);
     if (ratio < 4.5) {

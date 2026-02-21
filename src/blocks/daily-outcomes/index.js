@@ -3,7 +3,7 @@ import { renderDailyOutcomes } from './view.js';
 export function registerDailyOutcomesBlock(registry) {
   registry.register({
     id: 'daily-outcomes',
-    title: 'Top 3 Vandaag',
+    title: 'Top 3 vandaag',
     hosts: ['vandaag-hero'],
     modes: ['BPV', 'School', 'Personal'],
     enabled: true,

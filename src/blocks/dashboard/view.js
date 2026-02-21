@@ -1,7 +1,7 @@
 import { escapeHTML, getToday, formatDateLong } from '../../utils.js';
 import { getTodaySnapshot, getWeekFocus, getProjectsPulse, getBPVPulse } from '../../os/dashboardData.js';
 import { getCockpitItems } from '../../os/cockpitData.js';
-import { getInboxCount } from '../../stores/inbox.js';
+import { getInboxCount, addInboxItem } from '../../stores/inbox.js';
 import { getMomentumPulse } from '../../stores/momentum.js';
 import { renderSparkline } from '../../ui/sparkline.js';
 import { WEEKDAY_FULL } from '../../constants.js';
@@ -57,6 +57,15 @@ export function renderDashboard(container, context) {
       </div>
     </div>
 
+    <div class="life-dash__layer life-dash__layer--capture">
+      <div class="life-dash__capture-wrap">
+        <svg class="life-dash__capture-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+        <input type="text" class="life-dash__capture-input" placeholder="Vang iets op\u2026 (Enter)" data-life-capture autocomplete="off" />
+      </div>
+    </div>
+
     <div class="life-dash__layer life-dash__layer--depth">
       <button type="button" class="life-dash__toggle" data-life-toggle aria-expanded="false">
         <span class="life-dash__toggle-label">Meer details</span>
@@ -83,6 +92,20 @@ export function renderDashboard(container, context) {
     if (!expanded && !detailsEl.dataset.loaded) {
       loadDetails();
     }
+  });
+
+  // Quick-capture: Enter key saves to inbox without leaving dashboard
+  const captureInput = wrapper.querySelector('[data-life-capture]');
+  captureInput?.addEventListener('keydown', async (e) => {
+    if (e.key !== 'Enter') return;
+    const text = captureInput.value.trim();
+    if (!text) return;
+    captureInput.value = '';
+    const mode = context.modeManager?.getMode() || null;
+    await addInboxItem(text, mode);
+    context.eventBus?.emit('inbox:changed');
+    captureInput.placeholder = 'Opgeslagen \u2713';
+    setTimeout(() => { captureInput.placeholder = 'Vang iets op\u2026 (Enter)'; }, 1500);
   });
 
   function navigateTo(tab, focus) {

@@ -14,7 +14,7 @@ export function renderBPVToday(container) {
     ]);
 
     host.innerHTML = `
-      <h3 class="school-block__title">BPV Vandaag</h3>
+      <h3 class="school-block__title">BPV vandaag</h3>
       <p class="school-block__subtitle">Focus 3 • uren snelinvoer • leermoment • reflectie</p>
       <ul class="personal-list">
         ${(snapshot.topTasks || []).map((task) => `<li>${escapeHTML(task)}</li>`).join('') || '<li><small>Geen Top 3 voor vandaag.</small></li>'}
@@ -25,12 +25,12 @@ export function renderBPVToday(container) {
         <button class="btn btn-secondary btn-sm" data-action="pauze">Pauze</button>
         <button class="btn btn-secondary btn-sm" data-action="stop">Stop</button>
       </div>
-      <p class="school-block__subtitle">Timerstatus: ${timer.running ? (timer.paused ? 'gepauzeerd' : 'actief') : 'uit'}</p>
+      <p class="school-block__subtitle">Timerstatus: ${timer.running ? (timer.paused ? 'gepauzeerd' : 'actief') : 'gestopt'}</p>
       <p class="school-block__subtitle">Leermoment: ${escapeHTML(snapshot.learningMoment?.title || snapshot.learningMoment?.lesson || 'Nog geen leermoment vandaag.')}</p>
       <label class="school-block__field"><span>Korte reflectie</span><input class="form-input" data-field="reflectie" value="${escapeHTML(reflection)}" placeholder="Wat ging goed en wat neem je mee?"></label>
       <div class="school-inline-form">
-        <a class="btn btn-ghost btn-sm" href="#goals">BPV-doelen</a>
-        <a class="btn btn-ghost btn-sm" href="#assignments">Actief project</a>
+        <a class="btn btn-ghost btn-sm" href="#planning">BPV-doelen</a>
+        <a class="btn btn-ghost btn-sm" href="#projects">Actief project</a>
         <button class="btn btn-primary btn-sm" data-action="save">Opslaan</button>
       </div>
     `;

@@ -17,16 +17,16 @@ export function renderSchoolToday(container) {
     const cap = getTaskCap('School');
 
     host.innerHTML = `
-      <h3 class="school-block__title">School Vandaag</h3>
+      <h3 class="school-block__title">School vandaag</h3>
       <p class="school-block__subtitle">Focustaken (${tasks.length}/${cap})</p>
       <div class="school-inline-form">
         <input class="form-input" data-field="task" placeholder="Nieuwe focustaak">
         <button class="btn btn-secondary btn-sm" data-action="add">Toevoegen</button>
       </div>
       <ul class="personal-list">
-        ${tasks.map((item) => `<li>${escapeHTML(item.text || item.title || '')} <button class="btn btn-ghost btn-sm" data-action="del" data-id="${item.id}">x</button></li>`).join('') || '<li><small>Geen focustaken.</small></li>'}
+        ${tasks.map((item) => `<li>${escapeHTML(item.text || item.title || '')} <button class="btn btn-ghost btn-sm" data-action="del" data-id="${item.id}">×</button></li>`).join('') || '<li><small>Geen focustaken.</small></li>'}
       </ul>
-      <p class="school-block__subtitle">Projectfocus: ${escapeHTML(project?.building || 'Nog niet ingevuld.')} / ${escapeHTML(project?.learning || 'Nog niet ingevuld.')}</p>
+      <p class="school-block__subtitle">Projectfocus: ${escapeHTML(project?.building || '–')} / ${escapeHTML(project?.learning || '–')}</p>
       <label class="school-block__field"><span>Wat heb ik vandaag echt begrepen?</span><input class="form-input" data-field="learning" value="${escapeHTML(learning)}"></label>
       <div class="school-inline-form">
         <a class="btn btn-ghost btn-sm" href="#planning">Naar mijlpalen</a>

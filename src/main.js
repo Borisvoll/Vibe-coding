@@ -23,6 +23,7 @@ import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
 import { createOSShell } from './os/shell.js';
 import { initBalatro } from './ui/balatro.js';
+import { initClickSound } from './ui/clickSound.js';
 
 export const SCHEMA_VERSION = 9;
 
@@ -151,6 +152,7 @@ async function initNewOSShell() {
   registerDefaultBlocks(blockRegistry);
 
   createOSShell(app, { eventBus, modeManager, blockRegistry });
+  initClickSound(eventBus, modeManager);
 }
 
 async function initServiceWorker() {

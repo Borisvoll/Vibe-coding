@@ -63,13 +63,34 @@
   transform: rotate(-90deg);
 }
 
-/* Content area — uses os-host-stack class for stagger compat */
+/* Content area — grid container for smooth open/close animation */
 .collapsible-section__content {
+  display: grid;
+  grid-template-rows: 1fr;
+  overflow: hidden;
+  transition: grid-template-rows var(--duration-slow) var(--ease);
+}
+
+/* Collapsed state — driven by sibling aria-expanded attribute */
+.collapsible-section__header[aria-expanded="false"] + .collapsible-section__content {
+  grid-template-rows: 0fr;
+}
+
+/* Inner wrapper — actual block mount target */
+.collapsible-section__inner {
+  overflow: hidden;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   padding-top: var(--space-3);
   padding-left: var(--space-1);
+  opacity: 1;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.collapsible-section__header[aria-expanded="false"] + .collapsible-section__content .collapsible-section__inner {
+  opacity: 0;
 }
 
 @media (min-width: 768px) {
@@ -81,7 +102,7 @@
     margin-top: var(--space-8);
   }
 
-  .collapsible-section__content {
+  .collapsible-section__inner {
     gap: var(--space-6);
     padding-top: var(--space-4);
   }

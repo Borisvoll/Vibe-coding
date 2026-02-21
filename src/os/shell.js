@@ -1,5 +1,6 @@
 import { getSetting, setSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
+import { mountCuriosityPage } from './curiosity.js';
 import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
@@ -12,7 +13,7 @@ import { createMorningFlow, shouldAutoOpen } from '../ui/morning-flow.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
 
 const MODE_META = {
   School: {
@@ -92,6 +93,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         eventBus,
         onChange: async () => {},
       });
+    }
+    if (tab === 'curiosity') {
+      const mount = routeContainer.querySelector('#curiosity-route-mount');
+      if (mount) mountCuriosityPage(mount);
     }
 
     // Breadcrumb visibility + handler
@@ -243,12 +248,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     { zone: 'reflection', id: 'vandaag-reflection',  title: 'Reflectie',            hostName: 'vandaag-reflection' },
     { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode' },
     { zone: 'weekly',     id: 'vandaag-weekly',      title: 'Weekoverzicht',        hostName: 'vandaag-weekly' },
+    { zone: 'history',    id: 'vandaag-history',     title: 'Geschiedenis',         hostName: 'vandaag-history' },
   ];
 
+  // Progressive disclosure: fewer sections open by default for calmer initial view.
+  // User overrides persist per mode in localStorage and always take precedence.
   const COLLAPSE_DEFAULTS = {
-    School:   { tasks: true, projects: true, capture: true, reflection: false, mode: false, weekly: false },
-    Personal: { tasks: true, projects: true, capture: true, reflection: true,  mode: false, weekly: false },
-    BPV:      { tasks: true, projects: true, capture: true, reflection: false, mode: true,  weekly: false },
+    School:   { tasks: true, projects: false, capture: true, reflection: false, mode: false, weekly: false, history: false },
+    Personal: { tasks: true, projects: false, capture: true, reflection: true,  mode: false, weekly: false, history: false },
+    BPV:      { tasks: true, projects: false, capture: true, reflection: false, mode: true,  weekly: false, history: false },
   };
 
   const vandaagSections = {};
@@ -767,21 +775,16 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
   setTimeout(() => startTutorial(), tutorialDelay);
 
-  // ── Morning flow auto-open ──────────────────────────────
-  if (activeTab === 'today' && !modeManager.isFirstVisit?.()) {
-    setTimeout(async () => {
-      try {
-        if (await shouldAutoOpen(modeManager)) {
-          morningFlow.open();
-        }
-      } catch { /* non-critical */ }
-    }, 1000);
-  }
-
-  // ── Friday prompt ─────────────────────────────────────────
+  // ── Friday prompt (with snooze / disable) ────────────────
   (async () => {
     try {
       if (!isFriday()) return;
+      // Check if user disabled the Friday reminder entirely
+      const disabled = await getSetting('friday_banner_disabled');
+      if (disabled) return;
+      // Check snooze
+      const snoozedUntil = await getSetting('friday_banner_snoozed_until');
+      if (snoozedUntil && getToday() < snoozedUntil) return;
       const week = getISOWeek(getToday());
       const sent = await isReviewSent(week);
       if (sent) return;
@@ -791,6 +794,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         banner.innerHTML = `
           <span class="os-friday-prompt__text">Het is vrijdag — tijd voor je weekoverzicht?</span>
           <button type="button" class="os-friday-prompt__btn" data-action="scroll-review">Bekijk</button>
+          <button type="button" class="os-friday-prompt__btn os-friday-prompt__btn--ghost" data-action="snooze-week">Volgende week</button>
+          <button type="button" class="os-friday-prompt__btn os-friday-prompt__btn--ghost" data-action="snooze-month">Volgende maand</button>
           <button type="button" class="os-friday-prompt__close" aria-label="Sluiten">&times;</button>
         `;
         banner.querySelector('[data-action="scroll-review"]')?.addEventListener('click', () => {
@@ -800,6 +805,16 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
             const review = routeContainer.querySelector('.weekly-review');
             review?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 100);
+        });
+        banner.querySelector('[data-action="snooze-week"]')?.addEventListener('click', () => {
+          const d = new Date(); d.setDate(d.getDate() + 7);
+          setSetting('friday_banner_snoozed_until', d.toISOString().slice(0, 10));
+          banner.remove();
+        });
+        banner.querySelector('[data-action="snooze-month"]')?.addEventListener('click', () => {
+          const d = new Date(); d.setDate(d.getDate() + 30);
+          setSetting('friday_banner_snoozed_until', d.toISOString().slice(0, 10));
+          banner.remove();
         });
         banner.querySelector('.os-friday-prompt__close')?.addEventListener('click', () => banner.remove());
         routeContainer?.prepend(banner);

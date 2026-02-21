@@ -387,6 +387,119 @@ export async function setSetting(key, value) {
   return put('settings', { key, value });
 }
 
+// ===== Bounded queries =====
+
+/**
+ * Get records from an index within a key range [lower, upper].
+ * Both bounds are inclusive. Pass null for open-ended range.
+ */
+export async function getByIndexRange(storeName, indexName, lower, upper) {
+  const db = getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const index = store.index(indexName);
+    let range = null;
+    if (lower != null && upper != null) {
+      range = IDBKeyRange.bound(lower, upper);
+    } else if (lower != null) {
+      range = IDBKeyRange.lowerBound(lower);
+    } else if (upper != null) {
+      range = IDBKeyRange.upperBound(upper);
+    }
+    const request = index.getAll(range);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Get the most recent N records from a store using a reverse cursor on an index.
+ * Returns results sorted newest-first.
+ */
+export async function getRecentByIndex(storeName, indexName, limit) {
+  const db = getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const index = store.index(indexName);
+    const results = [];
+    const request = index.openCursor(null, 'prev');
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (!cursor || results.length >= limit) {
+        resolve(results);
+        return;
+      }
+      results.push(cursor.value);
+      cursor.continue();
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Count total records in a store.
+ */
+export async function countRecords(storeName) {
+  const db = getDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const request = store.count();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+/**
+ * Purge soft-deleted records older than `days` days.
+ * Uses the deletedAt index for efficient range deletion.
+ */
+export async function purgeDeletedOlderThan(days) {
+  const db = getDB();
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('deleted', 'readwrite');
+    const store = tx.objectStore('deleted');
+    const index = store.index('deletedAt');
+    const range = IDBKeyRange.upperBound(cutoff);
+    let count = 0;
+    const request = index.openCursor(range);
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (!cursor) return;
+      cursor.delete();
+      count++;
+      cursor.continue();
+    };
+    tx.oncomplete = () => resolve(count);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+/**
+ * Get record counts for all stores + estimated export size.
+ * Returns { counts: { storeName: number }, totalRecords: number, estimatedExportBytes: number }
+ */
+export async function getDbHealthMetrics() {
+  const db = getDB();
+  const names = Array.from(db.objectStoreNames);
+  const counts = {};
+  let totalRecords = 0;
+
+  for (const name of names) {
+    const c = await countRecords(name);
+    counts[name] = c;
+    totalRecords += c;
+  }
+
+  // Rough estimate: ~500 bytes per record average (JSON key-value overhead)
+  const estimatedExportBytes = totalRecords * 500;
+
+  return { counts, totalRecords, estimatedExportBytes };
+}
+
 // ===== Convenience queries =====
 
 export async function getHoursByWeek(weekStr) {

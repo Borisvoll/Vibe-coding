@@ -1,4 +1,4 @@
-import { getAll, getByKey, put } from '../db.js';
+import { getAll, getByKey, getRecentByIndex, put } from '../db.js';
 import { getToday } from '../utils.js';
 
 const WELLBEING_STORE = 'os_personal_wellbeing';
@@ -54,21 +54,24 @@ export async function toggleHabit(habitKey) {
 
 /**
  * Get "creative sparks" — thought-type inbox items (ideas).
+ * Uses reverse cursor on updated_at to scan recent items first, with early exit.
  */
 export async function getCreativeSparks(limit = 5) {
-  const all = await getAll(INBOX_STORE);
-  return all
+  // Fetch recent inbox items (3x limit to account for filtering)
+  const recent = await getRecentByIndex(INBOX_STORE, 'updated_at', limit * 3);
+  return recent
     .filter((item) => item.status === 'inbox' && item.type === 'thought')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, limit);
 }
 
 /**
- * Get recent journal entries (last 7 days that have content).
+ * Get recent journal entries (last N that have content).
+ * Uses reverse cursor on updated_at to avoid loading all records.
  */
 export async function getRecentEntries(limit = 7) {
-  const all = await getAll(WELLBEING_STORE);
-  return all
+  // Fetch recent wellbeing entries (3x limit to account for filtering)
+  const recent = await getRecentByIndex(WELLBEING_STORE, 'updated_at', limit * 3);
+  return recent
     .filter((e) => e.journalNote || e.gratitude || e.reflection)
     .sort((a, b) => (b.date || b.id || '').localeCompare(a.date || a.id || ''))
     .slice(0, limit);

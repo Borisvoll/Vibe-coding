@@ -26,6 +26,7 @@ import './conversation-debrief/styles.css';
 import './context-checklist/styles.css';
 import './project-detail/styles.css';
 import './project-hub/styles.css';
+import './history-browser/styles.css';
 import '../ui/theme-studio.css';
 import '../ui/morning-flow.css';
 import { registerMorningFocusBlock } from './morning-focus/index.js';
@@ -57,6 +58,7 @@ import { registerConversationDebriefBlock } from './conversation-debrief/index.j
 import { registerContextChecklistBlock } from './context-checklist/index.js';
 import { registerProjectDetailBlock } from './project-detail/index.js';
 import { registerProjectHubBlock } from './project-hub/index.js';
+import { registerHistoryBrowserBlock } from './history-browser/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
@@ -81,6 +83,7 @@ export function registerDefaultBlocks(registry) {
   registerDailyReflectionBlock(registry);
   registerConversationDebriefBlock(registry);
   registerWeeklyReviewBlock(registry);
+  registerHistoryBrowserBlock(registry);
 
   // Mode-specific context blocks (vandaag-mode)
   registerSchoolDashboardBlock(registry);

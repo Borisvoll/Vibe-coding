@@ -1043,3 +1043,100 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 - [ ] Card top border is 4px (prominent accent)
 - [ ] Mode hero banner has 4px left border
 - [ ] All tests pass (`npm test`)
+
+---
+
+## 5-Year Hardening — QA Scripts
+
+### Milestone A: Performance
+
+**Search Performance**
+1. Seed 500+ task records across multiple dates
+2. Open Vandaag → search bar → type "test"
+3. Results should appear within 100ms (no visible lag)
+4. Results capped at 30 items max
+5. Console: verify no `getAll` calls on large stores
+
+**Weekly Review Performance**
+1. Navigate to Vandaag → scroll to Weekoverzicht → open section
+2. Click "Bekijk" on weekly review
+3. Page should load without visible delay
+4. Console: no `getAll('os_tasks')` full scan — should use bounded query
+
+**Tombstone Purge**
+1. Soft-delete several items (tasks, inbox)
+2. Close and reopen app
+3. Check `deleted` store count in DevTools → tombstones older than 30 days should be purged
+4. Recent deletions (<30 days) should remain
+
+**DB Health Metrics**
+1. Go to Instellingen
+2. Verify record count per store is visible
+3. Estimated export size is shown
+
+### Milestone B: Backup Safety
+
+**Export Compact**
+1. Go to Instellingen → Export
+2. Download backup file
+3. Open in text editor — verify NO indentation (compact JSON)
+4. File size shown before download
+
+**Import Validation**
+1. Try importing a file that is not JSON → error message
+2. Try importing JSON with wrong `_meta.app` → rejected
+3. Try importing valid backup → success, all data restored
+4. Verify localStorage does NOT contain `boris_safety_backup`
+
+**Import Atomicity**
+1. Import a valid backup
+2. Verify all data is present after import
+3. No partial data state
+
+### Milestone C: Modes
+
+**Mode Config Migration**
+1. Fresh install → 3 default modes created in settings
+2. Verify mode picker shows all 3
+3. Data created in each mode is accessible
+
+**Mode Rename**
+1. Go to Instellingen → Modes
+2. Rename "School" → "Studie"
+3. Mode picker shows "Studie"
+4. Existing School data still accessible under new name
+
+**BPV Retirement**
+1. Set system date past 2026-04-24
+2. Reopen app
+3. BPV should auto-archive
+4. Mode picker shows only School + Personal
+5. BPV data still searchable, accessible via Settings
+
+### Milestone D: UX Softening
+
+**Task Cap Override**
+1. In School mode, add 3 tasks (hitting cap)
+2. Input should NOT be disabled
+3. Warning message appears
+4. "Toch toevoegen" link/button visible
+5. Click override → 4th task added successfully
+
+**Friday Banner Snooze**
+1. On a Friday, verify banner appears
+2. Click "Herinner me volgende week"
+3. Reload → banner should NOT appear
+4. Wait 1 week (or adjust date) → banner reappears
+
+**Morning Flow**
+1. Settings: set morning flow to "Strict"
+2. Close and reopen app → modal checklist appears
+3. Settings: set to "Manual" → no cockpit auto-display
+4. Settings: set to "Gentle" (default) → normal Vandaag view
+
+**History Browser**
+1. Navigate to History tab/section
+2. See list of past daily entries, newest first
+3. Click entry → view-only display with Top 3, todos, notes
+4. Click "Laad meer" → pagination works
+5. Quick jump: "Laatste 7 dagen" filter works

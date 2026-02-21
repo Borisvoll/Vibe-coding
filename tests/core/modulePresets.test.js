@@ -7,6 +7,7 @@ import {
   setBlockDisabled,
   clearBlockOverrides,
   getPresetIds,
+  applyDefaultPresetForMode,
 } from '../../src/core/modulePresets.js';
 
 beforeEach(() => {
@@ -117,5 +118,28 @@ describe('Module presets — clearBlockOverrides', () => {
     setActivePreset('minimaal');
     expect(isBlockDisabled('brain-state')).toBe(true); // not in minimaal
     expect(isBlockDisabled('dashboard')).toBe(false); // in minimaal
+  });
+});
+
+describe('Module presets — applyDefaultPresetForMode', () => {
+  it('sets school preset for School mode on first run', () => {
+    applyDefaultPresetForMode('School');
+    expect(getActivePreset()).toBe('school');
+  });
+
+  it('sets bpv preset for BPV mode on first run', () => {
+    applyDefaultPresetForMode('BPV');
+    expect(getActivePreset()).toBe('bpv');
+  });
+
+  it('sets persoonlijk preset for Personal mode on first run', () => {
+    applyDefaultPresetForMode('Personal');
+    expect(getActivePreset()).toBe('persoonlijk');
+  });
+
+  it('does not override existing user preference', () => {
+    localStorage.setItem('boris_active_preset', 'alles');
+    applyDefaultPresetForMode('School');
+    expect(getActivePreset()).toBe('alles');
   });
 });

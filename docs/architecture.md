@@ -182,6 +182,51 @@ App configuration, data export/import, sync, diagnostics.
 | **Pages** | settings, export, sync, diagnostics, report |
 | **Blocks** | `settings-panel` |
 
+### Module 8: Curiosity Studio
+
+A contemplative space for a conceptual thinker. Not productivity. Not reflection journaling. A place that gently resurfaces forgotten fragments, hidden patterns, and temporal echoes from the user's own captures — without demanding action.
+
+| Aspect | Details |
+|--------|---------|
+| **Route** | `curiosity` — registered in `SHELL_TABS` (shell.js) and `VALID_ROUTES` (deepLinks.js) |
+| **Page component** | `src/os/curiosity.js` — `mountCuriosityPage(container)` |
+| **Styles** | `src/os/curiosity.css` — lower contrast, maximum whitespace, no borders |
+| **Data layer** | `src/stores/curiosity-data.js` — pure async functions, no DOM |
+| **Stores read** | `os_inbox` (read-only, never writes) |
+| **Nav** | Sidebar button + mobile nav button in `index.html` |
+| **Template** | `<template data-route="curiosity">` in `index.html` |
+
+#### Design constraints
+
+- Read-only. No write operations ever.
+- No action buttons. No task conversion. No counts as pressure.
+- Data loads lazily via `setTimeout(..., 0)` — route mount cost is zero.
+- Daily seed (`getDaySeed()`) makes content stable within a day — no re-entry flicker.
+- Maximum 3 items surfaced per widget. No percentages, no graphs, no trend arrows.
+
+#### The four widgets
+
+| Widget | Dutch name | Curiosity mechanic | Source |
+|--------|------------|--------------------|--------|
+| Primary (large) | **Vonk** | Unexpected resurfacing — an old capture from 14+ days ago | `os_inbox` |
+| Hint 1 | **Draad** | Hidden pattern — the word/concept appearing most across captures | `os_inbox` |
+| Hint 2 | **Vergeten** | Incomplete information — the oldest unprocessed thought, still present | `os_inbox` |
+| Hint 3 | **Echo** | Contrast — a capture from the same weekday 4–8 weeks ago | `os_inbox` |
+
+#### `curiosity-data.js` exports
+
+```js
+getVonk()    → Promise<{ text, dateLabel } | null>
+getDraad()   → Promise<{ word, count, examples[] } | null>
+getVergeten() → Promise<{ text, dateLabel } | null>
+getEcho()    → Promise<{ text, weeksAgo, dateLabel } | null>
+relativeDate(isoString) → string  // Dutch relative date, no urgency
+```
+
+#### Design doc
+
+Full behavioral specification: `docs/design-curiosity.md`
+
 ---
 
 ## Data Model

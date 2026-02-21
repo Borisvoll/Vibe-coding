@@ -14,8 +14,42 @@ import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 import { createAgentChat } from '../ui/agent-chat.js';
 import { createPomodoro } from '../ui/pomodoro.js';
+import { enhanceEmptyHosts } from '../ui/ambient-canvas.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
+
+// ── Time-of-day phase ─────────────────────────────────────────
+function getTimePhase() {
+  const h = new Date().getHours();
+  if (h < 12) return 'morning';
+  if (h < 17) return 'afternoon';
+  return 'evening';
+}
+
+const PHASE_META = {
+  morning:   { label: 'Ochtend',   emoji: '🌅', desc: 'Plan je dag' },
+  afternoon: { label: 'Middag',    emoji: '☀️',  desc: 'Focus & uitvoering' },
+  evening:   { label: 'Avond',     emoji: '🌙', desc: 'Reflecteer & afronden' },
+};
+
+// Collapse defaults per phase × mode — user manual overrides always win (localStorage)
+const PHASE_COLLAPSE_DEFAULTS = {
+  morning: {
+    School:   { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
+    Personal: { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
+    BPV:      { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
+  },
+  afternoon: {
+    School:   { tasks: true,  projects: true,  capture: true,  reflection: false, mode: true,  weekly: false, history: false },
+    Personal: { tasks: true,  projects: true,  capture: true,  reflection: false, mode: false, weekly: false, history: false },
+    BPV:      { tasks: true,  projects: true,  capture: true,  reflection: false, mode: true,  weekly: false, history: false },
+  },
+  evening: {
+    School:   { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: true,  history: false },
+    Personal: { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: true,  history: false },
+    BPV:      { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: false, history: false },
+  },
+};
 
 const MODE_META = {
   School: {
@@ -154,15 +188,23 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   // ── Block mounting ────────────────────────────────────────
+  let cleanupAmbient = null;
+
   function ensureHostEmptyStates() {
+    if (cleanupAmbient) { cleanupAmbient(); cleanupAmbient = null; }
     routeContainer.querySelectorAll('[data-os-host]').forEach((host) => {
       if (host.children.length === 0) {
         host.innerHTML = '<p class="os-host-empty">Nog geen actieve blokken voor deze weergave.</p>';
       }
     });
+    // Replace blank placeholders with living ambient canvas
+    setTimeout(() => {
+      cleanupAmbient = enhanceEmptyHosts(routeContainer);
+    }, 50);
   }
 
   function unmountAll() {
+    if (cleanupAmbient) { cleanupAmbient(); cleanupAmbient = null; }
     mountedBlocks.forEach((entry) => { entry.instance?.unmount?.(); });
     mountedBlocks = [];
     routeContainer.querySelectorAll('[data-os-host]').forEach((host) => { host.innerHTML = ''; });
@@ -171,7 +213,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   function renderHosts() {
     unmountAll();
     const mode = modeManager.getMode();
-    const context = { mode, eventBus, modeManager };
+    const context = { mode, eventBus, modeManager, routeParams };
     const eligibleBlocks = blockRegistry.getEnabled().filter((block) => {
       if (!Array.isArray(block.modes) || block.modes.length === 0) return true;
       return block.modes.includes(mode);
@@ -241,6 +283,23 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (shell) shell.setAttribute('data-mode', mode);
   }
 
+  // ── Per-space sidebar: show only relevant nav items per mode ──
+  function updateSidebarForMode(mode) {
+    app.querySelectorAll('[data-sidebar-modes]').forEach((item) => {
+      const modes = item.getAttribute('data-sidebar-modes').split(',').map(s => s.trim());
+      const visible = modes.includes(mode) || modes.includes('all');
+      item.hidden = !visible;
+      item.style.display = visible ? '' : 'none';
+    });
+    // Update the space label in the sidebar
+    const spaceLabel = app.querySelector('.os-sidebar__space-label');
+    if (spaceLabel) {
+      const meta = MODE_META[mode] || MODE_META.School;
+      spaceLabel.textContent = `${meta.emoji} ${meta.label}`;
+      spaceLabel.style.color = meta.color;
+    }
+  }
+
   // ── Vandaag page layout with collapsible zones ────────────
 
   const VANDAAG_SECTIONS = [
@@ -253,18 +312,17 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     { zone: 'history',    id: 'vandaag-history',     title: 'Geschiedenis',         hostName: 'vandaag-history' },
   ];
 
-  // Progressive disclosure: fewer sections open by default for calmer initial view.
-  // User overrides persist per mode in localStorage and always take precedence.
-  const COLLAPSE_DEFAULTS = {
-    School:   { tasks: true, projects: true, capture: true, reflection: false, mode: false, weekly: false, history: false },
-    Personal: { tasks: true, projects: true, capture: true, reflection: true,  mode: false, weekly: false, history: false },
-    BPV:      { tasks: true, projects: true, capture: true, reflection: false, mode: true,  weekly: false, history: false },
-  };
+  // Progressive disclosure — phase-aware defaults. User overrides persist via date-scoped localStorage.
+  function getCollapseDefaults(mode) {
+    const phase = getTimePhase();
+    return (PHASE_COLLAPSE_DEFAULTS[phase] || PHASE_COLLAPSE_DEFAULTS.morning)[mode]
+      || PHASE_COLLAPSE_DEFAULTS.morning.School;
+  }
 
   const vandaagSections = {};
 
   function buildVandaagLayout(mode) {
-    const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
+    const defaults = getCollapseDefaults(mode);
 
     VANDAAG_SECTIONS.forEach((cfg) => {
       const zoneEl = routeContainer.querySelector(`[data-vandaag-zone="${cfg.zone}"]`);
@@ -282,7 +340,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   function updateVandaagCollapse(mode) {
-    const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
+    const defaults = getCollapseDefaults(mode);
     Object.entries(vandaagSections).forEach(([zone, section]) => {
       section?.setMode(mode, defaults[zone] ?? true);
     });
@@ -300,13 +358,19 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     const weekStr = getISOWeek(today);
     const weekNum = weekStr.split('-W')[1]?.replace(/^0/, '') || '';
 
-    const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
+    const phase = getTimePhase();
+    const phaseMeta = PHASE_META[phase];
+    const modeBadge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
+    const phaseBadge = `<span class="vandaag-header__phase-badge vandaag-header__phase-badge--${phase}" title="${phaseMeta.desc}">${phaseMeta.emoji} ${phaseMeta.label}</span>`;
     headerEl.innerHTML = `
       <div class="vandaag-header__top">
         <h2 class="vandaag-header__title">Vandaag</h2>
-        ${badge}
+        <div class="vandaag-header__badges">
+          ${modeBadge}
+          ${phaseBadge}
+        </div>
       </div>
-      <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum}</span>
+      <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum} · <span class="vandaag-header__phase-desc">${phaseMeta.desc}</span></span>
     `;
   }
 
@@ -663,6 +727,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     triggerModeWash(mode);
     updateModeBtn();
     updateTopbarModeRadio(mode);
+    updateSidebarForMode(mode);
     focusOverlay.showFor(mode, MODE_META[mode]);
 
     // Route-specific updates
@@ -842,6 +907,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // ── Initialize ────────────────────────────────────────────
   setShellMode(modeManager.getMode());
   updateModeBtn();
+  updateSidebarForMode(modeManager.getMode());
 
   // Deep links: determine initial tab from URL hash
   const hashState = parseHash();

@@ -336,6 +336,23 @@
   color: var(--color-accent-text);
 }
 
+/* BPV deprioritized — visually secondary in the picker */
+.mode-card[data-mode="BPV"] {
+  opacity: 0.75;
+  order: 10; /* Push to bottom of mode list */
+}
+
+.mode-card[data-mode="BPV"] .mode-card__desc::after {
+  content: ' · Verouderd';
+  font-size: var(--font-xs);
+  opacity: 0.6;
+  font-style: italic;
+}
+
+.mode-card[data-mode="BPV"]:hover {
+  opacity: 1;
+}
+
 /* ── Animated custom properties (CSS Houdini @property) ──── */
 /* Registering as <color> lets the browser interpolate on data-mode switch */
 @property --mode-accent {
@@ -574,6 +591,17 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--color-text-tertiary);
+}
+
+/* Arc-style space label — shows current mode identity */
+.os-sidebar__space-label {
+  padding: var(--space-2) var(--space-4) var(--space-1);
+  font-size: var(--font-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  transition: color 400ms var(--ease);
+  min-height: 1.5rem;
 }
 
 .os-sidebar__divider {
@@ -975,8 +1003,10 @@
 
 .os-section__title {
   margin: 0 0 var(--space-6);
-  font-size: var(--font-xl);
-  font-weight: 600;
+  font-family: var(--font-serif);
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -1479,18 +1509,70 @@
   align-items: center;
   gap: var(--space-3);
   margin-bottom: var(--space-1);
+  flex-wrap: wrap;
 }
 
+/* Editorial serif heading — gives the Today page weight and character */
 .vandaag-header__title {
   margin: 0;
-  font-size: 1.5rem;
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.vandaag-header__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .vandaag-header__date {
   font-size: var(--font-sm);
   color: var(--color-text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+/* Phase badge — morning/afternoon/evening indicator */
+.vandaag-header__phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  transition: background 400ms var(--ease), color 400ms var(--ease);
+}
+
+.vandaag-header__phase-badge--morning {
+  background: var(--color-amber-light);
+  color: var(--color-amber);
+  border-color: color-mix(in srgb, var(--color-amber) 20%, transparent);
+}
+
+.vandaag-header__phase-badge--afternoon {
+  background: var(--color-blue-light);
+  color: var(--color-blue);
+  border-color: color-mix(in srgb, var(--color-blue) 20%, transparent);
+}
+
+.vandaag-header__phase-badge--evening {
+  background: var(--color-indigo-light);
+  color: var(--color-indigo);
+  border-color: color-mix(in srgb, var(--color-indigo) 20%, transparent);
+}
+
+.vandaag-header__phase-desc {
+  font-style: italic;
+  opacity: 0.8;
 }
 
 /* ── Vandaag search bar ──────────────────────────────────────── */
@@ -1723,4 +1805,77 @@
 [data-reduce-motion="true"] * {
   transition-duration: 0.01ms !important;
   animation-duration: 0.01ms !important;
+}
+
+/* ── Ambient Empty State (Brian Eno-inspired) ─────────────────── */
+
+.ambient-empty {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: crosshair;
+  background: var(--color-surface);
+  border: 1px dashed var(--color-border);
+  transition: border-color 400ms var(--ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ambient-empty:hover {
+  border-color: var(--color-accent);
+}
+
+.ambient-empty__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.ambient-empty__label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+  padding: var(--space-8);
+  pointer-events: none;
+}
+
+.ambient-empty__title {
+  font-size: var(--font-md);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-serif);
+  font-style: italic;
+}
+
+.ambient-empty__hint {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+  opacity: 0.7;
+  transition: opacity 600ms var(--ease);
+}
+
+/* ── Improved mode wash — smoother Eno tide ─────────────────── */
+.os-mode-wash {
+  opacity: 0.18;
+}
+
+.os-mode-wash--active {
+  animation: mode-wash 700ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes mode-wash {
+  0%   { clip-path: inset(0 100% 0 0); opacity: 0.12; }
+  30%  { clip-path: inset(0 40% 0 0);  opacity: 0.22; }
+  60%  { clip-path: inset(0 0 0 0);    opacity: 0.18; }
+  100% { clip-path: inset(0 0 0 100%); opacity: 0.05; }
 }

@@ -122,3 +122,20 @@
     opacity: 0.7;
   }
 }
+
+.daily-cockpit__show-toggle {
+  display: block;
+  margin: var(--space-1) 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  cursor: pointer;
+  transition: color 150ms var(--ease);
+}
+
+.daily-cockpit__show-toggle:hover {
+  color: var(--color-text-secondary);
+}

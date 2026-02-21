@@ -1,0 +1,17 @@
+{
+  "name": "boris-agent-team",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Parallel agent workflows for BORIS codebase analysis",
+  "scripts": {
+    "start": "node team.js",
+    "code": "node team.js --agents code-analyst",
+    "data": "node team.js --agents data-inspector",
+    "features": "node team.js --agents feature-scout",
+    "tests": "node team.js --agents test-validator"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest"
+  }
+}

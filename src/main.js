@@ -11,16 +11,17 @@ import './styles/base.css';
 import './styles/components.css';
 import './styles/pages.css';
 import './styles/print.css';
+import './react/tailwind.css';
 
+import { createRoot } from 'react-dom/client';
+import { createElement } from 'react';
+import { App } from './react/App.jsx';
 import { initDB, getSetting } from './db.js';
 import { initTheme } from './core/themeEngine.js';
 import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
-import { createBlockRegistry } from './core/blockRegistry.js';
-import { registerDefaultBlocks } from './blocks/registerBlocks.js';
 import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
-import { createOSShell } from './os/shell.js';
 import { initBalatro } from './ui/balatro.js';
 
 export const SCHEMA_VERSION = 6;
@@ -115,10 +116,10 @@ async function initNewOSShell() {
   const savedMode = await getSetting('boris_mode').catch(() => null);
   const eventBus = createEventBus();
   const modeManager = createModeManager(eventBus, savedMode || 'School');
-  const blockRegistry = createBlockRegistry();
-  registerDefaultBlocks(blockRegistry);
 
-  createOSShell(app, { eventBus, modeManager, blockRegistry });
+  // Mount React app
+  const root = createRoot(app);
+  root.render(createElement(App, { eventBus, modeManager }));
 }
 
 async function initServiceWorker() {

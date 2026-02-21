@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+/*
+ * BORIS Design Tokens → Tailwind v4 Theme
+ *
+ * Maps existing CSS custom properties from variables.css / tokens.css
+ * into Tailwind's theme so we can use utility classes like:
+ *   bg-surface, text-muted, border-default, rounded-card, etc.
+ *
+ * All values reference the existing CSS vars so dark mode, compact mode,
+ * and mode switching continue to work automatically.
+ */
+
+@theme {
+  /* ── Colors ───────────────────────────────────────────────── */
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-border: var(--color-border);
+  --color-border-light: var(--color-border-light);
+  --color-text: var(--color-text);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-tertiary: var(--color-text-tertiary);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-light: var(--color-accent-light);
+  --color-accent-text: var(--color-accent-text);
+
+  --color-sidebar-bg: var(--color-sidebar-bg);
+  --color-sidebar-hover: var(--color-sidebar-hover);
+  --color-sidebar-active: var(--color-sidebar-active);
+  --color-sidebar-text: var(--color-sidebar-text);
+  --color-sidebar-text-active: var(--color-sidebar-text-active);
+
+  /* Module colors */
+  --color-blue: var(--color-blue);
+  --color-blue-light: var(--color-blue-light);
+  --color-purple: var(--color-purple);
+  --color-purple-light: var(--color-purple-light);
+  --color-emerald: var(--color-emerald);
+  --color-emerald-light: var(--color-emerald-light);
+  --color-amber: var(--color-amber);
+  --color-amber-light: var(--color-amber-light);
+  --color-rose: var(--color-rose);
+  --color-rose-light: var(--color-rose-light);
+  --color-cyan: var(--color-cyan);
+  --color-cyan-light: var(--color-cyan-light);
+  --color-indigo: var(--color-indigo);
+  --color-indigo-light: var(--color-indigo-light);
+  --color-orange: var(--color-orange);
+  --color-orange-light: var(--color-orange-light);
+  --color-teal: var(--color-teal);
+  --color-teal-light: var(--color-teal-light);
+  --color-pink: var(--color-pink);
+  --color-pink-light: var(--color-pink-light);
+
+  /* Semantic */
+  --color-success: var(--color-success);
+  --color-success-light: var(--color-success-light);
+  --color-warning: var(--color-warning);
+  --color-warning-light: var(--color-warning-light);
+  --color-error: var(--color-error);
+  --color-error-light: var(--color-error-light);
+
+  /* Mode accent (dynamic) */
+  --color-mode-accent: var(--mode-accent, var(--color-accent));
+  --color-mode-accent-light: var(--mode-accent-light, var(--color-accent-light));
+
+  /* ── Font Family ──────────────────────────────────────────── */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* ── Font Size ────────────────────────────────────────────── */
+  --font-size-xs: var(--font-xs);
+  --font-size-sm: var(--font-sm);
+  --font-size-base: var(--font-base);
+  --font-size-md: var(--font-md);
+  --font-size-lg: var(--font-lg);
+  --font-size-xl: var(--font-xl);
+  --font-size-2xl: var(--font-2xl);
+  --font-size-3xl: var(--font-3xl);
+  --font-size-stat: var(--font-stat);
+
+  /* ── Spacing ──────────────────────────────────────────────── */
+  --spacing-0: var(--space-0);
+  --spacing-1: var(--space-1);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+  --spacing-6: var(--space-6);
+  --spacing-8: var(--space-8);
+  --spacing-10: var(--space-10);
+  --spacing-12: var(--space-12);
+  --spacing-16: var(--space-16);
+
+  /* ── Border Radius ────────────────────────────────────────── */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-full: var(--radius-full);
+
+  /* ── Shadows ──────────────────────────────────────────────── */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-color: var(--shadow-color);
+
+  /* ── Transitions ──────────────────────────────────────────── */
+  --ease-default: var(--ease);
+  --ease-out: var(--ease-out);
+  --ease-spring: var(--ease-spring);
+
+  --animate-duration-fast: var(--duration-fast);
+  --animate-duration: var(--duration);
+  --animate-duration-slow: var(--duration-slow);
+  --animate-duration-page: var(--duration-page);
+}

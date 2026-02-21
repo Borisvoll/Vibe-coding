@@ -70,6 +70,7 @@ async function apiFetch(url, options = {}) {
   } catch (networkErr) {
     throw new Error('Geen internetverbinding of server onbereikbaar');
   }
+  if (res.status === 400) throw new Error('Ongeldig verzoek — data kon niet verwerkt worden door de server');
   if (res.status === 401) throw new Error('Ongeldige API key — controleer je jsonbin.io API key');
   if (res.status === 403) throw new Error('Toegang geweigerd — controleer of de API key juist is');
   if (res.status === 404) throw new Error('Bin niet gevonden — controleer de Bin ID');
@@ -391,6 +392,7 @@ export async function testSync() {
       headers: { 'X-Master-Key': config.apiKey }
     });
     result.steps.push(`API bereikbaar (HTTP ${res.status})`);
+    if (res.status === 400) { result.steps.push('Ongeldig verzoek (400) — controleer sync data'); return result; }
     if (res.status === 401) { result.steps.push('API key ongeldig'); return result; }
   } catch (err) {
     result.steps.push('Netwerk fout: ' + err.message);

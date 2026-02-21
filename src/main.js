@@ -12,7 +12,7 @@ import './styles/components.css';
 import './styles/pages.css';
 import './styles/print.css';
 
-import { initDB, getSetting } from './db.js';
+import { initDB, getSetting, purgeDeletedOlderThan } from './db.js';
 import { initTheme } from './core/themeEngine.js';
 import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
@@ -51,6 +51,8 @@ async function init() {
   await ensureDeviceId();
   await migratePersonalTasks();
   await checkExportReminder();
+  // Purge soft-deleted tombstones older than 30 days (fire-and-forget)
+  purgeDeletedOlderThan(30).catch(() => { /* non-critical */ });
   await initServiceWorker();
   initBalatro();
 

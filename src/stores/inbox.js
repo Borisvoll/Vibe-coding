@@ -23,20 +23,27 @@ export async function getInboxCount() {
 
 export async function addInboxItem(text, mode = null) {
   validateInboxItem({ text, mode });
-  const isLink = /^https?:\/\//.test(text.trim());
+  const raw = text.trim();
+  const isLink = /^https?:\/\//.test(raw);
   const item = {
     id: crypto.randomUUID(),
-    text: text.trim(),
+    text: raw,
     type: isLink ? 'link' : 'thought',
     mode,
-    url: isLink ? text.trim() : null,
+    url: isLink ? raw : null,
     status: 'inbox',
     promotedTo: null,
+    tags: extractHashtags(raw),
     createdAt: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
   await put(STORE, item);
   return item;
+}
+
+function extractHashtags(text) {
+  const matches = text.match(/#([\w-]+)/g) || [];
+  return matches.map((t) => t.slice(1).toLowerCase());
 }
 
 export async function promoteToTask(id, mode = null) {

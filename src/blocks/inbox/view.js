@@ -93,6 +93,7 @@ export function renderInbox(container, context) {
         <div class="inbox-block__item-content">
           <span class="inbox-block__item-text">${escapeHTML(item.text)}</span>
           ${item.mode ? `<span class="badge badge-default">${escapeHTML(item.mode)}</span>` : ''}
+          ${Array.isArray(item.tags) && item.tags.length ? item.tags.map((t) => `<span class="badge badge-accent">#${escapeHTML(t)}</span>`).join('') : ''}
         </div>
         <div class="inbox-block__item-actions">
           <button type="button" class="btn btn-ghost btn-sm btn-icon" data-action="promote" aria-label="Promoveer naar taak" data-tooltip="Naar taak">&#x2191;</button>

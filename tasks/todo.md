@@ -75,6 +75,7 @@ another reason. P3 is polish — do opportunistically.
   - `src/ui/modal.css` — modal overlay: `9999` → `1000`
   - `src/styles/components.css` — tooltip: `999` → `200`
   - `src/blocks/styles.css` — mode wash decoration: `999` → `10`
+  - `src/blocks/boundaries/styles.css` — `3000` → `2000` (confirm intent first)
   - `src/ui/morning-flow.css` — already at `2000`, keep as-is
   - After change: test that modals open correctly over page content, toasts
     appear above modals, morning flow appears above everything
@@ -111,6 +112,17 @@ file is opened for another reason.
 
 - [ ] **QA-P2e** Remove `button:focus { outline: none }` from any block CSS
   that has it without a visible replacement (check: project-hub, personal-dashboard)
+
+- [ ] **QA-P2f** Remove `!important` from `src/blocks/lijsten-screen/styles.css`
+  (5 declarations) — replace with higher-specificity selectors
+
+- [ ] **QA-P2g** Replace inline `dot.style.background = meta.color` in
+  `src/os/shell.js` (~line 226) with a CSS custom property on the element:
+  `dot.style.setProperty('--dot-color', meta.color)` + CSS rule `background: var(--dot-color)`
+
+- [ ] **QA-P2h** Remove hex fallbacks from `var(--token, #hexvalue)` calls in
+  `src/ui/command-palette.css` and `src/ui/morning-flow.css`; ensure all
+  referenced tokens are defined in `src/styles/variables.css`
 
 ---
 

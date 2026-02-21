@@ -121,6 +121,8 @@ unpredictable.
 - Morning flow overlay (`src/ui/morning-flow.css`): already at `z-index: 2000` — keep
 - Mode wash decoration (`src/blocks/styles.css`): at `z-index: 999` → `z-index: 10`
 - Tooltip (`src/styles/components.css`): at `z-index: 999` → `z-index: 200`
+- `src/blocks/boundaries/styles.css`: uses `z-index: 3000` — above the critical-system tier.
+  Change to `z-index: 2000` unless it intentionally sits above morning flow (confirm with product).
 
 ---
 
@@ -220,6 +222,71 @@ replacement. Let the global `:focus-visible` rule in `base.css` handle it.
 
 ---
 
+### P2-F: `!important` overrides in `lijsten-screen`
+
+`src/blocks/lijsten-screen/styles.css` contains 5 `!important` declarations
+used to override form element browser defaults. This makes the cascade brittle
+and harder to override when theming.
+
+**Fix:** Replace `!important` with higher-specificity selectors. For example:
+```css
+/* wrong */
+.lijsten-screen__quick-add { border: none !important; }
+
+/* correct — higher specificity, no !important */
+.lijsten-screen .lijsten-screen__quick-add { border: none; }
+```
+
+Do this as part of normal editing of `lijsten-screen` — not a standalone pass.
+
+---
+
+### P2-G: Inline style for tab dot color in `shell.js`
+
+`src/os/shell.js` line ~226 sets `dot.style.background = meta.color` to
+color the mode indicator dot in the tab bar. This bypasses CSS and breaks
+theming (the color cannot be overridden by a CSS rule).
+
+**Fix:** Replace the inline style with a CSS custom property on the element:
+```javascript
+// before
+dot.style.background = meta.color;
+
+// after
+dot.style.setProperty('--dot-color', meta.color);
+```
+```css
+/* in src/styles/pages.css or blocks/styles.css */
+.os-tab-dot { background: var(--dot-color, var(--color-accent)); }
+```
+
+---
+
+### P2-H: Hex fallback values in `src/ui/*.css`
+
+`src/ui/command-palette.css` and `src/ui/morning-flow.css` use the pattern
+`var(--color-token, #hexvalue)` extensively. The hex fallback is only needed
+for browsers that don't support CSS variables (all modern browsers do). More
+critically, when a theme variable is undefined or mis-spelled, the fallback
+silently applies a hardcoded colour that may violate contrast or theme.
+
+**Fix:** Remove the hex fallback from `var()` calls. If the token genuinely
+might be absent, define a safe fallback in `variables.css` instead:
+```css
+/* wrong — silent hardcoded fallback */
+color: var(--color-text, #1a1a1a);
+
+/* correct — ensure token is always defined in variables.css */
+color: var(--color-text);
+```
+
+Run the following to find all fallback instances:
+```bash
+grep -rn 'var(--[^,)]*,\s*#' src/ui/
+```
+
+---
+
 ## P3 — Polish (Nice-to-Have, No Rush)
 
 ### P3-A: Missing `aria-live` on dynamic count labels
@@ -313,8 +380,29 @@ grep -rn 'outline: none\|outline: 0' src/blocks/*/styles.css src/ui/*.css
 ### How to verify P2-A (hardcoded colors)
 
 ```bash
-# Find raw color values in block CSS
-grep -rn 'color: #fff\|color: white\|color: #ffffff\|color: #000\|color: black' src/blocks/*/styles.css
+# Find raw color values in block CSS (also check src/ui/ for completeness)
+grep -rn 'color: #fff\|color: white\|color: #ffffff\|color: #000\|color: black' src/blocks/*/styles.css src/ui/*.css
+```
+
+### How to verify P2-F (!important usage)
+
+```bash
+# Find !important in block and UI CSS
+grep -rn '!important' src/blocks/*/styles.css src/ui/*.css
+```
+
+### How to verify P2-G (inline style in shell)
+
+```bash
+# Find style property assignments in shell and OS JS
+grep -rn '\.style\.' src/os/ src/ui/
+```
+
+### How to verify P2-H (hex fallbacks in var())
+
+```bash
+# Find CSS var() calls with hardcoded hex fallbacks
+grep -rn 'var(--[^,)]*,\s*#' src/ui/ src/styles/
 ```
 
 ### Manual keyboard test (covers P1-A, P1-B, P1-C)
@@ -354,6 +442,9 @@ mode. Verify this passes.
 | P2-C | Card padding inconsistency | 2 CSS files | Medium | Low |
 | P2-D | Border-radius token alias | 1 CSS file | Low | Trivial |
 | P2-E | Button outline suppression | 3 CSS files | Medium | Low |
+| P2-F | `!important` overrides in lijsten-screen | 1 CSS file | Low | Low |
+| P2-G | Inline style for tab dot color | `shell.js` | Low | Trivial |
+| P2-H | Hex fallback in `var()` calls (UI components) | 2 CSS files | Low | Low |
 | P3-A | Missing `aria-live` on counts | 4 components | Low | Low |
 | P3-B | Forms without accessible names | 8 JS files | Low | Low |
 | P3-C | Collapsible missing `aria-controls` | 1 JS file | Low | Low |

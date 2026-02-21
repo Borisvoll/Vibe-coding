@@ -71,15 +71,18 @@ export function createCollapsibleSection({ id, title, hostName, defaultOpen = tr
   header.append(titleEl, badgeEl, chevronEl);
 
   const contentEl = document.createElement('div');
-  contentEl.className = 'collapsible-section__content os-host-stack';
-  contentEl.setAttribute('data-os-host', hostName);
+  contentEl.className = 'collapsible-section__content';
+
+  const innerEl = document.createElement('div');
+  innerEl.className = 'collapsible-section__inner os-host-stack';
+  innerEl.setAttribute('data-os-host', hostName);
+  contentEl.appendChild(innerEl);
 
   el.append(header, contentEl);
 
   // ── State helpers ──────────────────────────────────────────
   function applyState() {
     header.setAttribute('aria-expanded', String(isOpen));
-    contentEl.style.display = isOpen ? '' : 'none';
   }
 
   function toggle() {
@@ -96,7 +99,7 @@ export function createCollapsibleSection({ id, title, hostName, defaultOpen = tr
   // ── Public API ─────────────────────────────────────────────
   return {
     el,
-    contentEl,
+    contentEl: innerEl,
 
     setOpen(open) {
       isOpen = open;

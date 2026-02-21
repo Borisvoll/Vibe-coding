@@ -245,9 +245,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const VANDAAG_SECTIONS = [
     { zone: 'tasks',      id: 'vandaag-tasks',      title: 'Taken',                hostName: 'vandaag-tasks' },
     { zone: 'projects',   id: 'vandaag-projects',   title: 'Projecten & Lijsten',  hostName: 'vandaag-projects' },
+    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode' },
     { zone: 'capture',    id: 'vandaag-capture',     title: 'Inbox',                hostName: 'vandaag-capture' },
     { zone: 'reflection', id: 'vandaag-reflection',  title: 'Reflectie',            hostName: 'vandaag-reflection' },
-    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode' },
     { zone: 'weekly',     id: 'vandaag-weekly',      title: 'Weekoverzicht',        hostName: 'vandaag-weekly' },
     { zone: 'history',    id: 'vandaag-history',     title: 'Geschiedenis',         hostName: 'vandaag-history' },
   ];

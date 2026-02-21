@@ -29,6 +29,44 @@
   /* No container — pulse buttons are the visual elements */
 }
 
+/* ── Layer: Quick capture ─────────────────────────────────── */
+.life-dash__capture-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  transition: border-color var(--duration-fast) var(--ease),
+              box-shadow var(--duration-fast) var(--ease);
+}
+
+.life-dash__capture-wrap:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+
+.life-dash__capture-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.life-dash__capture-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font-size: var(--font-md);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  outline: none;
+}
+
+.life-dash__capture-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+
 .life-dash__layer--depth {
   /* Collapsed by default — toggle + hidden details */
 }

@@ -9,13 +9,15 @@ import './styles.css';
 
 export function renderProjectDetail(container, context) {
   const mountId = `project-detail-${crypto.randomUUID()}`;
-  const { eventBus, modeManager } = context;
+  const { eventBus, modeManager, routeParams = {}, fullScreen = false } = context;
 
-  let selectedProjectId = null;
+  // If launched from a deep link (#projects/[id]), pre-select that project
+  let selectedProjectId = routeParams.id || null;
   let subCleanups = [];
 
+  const fsClass = fullScreen ? ' project-detail--fullscreen' : '';
   container.insertAdjacentHTML('beforeend', `
-    <article class="project-detail" data-mount-id="${mountId}">
+    <article class="project-detail${fsClass}" data-mount-id="${mountId}">
       <div class="project-detail__picker"></div>
       <div class="project-detail__content"></div>
     </article>
@@ -95,9 +97,10 @@ export function renderProjectDetail(container, context) {
         </div>`;
     } catch { /* non-critical */ }
 
+    const headerTag = fullScreen ? 'h1' : 'h3';
     contentEl.innerHTML = `
-      <div class="project-detail__header">
-        <h3 class="project-detail__title">${escapeHTML(project.title)}</h3>
+      <div class="project-detail__header${fullScreen ? ' project-detail__header--fullscreen' : ''}">
+        <${headerTag} class="project-detail__title${fullScreen ? ' project-detail__title--fullscreen' : ''}">${escapeHTML(project.title)}</${headerTag}>
         ${project.goal ? `<p class="project-detail__goal">${escapeHTML(project.goal)}</p>` : ''}
         ${momentumHtml}
       </div>

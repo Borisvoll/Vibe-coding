@@ -4,10 +4,12 @@ import { renderBannerTab } from './tabs/banner.js';
 import { renderTasksTab } from './tabs/tasks.js';
 import { renderTimelineTab } from './tabs/timeline.js';
 import { renderFilesTab } from './tabs/files.js';
+import { renderMonthGrid } from '../project-detail/agenda.js';
 
 const TABS = [
   { id: 'banner', label: 'Banner' },
   { id: 'tasks', label: 'Taken' },
+  { id: 'agenda', label: 'Agenda' },
   { id: 'timeline', label: 'Tijdlijn' },
   { id: 'mindmap', label: 'Mindmap' },
   { id: 'files', label: 'Bestanden' },
@@ -187,6 +189,8 @@ export function renderProjectDetail(container, context, projectId, onBack) {
       tabCleanup = renderBannerTab(contentEl, project, context);
     } else if (tabId === 'tasks') {
       tabCleanup = renderTasksTab(contentEl, project, context);
+    } else if (tabId === 'agenda') {
+      tabCleanup = renderMonthGrid(contentEl, project, context);
     } else if (tabId === 'timeline') {
       tabCleanup = renderTimelineTab(contentEl, project, context);
     } else if (tabId === 'mindmap') {

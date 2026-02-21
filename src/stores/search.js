@@ -1,6 +1,8 @@
-import { getAll } from '../db.js';
+import { getAll, getByIndexRange } from '../db.js';
 
 const THRESHOLD = 0.3;
+const DEFAULT_SEARCH_LIMIT = 30;
+const SEARCH_DATE_WINDOW_DAYS = 365;
 
 /**
  * Maps each result type to display metadata and navigation target.
@@ -91,22 +93,34 @@ function safeGetAll(store) {
   return getAll(store).catch(() => []);
 }
 
+function safeGetByRange(store, index, lower, upper) {
+  return getByIndexRange(store, index, lower, upper).catch(() => []);
+}
+
+function dateNDaysAgo(n) {
+  return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+}
+
 /**
  * Global fuzzy search across all major stores.
  * Returns flat array sorted by score (desc) then date (desc).
+ *
+ * Uses date-bounded queries for time-series stores to avoid full scans.
+ * Results capped at `limit` (default 30).
  */
-export async function globalSearch(query) {
+export async function globalSearch(query, { limit = DEFAULT_SEARCH_LIMIT } = {}) {
   if (!query || query.trim().length < 2) return [];
   const q = query.trim();
+  const dateFloor = dateNDaysAgo(SEARCH_DATE_WINDOW_DAYS);
 
-  // Read all stores in parallel
+  // Use bounded queries for time-series stores; full scan only for small stores
   const [tasks, inbox, projects, hours, logbook, dailyPlans, wellbeing] = await Promise.all([
-    safeGetAll('os_tasks'),
+    safeGetByRange('os_tasks', 'date', dateFloor, '9999-12-31'),
     safeGetAll('os_inbox'),
     safeGetAll('os_projects'),
-    safeGetAll('hours'),
-    safeGetAll('logbook'),
-    safeGetAll('dailyPlans'),
+    safeGetByRange('hours', 'date', dateFloor, '9999-12-31'),
+    safeGetByRange('logbook', 'date', dateFloor, '9999-12-31'),
+    safeGetByRange('dailyPlans', 'date', dateFloor, '9999-12-31'),
     safeGetAll('os_personal_wellbeing'),
   ]);
 
@@ -157,7 +171,7 @@ export async function globalSearch(query) {
     return (b.date || '').localeCompare(a.date || '');
   });
 
-  return results;
+  return results.slice(0, limit);
 }
 
 /**

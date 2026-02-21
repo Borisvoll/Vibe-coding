@@ -1260,6 +1260,13 @@
 
 .os-friday-prompt__btn:hover { opacity: 0.9; }
 
+.os-friday-prompt__btn--ghost {
+  background: transparent;
+  color: var(--color-accent);
+  font-weight: 500;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
 .os-friday-prompt__close {
   border: none;
   background: none;

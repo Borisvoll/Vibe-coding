@@ -1,4 +1,4 @@
-import { getAll, getSetting, setSetting } from '../db.js';
+import { getAll, getByIndex, getByIndexRange, getSetting, setSetting } from '../db.js';
 import { getToday, getISOWeek, getWeekDates, formatMinutes, formatDateShort } from '../utils.js';
 import { getWeeklyOverview } from './bpv.js';
 
@@ -42,26 +42,30 @@ export async function aggregateWeeklyReview(weekStr = null) {
   fri.setDate(fri.getDate() + 2);
   const weekEnd = fri.toISOString().slice(0, 10); // Sunday
 
-  // Tasks completed this week
-  const allTasks = await getAll(TASKS_STORE);
-  const completedTasks = allTasks.filter((t) =>
+  // Tasks: use date-range query instead of loading all tasks ever.
+  // os_tasks has a 'date' index; filter completed tasks in-memory from the week range.
+  const weekTasks = await getByIndexRange(TASKS_STORE, 'date', weekStart, weekEnd);
+  const completedTasks = weekTasks.filter((t) =>
     t.status === 'done' &&
     t.doneAt &&
     t.doneAt.slice(0, 10) >= weekStart &&
     t.doneAt.slice(0, 10) <= weekEnd
   ).sort((a, b) => (a.doneAt || '').localeCompare(b.doneAt || ''));
 
-  const openTasks = allTasks.filter((t) => t.status === 'todo');
+  // Open task count: use status index (small result set, not a full scan)
+  const openTasks = await getByIndex(TASKS_STORE, 'status', 'todo');
 
   // BPV hours
   const bpv = await getWeeklyOverview(week);
 
-  // Wellbeing / journal entries for this week
-  const allWellbeing = await getAll(WELLBEING_STORE);
-  const weekEntries = allWellbeing.filter((e) => {
-    const d = e.date || e.id || '';
-    return d >= weekStart && d <= weekEnd;
-  }).sort((a, b) => (a.date || a.id || '').localeCompare(b.date || b.id || ''));
+  // Wellbeing: records are keyed by date (id = date string), use primary key range.
+  // os_personal_wellbeing has updated_at index, but IDs are date strings — direct range works.
+  const weekEntries = await getByIndexRange(WELLBEING_STORE, 'updated_at', weekStart, weekEnd + 'T23:59:59.999Z').then(
+    (all) => all.filter((e) => {
+      const d = e.date || e.id || '';
+      return d >= weekStart && d <= weekEnd;
+    }).sort((a, b) => (a.date || a.id || '').localeCompare(b.date || b.id || ''))
+  ).catch(() => []);
 
   // Extract gratitude, reflections, journal notes
   const gratitude = weekEntries
@@ -85,13 +89,13 @@ export async function aggregateWeeklyReview(weekStr = null) {
     habitsSummary[key] = { done, total: habitsData.length || 5 };
   }
 
-  // Projects
+  // Projects (small store — full scan is acceptable)
   const allProjects = await getAll(PROJECTS_STORE);
   const activeProjects = allProjects.filter((p) => p.status === 'active');
 
-  // Inbox processed this week
-  const allInbox = await getAll(INBOX_STORE);
-  const processedInbox = allInbox.filter((item) =>
+  // Inbox: use updated_at range instead of loading all inbox items
+  const weekInbox = await getByIndexRange(INBOX_STORE, 'updated_at', weekStart, weekEnd + 'T23:59:59.999Z').catch(() => []);
+  const processedInbox = weekInbox.filter((item) =>
     item.status !== 'inbox' &&
     item.updated_at &&
     item.updated_at.slice(0, 10) >= weekStart &&

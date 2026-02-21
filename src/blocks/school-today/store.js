@@ -16,8 +16,6 @@ export async function listFocusTasks() {
 }
 
 export async function addFocusTask(title) {
-  const list = await listFocusTasks();
-  if (list.length >= getTaskCap(MODE)) return false;
   await addTask(title, MODE);
   return true;
 }

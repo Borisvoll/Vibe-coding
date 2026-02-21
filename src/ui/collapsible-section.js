@@ -23,8 +23,14 @@
 
 const STORAGE_PREFIX = 'boris_collapse_';
 
+// Date-scoped keys mean each day starts fresh with phase-appropriate defaults,
+// while intra-day manual toggles are respected.
+function getDayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 function storageKey(id, mode) {
-  return `${STORAGE_PREFIX}${id}_${mode}`;
+  return `${STORAGE_PREFIX}${id}_${mode}_${getDayKey()}`;
 }
 
 function readState(id, mode, defaultOpen) {

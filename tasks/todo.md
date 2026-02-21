@@ -2,6 +2,46 @@
 
 ---
 
+## UI Fixes + Theme Studio — Implementation Plan
+
+**Feature branch:** `claude/design-personal-os-ui-1hX66`
+**Date:** 2026-02-21
+
+### Phase 1 — Audit (DONE)
+- [x] Root-cause "??" date in header → missing weekend days in WEEKDAYS array
+- [x] Root-cause "Hoe voelt je hoofd" readability → hardcoded pastels + small fonts + no dark mode adaptation
+- [x] Inventory Theme Studio → docs/audit/theme-studio-current-state.md
+- [x] Document problems → docs/audit/theme-studio-problems.md
+
+### Phase 2 — Design Decisions (WAITING)
+- [ ] Get answers to 7 design questions before implementing Milestone 2
+
+### Milestone 1 — Immediate UI Fixes
+
+#### 1.1 Fix "??" date in header
+- [ ] Add 'za' and 'zo' to `WEEKDAYS` in `src/constants.js:93`
+- [ ] Verify `formatDateShort()` returns correct names for all 7 days
+- [ ] Run tests, check no regressions
+
+#### 1.2 Fix "Hoe voelt je hoofd" readability
+- [ ] Replace hardcoded STATES colors with CSS token references (`--color-emerald-light` etc.)
+- [ ] Add dark-mode-aware variants for action backgrounds
+- [ ] Increase font sizes: button labels 11px→13px, action text 13px→14px
+- [ ] Verify contrast in all presets and dark mode
+
+#### 1.3 Verification & docs
+- [ ] Run full test suite (298 tests, 21 files)
+- [ ] Create/update `docs/a11y-contrast.md`
+- [ ] Commit with descriptive message
+
+### Milestone 2 — Theme Studio Redesign (blocked: awaiting design decisions)
+_Details TBD after Phase 2 answers._
+
+### Milestone 3 — Cleanup & Orphan Sweep
+_Details TBD after Milestone 2._
+
+---
+
 ## Project-Hub 2.0 — Implementation Plan
 
 **Feature branch:** `claude/life-dashboard-modular-blocks-AOPzD`

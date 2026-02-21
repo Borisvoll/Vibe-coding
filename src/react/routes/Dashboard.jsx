@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useMode } from '../hooks/useMode.jsx';
 import { useEvent } from '../hooks/useEventBus.jsx';
-import { getTodaySnapshot, getProjectsPulse, getBPVPulse, getWeekFocus } from '../../os/dashboardData.js';
+import { useKernel } from '../hooks/useKernel.jsx';
 
 export function Dashboard() {
   const { mode, meta } = useMode();
+  const kernel = useKernel();
   const [snapshot, setSnapshot] = useState(null);
   const [projects, setProjects] = useState(null);
   const [bpv, setBpv] = useState(null);
   const [week, setWeek] = useState(null);
 
   async function loadData() {
+    const { getTodaySnapshot, getProjectsPulse, getBPVPulse, getWeekFocus } = kernel.queries.dashboard;
     const [snap, proj, bpvData, weekData] = await Promise.all([
       getTodaySnapshot(mode),
       getProjectsPulse(),

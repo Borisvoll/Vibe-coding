@@ -21,6 +21,7 @@ import { initTheme } from './core/themeEngine.js';
 import { createEventBus } from './core/eventBus.js';
 import { createModeManager } from './core/modeManager.js';
 import { createBlockRegistry } from './core/blockRegistry.js';
+import { createKernel } from './kernel/index.js';
 import { registerDefaultBlocks } from './blocks/registerBlocks.js';
 import { applyDesignTokens } from './core/designSystem.js';
 import { APP_VERSION } from './version.js';
@@ -116,8 +117,13 @@ async function initNewOSShell() {
 
   // Read mode from IDB (set in previous session); fall back to localStorage cache
   const savedMode = await getSetting('boris_mode').catch(() => null);
+
+  // Single eventBus instance — shared by kernel, blocks, and React
   const eventBus = createEventBus();
   const modeManager = createModeManager(eventBus, savedMode || 'School');
+
+  // Create kernel — reuses the same eventBus (does NOT create a new one)
+  const kernel = createKernel(eventBus);
 
   // Create block registry and register all vanilla blocks
   const blockRegistry = createBlockRegistry();
@@ -125,7 +131,7 @@ async function initNewOSShell() {
 
   // Mount React app
   const root = createRoot(app);
-  root.render(createElement(App, { eventBus, modeManager, blockRegistry }));
+  root.render(createElement(App, { eventBus, modeManager, blockRegistry, kernel }));
 }
 
 async function initServiceWorker() {

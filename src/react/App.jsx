@@ -11,11 +11,13 @@ import { Settings } from './routes/Settings.jsx';
 import { ModeProvider } from './hooks/useMode.jsx';
 import { EventBusProvider } from './hooks/useEventBus.jsx';
 import { BlockRegistryProvider } from './hooks/useBlockRegistry.jsx';
+import { KernelProvider } from './hooks/useKernel.jsx';
 
-export function App({ eventBus, modeManager, blockRegistry }) {
+export function App({ eventBus, modeManager, blockRegistry, kernel }) {
   return (
     <EventBusProvider eventBus={eventBus}>
       <ModeProvider modeManager={modeManager}>
+        <KernelProvider kernel={kernel}>
         <BlockRegistryProvider blockRegistry={blockRegistry}>
         <HashRouter>
           <Routes>
@@ -34,6 +36,7 @@ export function App({ eventBus, modeManager, blockRegistry }) {
           </Routes>
         </HashRouter>
         </BlockRegistryProvider>
+        </KernelProvider>
       </ModeProvider>
     </EventBusProvider>
   );

@@ -2,12 +2,13 @@ import { useCallback, useState, useRef } from 'react';
 import { VanillaBridge } from '../components/VanillaBridge.jsx';
 import { useMode } from '../hooks/useMode.jsx';
 import { useEventBus } from '../hooks/useEventBus.jsx';
+import { useKernel } from '../hooks/useKernel.jsx';
 import { renderSettingsBlock } from '../../blocks/settings-panel.js';
-import { downloadBundle, readBundleFile, importBundle, validateBundle } from '../../stores/backup.js';
 
 export function Settings() {
   const { mode, modeManager } = useMode();
   const eventBus = useEventBus();
+  const kernel = useKernel();
   const [exportStatus, setExportStatus] = useState(null);
   const [importStatus, setImportStatus] = useState(null);
   const fileRef = useRef(null);
@@ -25,8 +26,17 @@ export function Settings() {
   async function handleExport() {
     try {
       setExportStatus('Exporteren...');
-      const meta = await downloadBundle();
-      setExportStatus(`Export succesvol (${meta.storeCount} stores)`);
+      // Kernel returns pure data; UI handles the download side effect
+      const bundle = await kernel.queries.backup.exportBundle();
+      const json = JSON.stringify(bundle, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `boris-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setExportStatus(`Export succesvol (${bundle._meta?.storeCount || '?'} stores)`);
       setTimeout(() => setExportStatus(null), 3000);
     } catch (err) {
       setExportStatus(`Fout: ${err.message}`);
@@ -39,8 +49,8 @@ export function Settings() {
 
     try {
       setImportStatus('Valideren...');
-      const bundle = await readBundleFile(file);
-      const validation = validateBundle(bundle);
+      const bundle = await kernel.queries.backup.readBundleFile(file);
+      const validation = kernel.queries.backup.validateBundle(bundle);
 
       if (!validation.valid) {
         setImportStatus(`Ongeldige backup: ${validation.errors.join(', ')}`);
@@ -48,7 +58,7 @@ export function Settings() {
       }
 
       setImportStatus('Importeren...');
-      const result = await importBundle(bundle);
+      const result = await kernel.commands.backup.import(bundle);
       setImportStatus(`Import succesvol: ${result.imported} records uit ${result.stores} stores. Ververs de pagina.`);
     } catch (err) {
       setImportStatus(`Fout: ${err.message}`);

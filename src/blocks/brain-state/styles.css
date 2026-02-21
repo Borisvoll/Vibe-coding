@@ -47,7 +47,7 @@
 }
 
 .brain-state__label {
-  font-size: var(--font-xs, 0.6875rem);
+  font-size: var(--font-sm, 0.8125rem);
   font-weight: 600;
   color: var(--color-text, #1f2937);
 }
@@ -60,7 +60,7 @@
 }
 
 .brain-state__action-text {
-  font-size: var(--font-sm, 0.8125rem);
+  font-size: var(--font-base, 0.875rem);
   color: var(--color-text, #1f2937);
   font-weight: 500;
 }

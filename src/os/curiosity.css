@@ -17,7 +17,7 @@
 /* ── Header ─────────────────────────────────────────── */
 
 .curiosity-header {
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-8);
 }
 
 .curiosity-header__title {
@@ -34,6 +34,43 @@
   margin: 0;
   font-style: italic;
 }
+
+/* ── Word Cloud ──────────────────────────────────────── */
+
+.curiosity-cloud {
+  background: var(--ui-surface);
+  border-radius: var(--ui-card-radius);
+  padding: var(--space-6);
+  margin-bottom: var(--space-5);
+  opacity: 0;
+  animation: curiosity-fadein 180ms ease-out 20ms both;
+}
+
+.curiosity-cloud__words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  align-items: baseline;
+  justify-content: center;
+  line-height: 1.8;
+}
+
+.curiosity-cloud__word {
+  display: inline-block;
+  color: var(--ui-text-muted);
+  cursor: default;
+  transition: color 150ms ease;
+}
+
+.curiosity-cloud__word:hover {
+  color: var(--mode-accent, var(--color-accent));
+}
+
+.curiosity-cloud__word--s1 { font-size: var(--font-sm); opacity: 0.6; }
+.curiosity-cloud__word--s2 { font-size: var(--font-base); opacity: 0.7; }
+.curiosity-cloud__word--s3 { font-size: var(--font-lg); opacity: 0.8; font-weight: 400; }
+.curiosity-cloud__word--s4 { font-size: var(--font-xl, 1.5rem); opacity: 0.9; font-weight: 400; }
+.curiosity-cloud__word--s5 { font-size: var(--font-2xl, 1.75rem); opacity: 1; font-weight: 500; color: var(--mode-accent, var(--color-accent)); }
 
 /* ── Grid: one big + three small ────────────────────── */
 
@@ -105,6 +142,17 @@
   margin: 0 0 var(--space-5) 0;
 }
 
+.curiosity-widget__quote {
+  font-size: var(--font-md);
+  font-weight: 400;
+  color: var(--ui-text);
+  line-height: 1.7;
+  margin: 0 0 var(--space-5) 0;
+  padding-left: var(--space-4);
+  border-left: 3px solid var(--mode-accent, var(--color-accent));
+  font-style: italic;
+}
+
 .curiosity-widget__date {
   font-size: var(--font-sm);
   color: var(--ui-text-faint);
@@ -115,7 +163,7 @@
 .curiosity-widget__word {
   font-size: var(--font-lg);
   font-weight: 400;
-  color: var(--ui-text-muted);
+  color: var(--mode-accent, var(--color-accent));
   margin: 0 0 var(--space-3) 0;
 }
 
@@ -160,7 +208,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .curiosity-page,
-  .curiosity-widget {
+  .curiosity-widget,
+  .curiosity-cloud {
     animation: none;
     opacity: 1;
   }

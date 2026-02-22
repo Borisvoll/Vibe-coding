@@ -149,6 +149,52 @@ export async function getVergeten() {
  *
  * @returns {Promise<{ text: string, weeksAgo: number, dateLabel: string } | null>}
  */
+/**
+ * WORD CLOUD — Top 20 meaningful words across all captures,
+ * each with a relative size (1-5) based on frequency.
+ *
+ * @returns {Promise<Array<{ word: string, count: number, size: number }>>}
+ */
+export async function getWordCloud() {
+  try {
+    const all = await getAll(INBOX_STORE);
+    if (all.length < 3) return [];
+
+    const freq = {};
+    for (const item of all) {
+      const words = item.text
+        .toLowerCase()
+        .replace(/[^\w\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length >= 3 && !STOP_WORDS.has(w));
+
+      const seen = new Set();
+      for (const word of words) {
+        if (seen.has(word)) continue;
+        seen.add(word);
+        freq[word] = (freq[word] || 0) + 1;
+      }
+    }
+
+    const entries = Object.entries(freq)
+      .filter(([, count]) => count >= 2)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+
+    if (entries.length === 0) return [];
+
+    const maxCount = entries[0][1];
+    const minCount = entries[entries.length - 1][1];
+    const range = maxCount - minCount || 1;
+
+    return entries.map(([word, count]) => ({
+      word,
+      count,
+      size: Math.ceil(((count - minCount) / range) * 4) + 1,
+    }));
+  } catch { return []; }
+}
+
 export async function getEcho() {
   try {
     const all = await getAll(INBOX_STORE);

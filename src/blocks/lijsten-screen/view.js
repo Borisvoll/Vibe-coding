@@ -14,6 +14,22 @@ const PRIORITY_META = [
   { value: 4, label: 'Geen', color: 'var(--color-text-tertiary)', className: 'p4' },
 ];
 
+const LIST_COLORS = [
+  { id: 'none', hex: '', label: 'Geen' },
+  { id: 'red', hex: '#e53e3e', label: 'Rood' },
+  { id: 'orange', hex: '#dd6b20', label: 'Oranje' },
+  { id: 'green', hex: '#38a169', label: 'Groen' },
+  { id: 'blue', hex: '#3182ce', label: 'Blauw' },
+  { id: 'purple', hex: '#805ad5', label: 'Paars' },
+];
+
+const SORT_OPTIONS = [
+  { id: 'manual', label: 'Handmatig' },
+  { id: 'priority', label: 'Prioriteit' },
+  { id: 'date', label: 'Deadline' },
+  { id: 'name', label: 'Naam' },
+];
+
 const DEFAULT_LISTS = [
   { name: 'Boodschappen', icon: '🛒' },
   { name: 'Te doen', icon: '✅' },
@@ -23,6 +39,7 @@ export function mountLijstenScreen(container, context) {
   const mountId = crypto.randomUUID();
   const { eventBus } = context;
   let selectedListId = null;
+  let currentSort = 'manual';
   // Drag state
   let dragItemId = null;
 
@@ -110,8 +127,10 @@ export function mountLijstenScreen(container, context) {
       const icon = list.icon ? escapeHTML(list.icon) : '📋';
       const remaining = c.total - c.done;
       const countText = remaining > 0 ? `${remaining}` : '';
+      const colorDot = list.color ? `<span class="lijsten-screen__nav-dot" style="background:${list.color}"></span>` : '';
       return `
         <button type="button" class="lijsten-screen__nav-item ${active ? 'lijsten-screen__nav-item--active' : ''}" data-list-id="${list.id}">
+          ${colorDot}
           <span class="lijsten-screen__nav-icon">${icon}</span>
           <span class="lijsten-screen__nav-name">${escapeHTML(list.name)}</span>
           ${countText ? `<span class="lijsten-screen__nav-count">${countText}</span>` : ''}
@@ -149,19 +168,42 @@ export function mountLijstenScreen(container, context) {
     const activeItems = items.filter((i) => !i.done);
     const doneItems = items.filter((i) => i.done);
 
-    // Sort active by priority (lower = higher priority), then position
-    activeItems.sort((a, b) => {
-      const pa = a.priority ?? 4;
-      const pb = b.priority ?? 4;
-      if (pa !== pb) return pa - pb;
-      return (a.position ?? 999) - (b.position ?? 999);
-    });
+    // Sort active items based on current sort mode
+    if (currentSort === 'priority') {
+      activeItems.sort((a, b) => (a.priority ?? 4) - (b.priority ?? 4));
+    } else if (currentSort === 'date') {
+      activeItems.sort((a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return a.dueDate.localeCompare(b.dueDate);
+      });
+    } else if (currentSort === 'name') {
+      activeItems.sort((a, b) => a.text.localeCompare(b.text, 'nl'));
+    } else {
+      // manual: position then priority
+      activeItems.sort((a, b) => {
+        const pa = a.priority ?? 4;
+        const pb = b.priority ?? 4;
+        if (pa !== pb) return pa - pb;
+        return (a.position ?? 999) - (b.position ?? 999);
+      });
+    }
 
     // Load subtasks for all items
     const subtaskMap = {};
     for (const item of [...activeItems, ...doneItems]) {
       subtaskMap[item.id] = await getSubtasks(item.id);
     }
+
+    const colorPickerHtml = LIST_COLORS.map((c) => {
+      const isActive = (list.color || '') === c.hex;
+      return `<button type="button" class="lijsten-screen__color-dot ${isActive ? 'lijsten-screen__color-dot--active' : ''}" data-color-hex="${c.hex}" title="${c.label}" style="${c.hex ? `background:${c.hex}` : 'background:var(--color-border)'}"></button>`;
+    }).join('');
+
+    const sortPickerHtml = SORT_OPTIONS.map((s) => {
+      return `<button type="button" class="lijsten-screen__sort-opt ${currentSort === s.id ? 'lijsten-screen__sort-opt--active' : ''}" data-sort="${s.id}">${s.label}</button>`;
+    }).join('');
 
     mainEl.innerHTML = `
       <div class="lijsten-screen__header">
@@ -173,6 +215,10 @@ export function mountLijstenScreen(container, context) {
           <button type="button" class="btn btn-ghost btn-sm lijsten-screen__rename-btn" data-tooltip="Naam wijzigen">Hernoem</button>
           <button type="button" class="btn btn-ghost btn-sm lijsten-screen__delete-btn" data-tooltip="Lijst verwijderen">Verwijder</button>
         </div>
+      </div>
+      <div class="lijsten-screen__toolbar">
+        <div class="lijsten-screen__color-picker">${colorPickerHtml}</div>
+        <div class="lijsten-screen__sort-picker">${sortPickerHtml}</div>
       </div>
 
       <div class="lijsten-screen__quick-add">
@@ -317,6 +363,54 @@ export function mountLijstenScreen(container, context) {
         selectedListId = null;
         eventBus.emit('lists:changed');
       }
+    });
+
+    // Color picker
+    mainEl.querySelectorAll('.lijsten-screen__color-dot').forEach((dot) => {
+      dot.addEventListener('click', async () => {
+        const hex = dot.dataset.colorHex;
+        await updateList(list.id, { color: hex });
+        eventBus.emit('lists:changed');
+      });
+    });
+
+    // Sort picker
+    mainEl.querySelectorAll('.lijsten-screen__sort-opt').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        currentSort = btn.dataset.sort;
+        renderMain();
+      });
+    });
+
+    // Inline text editing (double-click)
+    mainEl.querySelectorAll('.lijsten-screen__item-text').forEach((textEl) => {
+      textEl.addEventListener('dblclick', () => {
+        const itemEl = textEl.closest('[data-item-id]');
+        if (!itemEl || itemEl.classList.contains('lijsten-screen__item--done')) return;
+        const itemId = itemEl.dataset.itemId;
+        const currentText = textEl.textContent;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'form-input lijsten-screen__inline-edit';
+        input.value = currentText;
+        textEl.replaceWith(input);
+        input.focus();
+        input.select();
+        async function save() {
+          const newText = input.value.trim();
+          if (newText && newText !== currentText) {
+            await updateItem(itemId, { text: newText });
+            eventBus.emit('lists:changed');
+          } else {
+            renderMain();
+          }
+        }
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+          if (e.key === 'Escape') { input.value = currentText; input.blur(); }
+        });
+      });
     });
 
     // Auto-focus add input

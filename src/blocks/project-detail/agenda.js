@@ -1,4 +1,4 @@
-import { getTasksByProject } from '../../stores/tasks.js';
+import { getTasksByProject, updateTask } from '../../stores/tasks.js';
 import { escapeHTML, getToday } from '../../utils.js';
 
 const DAY_NAMES = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'];
@@ -8,10 +8,21 @@ const MONTH_NAMES = [
 ];
 
 export function renderMonthGrid(host, project, context) {
+  const { eventBus } = context;
   const today = getToday();
   let viewYear = parseInt(today.slice(0, 4), 10);
-  let viewMonth = parseInt(today.slice(5, 7), 10) - 1; // 0-based
+  let viewMonth = parseInt(today.slice(5, 7), 10) - 1;
   let selectedDay = null;
+  let viewMode = 'month'; // 'month' | 'week'
+  let weekOffset = 0;
+  let dragTaskId = null;
+
+  function getWeekStart(offset) {
+    const d = new Date(getToday() + 'T00:00:00');
+    const dayOfWeek = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - dayOfWeek + offset * 7);
+    return d;
+  }
 
   async function render() {
     const tasks = await getTasksByProject(project.id);
@@ -22,27 +33,153 @@ export function renderMonthGrid(host, project, context) {
       tasksByDate[t.date].push(t);
     }
 
+    if (viewMode === 'week') {
+      renderWeekView(tasksByDate, tasks);
+    } else {
+      renderMonthView(tasksByDate);
+    }
+  }
+
+  function renderWeekView(tasksByDate, allTasks) {
+    const weekStart = getWeekStart(weekOffset);
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(weekStart);
+      d.setDate(d.getDate() + i);
+      days.push(d.toISOString().slice(0, 10));
+    }
+
+    const weekStartStr = weekStart.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+    const weekEndDate = new Date(weekStart);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const weekEndStr = weekEndDate.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' });
+
+    // Tasks without a date (backlog)
+    const unplanned = allTasks.filter((t) => !t.date && t.status !== 'done');
+
+    host.innerHTML = `
+      <div class="agenda-grid">
+        <div class="agenda-grid__nav">
+          <button type="button" class="btn btn-ghost btn-sm" data-view-toggle>Maand</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-week-prev>\u2190</button>
+          <span class="agenda-grid__month-label">${weekStartStr} \u2013 ${weekEndStr}</span>
+          <button type="button" class="btn btn-ghost btn-sm" data-week-next>\u2192</button>
+        </div>
+        <div class="agenda-week-grid">
+          ${days.map((d, i) => {
+            const isToday = d === today;
+            const dayTasks = tasksByDate[d] || [];
+            return `
+              <div class="agenda-week-col ${isToday ? 'agenda-week-col--today' : ''}" data-drop-date="${d}">
+                <div class="agenda-week-col__header">
+                  <span class="agenda-week-col__name">${DAY_NAMES[i]}</span>
+                  <span class="agenda-week-col__num">${parseInt(d.slice(8), 10)}</span>
+                </div>
+                <div class="agenda-week-col__body" data-drop-zone="${d}">
+                  ${dayTasks.map((t) => renderWeekTask(t)).join('')}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+        ${unplanned.length > 0 ? `
+          <div class="agenda-week-backlog">
+            <span class="agenda-week-backlog__label">Ongepland (${unplanned.length})</span>
+            <div class="agenda-week-backlog__items" data-drop-zone="backlog">
+              ${unplanned.map((t) => renderWeekTask(t)).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    bindWeekEvents();
+  }
+
+  function renderWeekTask(task) {
+    const isDone = task.status === 'done';
+    return `
+      <div class="agenda-week-task ${isDone ? 'agenda-week-task--done' : ''}"
+        draggable="${isDone ? 'false' : 'true'}" data-task-drag="${task.id}">
+        <span class="agenda-week-task__dot ${isDone ? 'agenda-week-task__dot--done' : ''}"></span>
+        <span class="agenda-week-task__text">${escapeHTML(task.text)}</span>
+      </div>
+    `;
+  }
+
+  function bindWeekEvents() {
+    // View toggle
+    host.querySelector('[data-view-toggle]')?.addEventListener('click', () => {
+      viewMode = 'month';
+      render();
+    });
+
+    // Week navigation
+    host.querySelector('[data-week-prev]')?.addEventListener('click', () => { weekOffset--; render(); });
+    host.querySelector('[data-week-next]')?.addEventListener('click', () => { weekOffset++; render(); });
+
+    // Drag & drop
+    const draggables = host.querySelectorAll('[data-task-drag]');
+    const dropZones = host.querySelectorAll('[data-drop-zone]');
+
+    draggables.forEach((el) => {
+      el.addEventListener('dragstart', (e) => {
+        dragTaskId = el.dataset.taskDrag;
+        e.dataTransfer.effectAllowed = 'move';
+        el.classList.add('agenda-week-task--dragging');
+      });
+      el.addEventListener('dragend', () => {
+        el.classList.remove('agenda-week-task--dragging');
+        dragTaskId = null;
+        host.querySelectorAll('.agenda-week-col--drop-target').forEach((z) => {
+          z.classList.remove('agenda-week-col--drop-target');
+        });
+      });
+    });
+
+    dropZones.forEach((zone) => {
+      const col = zone.closest('[data-drop-date]') || zone;
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        col.classList.add('agenda-week-col--drop-target');
+      });
+      zone.addEventListener('dragleave', (e) => {
+        if (!zone.contains(e.relatedTarget)) {
+          col.classList.remove('agenda-week-col--drop-target');
+        }
+      });
+      zone.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        col.classList.remove('agenda-week-col--drop-target');
+        if (!dragTaskId) return;
+        const newDate = zone.dataset.dropZone === 'backlog' ? null : zone.dataset.dropZone;
+        await updateTask(dragTaskId, { date: newDate });
+        dragTaskId = null;
+        eventBus?.emit('tasks:changed');
+        await render();
+      });
+    });
+  }
+
+  function renderMonthView(tasksByDate) {
     const firstDay = new Date(viewYear, viewMonth, 1);
     const lastDay = new Date(viewYear, viewMonth + 1, 0);
-    // Monday-based: 0=Mon, 6=Sun
     const startOffset = (firstDay.getDay() + 6) % 7;
     const daysInMonth = lastDay.getDate();
 
     const monthLabel = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
 
     let gridHtml = '';
-    // Empty cells before first day
     for (let i = 0; i < startOffset; i++) {
       gridHtml += '<div class="agenda-grid__cell agenda-grid__cell--empty"></div>';
     }
-    // Day cells
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const isToday = dateStr === today;
       const isSelected = dateStr === selectedDay;
       const dayTasks = tasksByDate[dateStr] || [];
       const hasTasks = dayTasks.length > 0;
-      const hasDone = dayTasks.some((t) => t.status === 'done');
       const allDone = hasTasks && dayTasks.every((t) => t.status === 'done');
 
       const classes = [
@@ -63,7 +200,6 @@ export function renderMonthGrid(host, project, context) {
         </button>`;
     }
 
-    // Day detail (tasks for selected day)
     let dayDetailHtml = '';
     if (selectedDay && tasksByDate[selectedDay]) {
       const dayTasks = tasksByDate[selectedDay];
@@ -86,7 +222,6 @@ export function renderMonthGrid(host, project, context) {
         </div>`;
     }
 
-    // Milestone markers on month
     const milestones = (project.milestones || []).filter((m) => {
       return m.date && m.date.startsWith(`${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`);
     });
@@ -94,7 +229,7 @@ export function renderMonthGrid(host, project, context) {
       <div class="agenda-grid__milestones">
         ${milestones.map((m) => `
           <span class="agenda-grid__milestone" title="${escapeHTML(m.title)}">
-            ◆ ${escapeHTML(m.title)} — ${formatDate(m.date)}
+            \u25C6 ${escapeHTML(m.title)} \u2014 ${formatDate(m.date)}
           </span>
         `).join('')}
       </div>` : '';
@@ -102,9 +237,10 @@ export function renderMonthGrid(host, project, context) {
     host.innerHTML = `
       <div class="agenda-grid">
         <div class="agenda-grid__nav">
-          <button type="button" class="btn btn-ghost btn-sm" data-month-prev>←</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-view-toggle>Week</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-month-prev>\u2190</button>
           <span class="agenda-grid__month-label">${monthLabel}</span>
-          <button type="button" class="btn btn-ghost btn-sm" data-month-next>→</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-month-next>\u2192</button>
         </div>
         <div class="agenda-grid__header">
           ${DAY_NAMES.map((d) => `<div class="agenda-grid__day-name">${d}</div>`).join('')}
@@ -117,7 +253,15 @@ export function renderMonthGrid(host, project, context) {
       </div>
     `;
 
-    // Bind day clicks
+    bindMonthEvents();
+  }
+
+  function bindMonthEvents() {
+    host.querySelector('[data-view-toggle]')?.addEventListener('click', () => {
+      viewMode = 'week';
+      render();
+    });
+
     host.querySelectorAll('[data-date]').forEach((cell) => {
       cell.addEventListener('click', () => {
         selectedDay = selectedDay === cell.dataset.date ? null : cell.dataset.date;
@@ -125,7 +269,6 @@ export function renderMonthGrid(host, project, context) {
       });
     });
 
-    // Bind month navigation
     host.querySelector('[data-month-prev]')?.addEventListener('click', () => {
       viewMonth--;
       if (viewMonth < 0) { viewMonth = 11; viewYear--; }

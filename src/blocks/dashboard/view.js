@@ -5,6 +5,7 @@ import { getInboxCount, addInboxItem } from '../../stores/inbox.js';
 import { getMomentumPulse } from '../../stores/momentum.js';
 import { renderSparkline } from '../../ui/sparkline.js';
 import { WEEKDAY_FULL } from '../../constants.js';
+import { getRecentActivity } from './activity-feed.js';
 
 const MODE_META = {
   School: { label: 'School', emoji: '📚', color: 'var(--color-purple)', colorLight: 'var(--color-purple-light)' },
@@ -67,6 +68,16 @@ export function renderDashboard(container, context) {
       </div>
     </div>
 
+    <div class="life-dash__layer life-dash__layer--activity">
+      <button type="button" class="life-dash__activity-toggle" data-activity-toggle aria-expanded="false">
+        <span class="life-dash__toggle-label">Recente activiteit</span>
+        <svg class="life-dash__toggle-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+          <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="life-dash__activity-feed" data-activity-feed hidden></div>
+    </div>
+
     <div class="life-dash__layer life-dash__layer--depth">
       <button type="button" class="life-dash__toggle" data-life-toggle aria-expanded="false">
         <span class="life-dash__toggle-label">Meer details</span>
@@ -108,6 +119,46 @@ export function renderDashboard(container, context) {
     captureInput.placeholder = 'Opgeslagen \u2713';
     setTimeout(() => { captureInput.placeholder = 'Vang iets op\u2026 (Enter)'; }, 1500);
   });
+
+  // Activity feed toggle
+  const activityToggle = wrapper.querySelector('[data-activity-toggle]');
+  const activityFeed = wrapper.querySelector('[data-activity-feed]');
+  let activityLoaded = false;
+
+  activityToggle?.addEventListener('click', () => {
+    const expanded = activityToggle.getAttribute('aria-expanded') === 'true';
+    activityToggle.setAttribute('aria-expanded', String(!expanded));
+    activityFeed.hidden = expanded;
+    if (!expanded && !activityLoaded) {
+      loadActivityFeed();
+    }
+  });
+
+  async function loadActivityFeed() {
+    activityLoaded = true;
+    try {
+      const items = await getRecentActivity(10);
+      if (items.length === 0) {
+        activityFeed.innerHTML = '<p class="life-dash__meta">Nog geen activiteit vandaag.</p>';
+        return;
+      }
+      activityFeed.innerHTML = `
+        <div class="life-dash__activity-list">
+          ${items.map((item) => `
+            <div class="life-dash__activity-item">
+              <span class="life-dash__activity-icon">${item.icon}</span>
+              <div class="life-dash__activity-body">
+                <span class="life-dash__activity-text">${escapeHTML(item.text)}</span>
+                <span class="life-dash__activity-time">${escapeHTML(item.timeAgo)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    } catch {
+      activityFeed.innerHTML = '<p class="life-dash__meta">Kon activiteit niet laden.</p>';
+    }
+  }
 
   function navigateTo(tab, focus) {
     const shell = document.querySelector('#new-os-shell');

@@ -216,7 +216,7 @@
 }
 
 .life-dash__pulse-label {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -273,7 +273,7 @@
 }
 
 .life-dash__stat-label {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;

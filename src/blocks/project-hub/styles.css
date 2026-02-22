@@ -875,7 +875,7 @@
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 10px;
+  font-size: var(--font-xs);
   background: color-mix(in srgb, var(--project-accent, var(--color-accent)) 12%, var(--color-surface));
   border: 1px solid color-mix(in srgb, var(--project-accent, var(--color-accent)) 25%, var(--color-border));
   border-radius: var(--radius-sm);
@@ -967,7 +967,7 @@
 }
 
 .hub-timeline__month-cell-num {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
   line-height: 1;
@@ -1052,7 +1052,7 @@
 
 .hub-gantt__week-label {
   position: absolute;
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-text-tertiary);
   transform: translateX(-50%);
@@ -1174,7 +1174,7 @@
 }
 
 .hub-gantt__bar-label {
-  font-size: 11px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
@@ -1185,7 +1185,7 @@
 }
 
 .hub-gantt__bar-dates {
-  font-size: 10px;
+  font-size: var(--font-xs);
   color: rgba(255,255,255,0.8);
   white-space: nowrap;
   flex-shrink: 0;
@@ -1210,7 +1210,7 @@
 
 .hub-gantt__resize-handle::after {
   content: '⋮';
-  font-size: 12px;
+  font-size: var(--font-xs);
   color: rgba(255,255,255,0.7);
   line-height: 1;
 }
@@ -1234,7 +1234,7 @@
 }
 
 .hub-gantt__ms-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -1246,7 +1246,7 @@
 }
 
 .hub-gantt__hint {
-  font-size: 11px;
+  font-size: var(--font-xs);
   color: var(--color-text-tertiary);
   text-align: center;
   margin: var(--space-1) 0 0;
@@ -1310,7 +1310,7 @@
   border-radius: 6px;
   background: var(--color-surface);
   color: var(--color-text);
-  font-size: 13px;
+  font-size: var(--font-base);
   font-family: var(--font-sans);
   padding: 6px var(--space-2);
   box-sizing: border-box;
@@ -1689,7 +1689,7 @@
 .hub-banner__swatch--auto {
   background: var(--color-surface);
   border: 2px dashed var(--color-border);
-  font-size: 14px;
+  font-size: var(--font-md);
   display: flex;
   align-items: center;
   justify-content: center;

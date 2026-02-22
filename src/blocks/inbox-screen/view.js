@@ -2,6 +2,8 @@ import {
   getInboxItems, addInboxItem, promoteToTask,
   saveToReference, archiveItem, deleteItem, getInboxCount,
 } from '../../stores/inbox.js';
+import { softDelete, undoDelete } from '../../db.js';
+import { showUndoToast } from '../../toast.js';
 import { escapeHTML } from '../../utils.js';
 
 const MODE_OPTIONS = ['BPV', 'School', 'Personal'];
@@ -39,14 +41,24 @@ export function renderInboxScreen(container, context) {
   let selectedIdx = 0;
   let processingItem = null;
 
-  // --- Capture ---
+  // --- Capture with swoosh + toast ---
   captureForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = captureInput.value.trim();
     if (!text) return;
     const mode = modeManager.getMode();
+
+    // Swoosh animation on input
+    captureInput.classList.add('inbox-screen__capture-input--swoosh');
+    setTimeout(() => captureInput.classList.remove('inbox-screen__capture-input--swoosh'), 400);
+
     await addInboxItem(text, mode !== 'BPV' ? mode : null);
     captureInput.value = '';
+
+    // Toast feedback
+    const { showToast } = await import('../../toast.js');
+    showToast('Vastgelegd!');
+
     eventBus.emit('inbox:changed');
     await render();
   });
@@ -203,8 +215,12 @@ export function renderInboxScreen(container, context) {
     });
 
     processingEl.querySelector('[data-process="delete"]')?.addEventListener('click', async () => {
-      await deleteItem(item.id);
+      await softDelete('os_inbox', item.id);
       eventBus.emit('inbox:changed');
+      showUndoToast('Item verwijderd', async () => {
+        await undoDelete(item.id);
+        eventBus.emit('inbox:changed');
+      });
       closeProcessing();
       await render();
     });
@@ -277,9 +293,14 @@ export function renderInboxScreen(container, context) {
     } else if (key === 'd') {
       e.preventDefault();
       if (items[selectedIdx]) {
+        const itemToDelete = items[selectedIdx];
         (async () => {
-          await deleteItem(items[selectedIdx].id);
+          await softDelete('os_inbox', itemToDelete.id);
           eventBus.emit('inbox:changed');
+          showUndoToast('Item verwijderd', async () => {
+            await undoDelete(itemToDelete.id);
+            eventBus.emit('inbox:changed');
+          });
           await render();
         })();
       }

@@ -6,7 +6,7 @@
 .curiosity-page {
   padding: var(--space-8) var(--space-6);
   max-width: 780px;
-  animation: curiosity-fadein 160ms ease-out both;
+  animation: curiosity-fadein var(--duration-fast) var(--ease-out) both;
 }
 
 @keyframes curiosity-fadein {

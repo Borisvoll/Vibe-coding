@@ -201,7 +201,7 @@
 }
 
 .hub-card__cover-placeholder {
-  font-size: 1.75rem;
+  font-size: var(--font-3xl);
   font-weight: 800;
   letter-spacing: -0.04em;
   color: var(--project-accent, var(--color-accent));
@@ -435,7 +435,7 @@
   justify-content: center;
   gap: var(--space-3);
   background: var(--color-surface-hover);
-  font-size: 3rem;
+  font-size: var(--font-stat);
 }
 
 /* ── Detail header ───────────────────────────────────────────── */
@@ -674,7 +674,7 @@
   border: none;
   padding: 2px var(--space-1);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--font-lg);
   line-height: 1;
   border-radius: var(--radius-sm);
   transition: background var(--duration-fast) var(--ease), transform var(--duration-fast) var(--ease-spring);
@@ -882,7 +882,7 @@
 }
 
 .hub-timeline__day-name {
-  font-size: 9px;
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -944,7 +944,7 @@
 
 .hub-timeline__diamond {
   color: var(--project-accent, var(--color-accent));
-  font-size: 9px;
+  font-size: var(--font-xs);
   flex-shrink: 0;
   line-height: 1;
 }
@@ -981,7 +981,7 @@
 
 .hub-timeline__month-dayname {
   text-align: center;
-  font-size: 9px;
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -1027,7 +1027,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  font-size: 9px;
+  font-size: var(--font-xs);
   white-space: nowrap;
   overflow: hidden;
   cursor: pointer;
@@ -1249,7 +1249,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 150ms;
+  transition: background var(--duration-fast);
   flex-shrink: 0;
 }
 
@@ -1268,7 +1268,7 @@
 .hub-gantt__milestone {
   position: absolute;
   transform: translateX(-50%);
-  font-size: 1rem;
+  font-size: var(--font-lg);
   color: var(--color-text-secondary);
   cursor: default;
   top: 4px;
@@ -1551,7 +1551,7 @@
 }
 
 .hub-files__file-icon {
-  font-size: 1.1rem;
+  font-size: var(--font-xl);
   flex-shrink: 0;
   line-height: 1;
 }
@@ -1603,7 +1603,7 @@
   flex-direction: column;
   align-items: center;
   gap: var(--space-3);
-  font-size: 3rem;
+  font-size: var(--font-stat);
 }
 
 .hub-banner__cover-img {
@@ -1790,7 +1790,7 @@
   position: absolute;
   top: var(--space-2);
   right: var(--space-2);
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   z-index: 1;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
 }

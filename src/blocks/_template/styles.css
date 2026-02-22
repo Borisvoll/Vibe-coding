@@ -7,7 +7,7 @@
 
 .os-block-template__title {
   margin: 0 0 6px;
-  font-size: 14px;
+  font-size: var(--font-md);
 }
 
 .os-block-template__text,

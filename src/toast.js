@@ -34,3 +34,19 @@ export function showToast(message, { type = 'info', duration = 3000, action = nu
     el.addEventListener('animationend', () => el.remove());
   }
 }
+
+/**
+ * Show an undo toast after a soft delete.
+ * @param {string} message - e.g. "Item verwijderd"
+ * @param {Function} onUndo - callback to execute undo (restore item)
+ */
+export function showUndoToast(message, onUndo) {
+  showToast(message, {
+    type: 'info',
+    duration: 5000,
+    action: {
+      label: 'Ongedaan maken',
+      onClick: onUndo,
+    },
+  });
+}

@@ -1,4 +1,6 @@
 import { getTasksByProject, addTask, toggleTask, deleteTask, updateTask } from '../../stores/tasks.js';
+import { softDelete, undoDelete } from '../../db.js';
+import { showUndoToast } from '../../toast.js';
 import { escapeHTML, getToday } from '../../utils.js';
 
 export function renderProjectTasks(host, project, context) {
@@ -59,11 +61,16 @@ export function renderProjectTasks(host, project, context) {
       });
     });
 
-    // Bind delete
+    // Bind delete with undo toast
     host.querySelectorAll('[data-delete-task]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        await deleteTask(btn.dataset.deleteTask);
+        const taskId = btn.dataset.deleteTask;
+        await softDelete('os_tasks', taskId);
         eventBus.emit('tasks:changed');
+        showUndoToast('Taak verwijderd', async () => {
+          await undoDelete(taskId);
+          eventBus.emit('tasks:changed');
+        });
         await render();
       });
     });

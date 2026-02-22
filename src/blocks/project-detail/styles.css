@@ -291,6 +291,164 @@
 }
 
 /* ============================
+   Week View (Drag & Drop)
+   ============================ */
+
+.agenda-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .agenda-week-grid {
+    grid-template-columns: repeat(7, minmax(40px, 1fr));
+    gap: var(--space-1);
+    overflow-x: auto;
+  }
+}
+
+.agenda-week-col {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-height: 6rem;
+  display: flex;
+  flex-direction: column;
+  transition: border-color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+
+.agenda-week-col--today {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 4%, var(--color-surface));
+}
+
+.agenda-week-col--drop-target {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  border-style: dashed;
+}
+
+.agenda-week-col__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: var(--space-1) var(--space-1) var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.agenda-week-col__name {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+
+.agenda-week-col__num {
+  font-size: var(--font-md);
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.agenda-week-col--today .agenda-week-col__num {
+  color: var(--color-accent);
+}
+
+.agenda-week-col__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  flex: 1;
+  min-height: 3rem;
+}
+
+/* Week task chip (draggable) */
+.agenda-week-task {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 3px var(--space-1);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-xs);
+  line-height: 1.3;
+  cursor: grab;
+  user-select: none;
+  transition: opacity var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+
+.agenda-week-task:hover {
+  background: var(--color-surface-hover);
+}
+
+.agenda-week-task--done {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.agenda-week-task--done .agenda-week-task__text {
+  text-decoration: line-through;
+}
+
+.agenda-week-task--dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+.agenda-week-task__dot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  margin-top: 4px;
+}
+
+.agenda-week-task__dot--done {
+  background: var(--color-success, #22c55e);
+}
+
+.agenda-week-task__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text);
+}
+
+/* Backlog (unplanned tasks) */
+.agenda-week-backlog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  padding: var(--space-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.agenda-week-backlog__label {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.agenda-week-backlog__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  min-height: 1.5rem;
+}
+
+/* ============================
    Project Tasks
    ============================ */
 

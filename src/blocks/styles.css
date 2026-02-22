@@ -1836,6 +1836,71 @@
   margin-bottom: var(--space-4);
 }
 
+/* ── Weekstrip (ma-vr compact bar) ────────────────────── */
+
+.vandaag-weekstrip {
+  margin-bottom: var(--space-4);
+}
+
+.weekstrip {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-light);
+}
+
+.weekstrip__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.weekstrip__label {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.weekstrip__day--today .weekstrip__label {
+  color: var(--mode-accent, var(--color-accent));
+  font-weight: 700;
+}
+
+.weekstrip__circle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: transparent;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.weekstrip__day--today .weekstrip__circle {
+  border-color: var(--mode-accent, var(--color-accent));
+}
+
+.weekstrip__day--future .weekstrip__circle {
+  opacity: 0.4;
+}
+
+.weekstrip__circle--filled {
+  background: var(--mode-accent, var(--color-accent));
+  border-color: var(--mode-accent, var(--color-accent));
+  color: white;
+}
+
 .vandaag-search__wrap {
   display: flex;
   align-items: center;

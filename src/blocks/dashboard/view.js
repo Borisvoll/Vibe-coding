@@ -1,11 +1,13 @@
-import { escapeHTML, getToday, formatDateLong } from '../../utils.js';
+import { escapeHTML, getToday, formatDateLong, formatDateISO } from '../../utils.js';
 import { getTodaySnapshot, getWeekFocus, getProjectsPulse, getBPVPulse } from '../../os/dashboardData.js';
 import { getCockpitItems } from '../../os/cockpitData.js';
 import { getInboxCount, addInboxItem } from '../../stores/inbox.js';
 import { getMomentumPulse } from '../../stores/momentum.js';
+import { getActiveProjects } from '../../stores/projects.js';
 import { renderSparkline } from '../../ui/sparkline.js';
 import { WEEKDAY_FULL } from '../../constants.js';
 import { getRecentActivity } from './activity-feed.js';
+import { getAll } from '../../db.js';
 
 const MODE_META = {
   School: { label: 'School', emoji: '📚', color: 'var(--color-purple)', colorLight: 'var(--color-purple-light)' },
@@ -57,6 +59,11 @@ export function renderDashboard(container, context) {
       <div class="life-dash__pulses" data-life-pulses>
         <p class="life-dash__loading">Laden\u2026</p>
       </div>
+    </div>
+
+    <div class="life-dash__layer life-dash__layer--insights">
+      <div class="life-dash__weektrend" data-life-weektrend></div>
+      <div class="life-dash__project-health" data-life-project-health></div>
     </div>
 
     <div class="life-dash__layer life-dash__layer--capture">
@@ -407,11 +414,129 @@ export function renderDashboard(container, context) {
     }
   }
 
+  async function loadInsights() {
+    const mode = context.modeManager?.getMode() || 'School';
+
+    // Weektrend: tasks completed per week over last 8 weeks
+    const weekTrendEl = wrapper.querySelector('[data-life-weektrend]');
+    if (weekTrendEl) {
+      try {
+        const allPlans = await getAll('dailyPlans');
+        const now = new Date();
+        const weekLabels = [];
+        const weekCounts = [];
+
+        for (let w = 7; w >= 0; w--) {
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay() + 1 - (w * 7));
+          const weekEnd = new Date(weekStart);
+          weekEnd.setDate(weekStart.getDate() + 6);
+          const startISO = formatDateISO(weekStart);
+          const endISO = formatDateISO(weekEnd);
+
+          let count = 0;
+          for (const plan of allPlans) {
+            if (plan.mode === mode && plan.date >= startISO && plan.date <= endISO) {
+              count += (plan.todos || []).filter((t) => t.done).length;
+            }
+          }
+          weekLabels.push(`W${getWeekNum(weekStart)}`);
+          weekCounts.push(count);
+        }
+
+        const maxCount = Math.max(...weekCounts, 1);
+        const barsHtml = weekCounts.map((count, i) => {
+          const h = Math.max(Math.round((count / maxCount) * 48), count > 0 ? 3 : 0);
+          const isCurrent = i === weekCounts.length - 1;
+          return `<div class="life-dash__trend-col">
+            <span class="life-dash__trend-bar ${isCurrent ? 'life-dash__trend-bar--current' : ''}" style="height:${h}px"></span>
+            <span class="life-dash__trend-label">${weekLabels[i]}</span>
+          </div>`;
+        }).join('');
+
+        const total = weekCounts.reduce((a, b) => a + b, 0);
+        weekTrendEl.innerHTML = `
+          <h4 class="life-dash__insight-title">Weektrend</h4>
+          <p class="life-dash__insight-sub">${total} taken in 8 weken</p>
+          <div class="life-dash__trend-chart">${barsHtml}</div>
+        `;
+      } catch { weekTrendEl.innerHTML = ''; }
+    }
+
+    // Project health
+    const healthEl = wrapper.querySelector('[data-life-project-health]');
+    if (healthEl) {
+      try {
+        const [projects, momentum] = await Promise.all([
+          getActiveProjects(mode),
+          getMomentumPulse(mode),
+        ]);
+
+        if (projects.length === 0) {
+          healthEl.innerHTML = '';
+          return;
+        }
+
+        const healthRows = projects.map((p) => {
+          const isStalled = momentum.stalled.some((s) => s.id === p.id);
+          const stalledInfo = momentum.stalled.find((s) => s.id === p.id);
+          const topInfo = momentum.topActive.find((t) => t.id === p.id);
+          const hasNextAction = !!p.nextActionId;
+
+          let statusIcon, statusClass;
+          if (isStalled) {
+            statusIcon = '⚠';
+            statusClass = 'life-dash__health-status--warn';
+          } else if (!hasNextAction) {
+            statusIcon = '○';
+            statusClass = 'life-dash__health-status--idle';
+          } else {
+            statusIcon = '●';
+            statusClass = 'life-dash__health-status--ok';
+          }
+
+          const detail = isStalled
+            ? `${stalledInfo?.daysSince || '?'}d stil`
+            : !hasNextAction
+              ? 'Geen actie'
+              : '';
+
+          return `<div class="life-dash__health-row">
+            <span class="life-dash__health-status ${statusClass}">${statusIcon}</span>
+            <span class="life-dash__health-name">${escapeHTML(p.title)}</span>
+            ${detail ? `<span class="life-dash__health-detail">${escapeHTML(detail)}</span>` : ''}
+          </div>`;
+        }).join('');
+
+        const stalledCount = momentum.stalled.length;
+        const healthLabel = stalledCount > 0
+          ? `${stalledCount} project${stalledCount === 1 ? '' : 'en'} stagneert`
+          : 'Alles loopt';
+
+        healthEl.innerHTML = `
+          <h4 class="life-dash__insight-title">Project health</h4>
+          <p class="life-dash__insight-sub">${escapeHTML(healthLabel)}</p>
+          <div class="life-dash__health-list">${healthRows}</div>
+        `;
+      } catch { healthEl.innerHTML = ''; }
+    }
+  }
+
+  function getWeekNum(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const w1 = new Date(d.getFullYear(), 0, 4);
+    return 1 + Math.round(((d.getTime() - w1.getTime()) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
+  }
+
   loadLayers();
+  loadInsights();
 
   const unsubs = [];
   const refresh = () => {
     loadLayers();
+    loadInsights();
     if (detailsEl && !detailsEl.hidden && detailsEl.dataset.loaded) {
       loadDetails();
     }

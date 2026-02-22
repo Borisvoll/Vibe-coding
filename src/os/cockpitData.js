@@ -9,8 +9,9 @@ import { getDailyEntry } from '../stores/daily.js';
 import { getInboxCount } from '../stores/inbox.js';
 import { getActiveProjects } from '../stores/projects.js';
 import { getHoursEntry } from '../stores/bpv.js';
-import { getByIndex } from '../db.js';
-import { getToday } from '../utils.js';
+import { getByIndex, getAll } from '../db.js';
+import { getToday, formatDateISO } from '../utils.js';
+import { getAllProjectsMomentum } from '../stores/momentum.js';
 
 /**
  * @typedef {Object} CockpitItem
@@ -76,4 +77,54 @@ export async function getCockpitItems(mode) {
     ...item,
     done: !!doneMap[item.id],
   }));
+}
+
+/**
+ * Get the 4 cockpit stats: gedaan, streak, momentum, inbox.
+ * @param {string} mode
+ * @returns {Promise<{done: number, streak: number, momentum: number, inbox: number}>}
+ */
+export async function getCockpitStats(mode) {
+  const today = getToday();
+
+  const [dailyEntry, inboxCount, momentumMap] = await Promise.all([
+    getDailyEntry(mode, today),
+    getInboxCount(),
+    getAllProjectsMomentum(mode).catch(() => new Map()),
+  ]);
+
+  // Done: tasks completed today in this mode
+  const todos = dailyEntry?.todos || [];
+  const done = todos.filter((t) => t.done).length;
+
+  // Streak: consecutive days with at least 1 completed task
+  let streak = done > 0 ? 1 : 0;
+  try {
+    const allPlans = await getAll('dailyPlans');
+    const modePlans = allPlans
+      .filter((p) => p.mode === mode && p.date < today)
+      .sort((a, b) => b.date.localeCompare(a.date));
+
+    for (const plan of modePlans) {
+      const planTodos = plan.todos || [];
+      if (planTodos.some((t) => t.done)) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+  } catch { /* non-critical */ }
+
+  // Momentum: average score across active projects (0-100 scale)
+  let momentum = 0;
+  if (momentumMap.size > 0) {
+    let totalScore = 0;
+    for (const m of momentumMap.values()) {
+      totalScore += m.score;
+    }
+    const avgScore = totalScore / momentumMap.size;
+    momentum = Math.min(Math.round((avgScore / 40) * 100), 100);
+  }
+
+  return { done, streak, momentum, inbox: inboxCount };
 }

@@ -6,6 +6,7 @@ import {
 import { addTask, getTasksByProject } from '../../stores/tasks.js';
 import { getByKey } from '../../db.js';
 import { escapeHTML } from '../../utils.js';
+import { getProjectMomentum } from '../../stores/momentum.js';
 
 const STATUS_LABELS = { active: 'Actief', paused: 'Gepauzeerd', done: 'Gereed' };
 const STATUS_BADGES = { active: 'badge-accent', paused: 'badge-warning', done: 'badge-success' };
@@ -118,11 +119,26 @@ export function renderProjects(container, context) {
         nextActionTask = await getByKey('os_tasks', project.nextActionId);
       }
 
+      // Momentum data
+      const momentum = await getProjectMomentum(project.id, project);
+      const tasks = await getTasksByProject(project.id);
+      const totalTasks = tasks.length;
+      const doneTasks = tasks.filter((t) => t.status === 'done').length;
+      const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+      const maxWeek = Math.max(...momentum.weeklyActivity, 1);
+      const barsHtml = momentum.weeklyActivity.map((count, i) => {
+        const h = Math.max(Math.round((count / maxWeek) * 20), count > 0 ? 3 : 0);
+        const isCurrent = i === 3;
+        return `<span class="projects-block__spark-bar ${isCurrent ? 'projects-block__spark-bar--current' : ''}" style="height:${h}px"></span>`;
+      }).join('');
+
       const badge = STATUS_BADGES[project.status] || 'badge-default';
       const statusLabel = STATUS_LABELS[project.status] || project.status;
       const nextPreview = nextActionTask
         ? escapeHTML(nextActionTask.text)
         : '<span class="projects-block__no-action">Geen volgende actie</span>';
+      const stalledBadge = momentum.isStalled ? '<span class="projects-block__stalled-badge">stagnatie</span>' : '';
 
       const detailHtml = isExpanded ? renderDetail(project, nextActionTask) : '';
 
@@ -132,8 +148,14 @@ export function renderProjects(container, context) {
           <div class="projects-block__summary" data-expand>
             <span class="badge ${badge} projects-block__status">${statusLabel}</span>
             <span class="projects-block__name">${escapeHTML(project.title)}</span>
+            ${stalledBadge}
             <button type="button" class="projects-block__open-btn" data-open-project="${project.id}" title="Open in Planning">↗</button>
             <span class="projects-block__chevron">${isExpanded ? '▲' : '▼'}</span>
+          </div>
+          <div class="projects-block__momentum-row">
+            <div class="projects-block__spark">${barsHtml}</div>
+            <span class="projects-block__pct">${pct}%</span>
+            <div class="projects-block__progress-thin"><div class="projects-block__progress-fill" style="width:${pct}%"></div></div>
           </div>
           <div class="projects-block__next-preview">→ ${nextPreview}</div>
           ${detailHtml}

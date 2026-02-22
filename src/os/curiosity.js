@@ -18,6 +18,12 @@ export function mountCuriosityPage(container) {
         <p class="curiosity-header__sub">Fragmenten uit je denken. Niets om te doen.</p>
       </header>
 
+      <!-- Word Cloud -->
+      <div class="curiosity-cloud" id="cq-cloud">
+        <span class="curiosity-widget__label">Woordwolk</span>
+        ${skeletons(['wide', 'med', 'wide'])}
+      </div>
+
       <div class="curiosity-grid">
 
         <!-- Vonk: one old capture resurfaces -->
@@ -72,15 +78,17 @@ function skeletons(widths) {
 
 async function loadData(container) {
   // Dynamic import keeps the data layer out of the initial bundle parse
-  const { getVonk, getDraad, getVergeten, getEcho } = await import('../stores/curiosity-data.js');
+  const { getVonk, getDraad, getVergeten, getEcho, getWordCloud } = await import('../stores/curiosity-data.js');
 
-  const [vonk, draad, vergeten, echo] = await Promise.all([
+  const [vonk, draad, vergeten, echo, cloud] = await Promise.all([
     getVonk(),
     getDraad(),
     getVergeten(),
     getEcho(),
+    getWordCloud(),
   ]);
 
+  renderCloud(container.querySelector('#cq-cloud'), cloud);
   renderVonk(container.querySelector('#cq-vonk'), vonk);
   renderDraad(container.querySelector('#cq-draad'), draad);
   renderVergeten(container.querySelector('#cq-vergeten'), vergeten);
@@ -88,6 +96,37 @@ async function loadData(container) {
 }
 
 // ── Widget renderers ──────────────────────────────────────────────────────────
+
+function renderCloud(el, data) {
+  if (!el) return;
+  const label = el.querySelector('.curiosity-widget__label').outerHTML;
+
+  if (!data || data.length === 0) {
+    el.innerHTML = `${label}<p class="curiosity-widget__empty">Voeg meer gedachten toe — je woordwolk groeit vanzelf.</p>`;
+    return;
+  }
+
+  // Shuffle deterministically using today's seed
+  const shuffled = [...data].sort((a, b) => {
+    const ha = hashCode(a.word);
+    const hb = hashCode(b.word);
+    return ha - hb;
+  });
+
+  const wordsHtml = shuffled.map((item) => {
+    return `<span class="curiosity-cloud__word curiosity-cloud__word--s${item.size}" title="${item.count}× in je captures">${escapeHTML(item.word)}</span>`;
+  }).join('');
+
+  el.innerHTML = `${label}<div class="curiosity-cloud__words">${wordsHtml}</div>`;
+}
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash + str.charCodeAt(i)) | 0;
+  }
+  return hash;
+}
 
 function renderVonk(el, data) {
   if (!el) return;
@@ -101,7 +140,7 @@ function renderVonk(el, data) {
   const text = truncate(data.text, 240);
   el.innerHTML = `
     ${label}
-    <p class="curiosity-widget__fragment">${escapeHTML(text)}</p>
+    <blockquote class="curiosity-widget__quote">${escapeHTML(text)}</blockquote>
     <span class="curiosity-widget__date">${escapeHTML(data.dateLabel)}</span>
   `;
 }
@@ -160,5 +199,5 @@ function renderEcho(el, data) {
 }
 
 function truncate(str, max) {
-  return str.length > max ? str.slice(0, max).trimEnd() + '…' : str;
+  return str.length > max ? str.slice(0, max).trimEnd() + '\u2026' : str;
 }

@@ -32,7 +32,7 @@
   background: transparent;
   cursor: pointer;
   color: var(--color-text-tertiary);
-  font-size: 16px;
+  font-size: var(--font-lg);
   line-height: 1;
   display: flex;
   align-items: center;
@@ -263,7 +263,7 @@
   align-items: center;
   justify-content: center;
   transition: all 100ms ease;
-  font-size: 14px;
+  font-size: var(--font-md);
   line-height: 1;
 }
 
@@ -281,7 +281,7 @@
 }
 
 .habits-block__empty-icon {
-  font-size: 28px;
+  font-size: var(--font-3xl);
   margin-bottom: 8px;
   display: block;
   opacity: 0.6;

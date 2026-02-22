@@ -283,3 +283,65 @@
   color: var(--color-text-tertiary);
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Momentum sparkline ────────────────────────────────────── */
+
+.projects-block__momentum {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.projects-block__spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 20px;
+}
+
+.projects-block__spark-bar {
+  width: 4px;
+  border-radius: 2px;
+  background: var(--color-border);
+  display: block;
+  transition: background 200ms var(--ease);
+}
+
+.projects-block__spark-bar--now {
+  background: var(--mode-accent, var(--color-accent));
+}
+
+.projects-block__pct {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 2.5ch;
+  text-align: right;
+}
+
+.projects-block__stall-badge {
+  font-size: var(--font-xs);
+  color: var(--color-amber);
+  font-weight: 500;
+}
+
+.projects-block__item--stalled .projects-block__name {
+  color: var(--color-text-secondary);
+}
+
+/* Thin progress bar under each project row */
+.projects-block__progress-bar {
+  height: 2px;
+  background: var(--color-border-light);
+  overflow: hidden;
+}
+
+.projects-block__progress-fill {
+  height: 100%;
+  background: var(--mode-accent, var(--color-accent));
+  border-radius: 1px;
+  transition: width 400ms var(--ease-out);
+  opacity: 0.7;
+}

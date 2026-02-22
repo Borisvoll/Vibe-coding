@@ -1,4 +1,4 @@
-import { getCockpitItems } from '../../os/cockpitData.js';
+import { getCockpitItems, getCockpitStats } from '../../os/cockpitData.js';
 import { getSetting } from '../../db.js';
 
 /**
@@ -36,6 +36,7 @@ export function renderDailyCockpit(container, context) {
 
   container.insertAdjacentHTML('beforeend', `
     <div class="daily-cockpit" data-mount-id="${mountId}">
+      <div class="daily-cockpit__stats"></div>
       <div class="daily-cockpit__header">
         <span class="daily-cockpit__title">Nog te doen</span>
         <span class="daily-cockpit__pill"></span>
@@ -60,18 +61,42 @@ export function renderDailyCockpit(container, context) {
   const el = container.querySelector(`[data-mount-id="${mountId}"]`);
   const pillEl = el.querySelector('.daily-cockpit__pill');
   const listEl = el.querySelector('.daily-cockpit__list');
+  const statsEl = el.querySelector('.daily-cockpit__stats');
 
   async function render() {
-    let items;
+    let items, stats;
     try {
       const mode = modeManager.getMode();
-      items = await getCockpitItems(mode);
+      [items, stats] = await Promise.all([
+        getCockpitItems(mode),
+        getCockpitStats(mode),
+      ]);
     } catch (err) {
       console.error('[daily-cockpit] Failed to load cockpit data:', err);
       return;
     }
     const doneCount = items.filter((i) => i.done).length;
     const openCount = items.length - doneCount;
+
+    // Update stats row
+    statsEl.innerHTML = `
+      <div class="daily-cockpit__stat">
+        <span class="daily-cockpit__stat-val">${stats.tasksCompleted}</span>
+        <span class="daily-cockpit__stat-lbl">gedaan</span>
+      </div>
+      <div class="daily-cockpit__stat">
+        <span class="daily-cockpit__stat-val">${stats.streak > 0 ? stats.streak + ' 🔥' : '—'}</span>
+        <span class="daily-cockpit__stat-lbl">streak</span>
+      </div>
+      <div class="daily-cockpit__stat">
+        <span class="daily-cockpit__stat-val">${stats.momentumScore}</span>
+        <span class="daily-cockpit__stat-lbl">momentum</span>
+      </div>
+      <div class="daily-cockpit__stat ${stats.inboxBacklog > 0 ? 'daily-cockpit__stat--warn' : ''}">
+        <span class="daily-cockpit__stat-val">${stats.inboxBacklog}</span>
+        <span class="daily-cockpit__stat-lbl">inbox</span>
+      </div>
+    `;
 
     // Update pill
     if (openCount === 0) {

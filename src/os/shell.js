@@ -1,4 +1,4 @@
-import { getSetting, setSetting } from '../db.js';
+import { getSetting, setSetting, getAll } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { mountCuriosityPage } from './curiosity.js';
 import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
@@ -114,6 +114,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (tab === 'today') {
       buildVandaagLayout(mode);
       renderVandaagHeader(mode);
+      renderWeekBar();
       initSearchBar();
       showMorningNudge(mode);
     }
@@ -389,6 +390,45 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       </div>
       <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum} · <span class="vandaag-header__phase-desc">${phaseMeta.desc}</span></span>
     `;
+  }
+
+  // ── Compact weekbalk — always-visible Mon–Fri progress strip ──
+  function renderWeekBar() {
+    const barEl = routeContainer.querySelector('[data-vandaag-weekbar]');
+    if (!barEl || barEl.children.length > 0) return;
+
+    const today = getToday();
+    const todayObj = new Date(today + 'T00:00:00');
+    const dayOfWeek = (todayObj.getDay() + 6) % 7; // 0 = Monday
+    const weekStart = new Date(todayObj);
+    weekStart.setDate(todayObj.getDate() - dayOfWeek);
+
+    const SHORT = ['Ma', 'Di', 'Wo', 'Do', 'Vr'];
+    const workDays = SHORT.map((label, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      return { label, iso, isToday: iso === today, isFuture: d > todayObj };
+    });
+
+    barEl.innerHTML = workDays.map((d) => `
+      <div class="weekbar__day${d.isToday ? ' weekbar__day--today' : ''}${d.isFuture ? ' weekbar__day--future' : ''}">
+        <span class="weekbar__dot" data-weekday="${d.iso}"></span>
+        <span class="weekbar__label">${d.label}</span>
+      </div>
+    `).join('');
+
+    // Load task completions async (non-blocking)
+    getAll('os_tasks').then((tasks) => {
+      workDays.forEach((d) => {
+        const count = tasks.filter((t) => t.doneAt && t.doneAt.startsWith(d.iso)).length;
+        const dot = barEl.querySelector(`[data-weekday="${d.iso}"]`);
+        if (dot && count > 0) {
+          dot.classList.add('weekbar__dot--done');
+          dot.textContent = String(Math.min(count, 9));
+        }
+      });
+    }).catch(() => {});
   }
 
   // ── Search bar (with keyboard navigation) ────────────────

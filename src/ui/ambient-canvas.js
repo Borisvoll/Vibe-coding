@@ -1,11 +1,9 @@
 /**
- * Ambient Canvas — Brian Eno-inspired generative audio/visual empty state
+ * Ambient Canvas — Brian Eno-inspired generative visual empty state
  *
  * When a space is empty, instead of a blank void, BORIS renders a living canvas:
  * - Slowly drifting particles on a dark canvas
- * - Touch/click generates pentatonic ambient tones (like Bloom)
- * - Each interaction spawns a ripple and a tone that fades over 4–8 seconds
- * - Silent by default; first interaction activates audio (browser policy)
+ * - Touch/click spawns ripple visuals that fade over 4–8 seconds
  *
  * Usage:
  *   const ambient = createAmbientCanvas({ label: 'Geen taken voor nu' });
@@ -13,64 +11,7 @@
  *   // ambient.destroy() to clean up
  */
 
-// Pentatonic scale in Hz — harmonious regardless of combination order
-const PENTATONIC = [
-  261.63, // C4
-  293.66, // D4
-  329.63, // E4
-  392.00, // G4
-  440.00, // A4
-  523.25, // C5
-  587.33, // D5
-  659.25, // E5
-  783.99, // G5
-  880.00, // A5
-];
-
-let sharedAudioCtx = null;
-
-function getAudioContext() {
-  if (!sharedAudioCtx || sharedAudioCtx.state === 'closed') {
-    try {
-      sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch {
-      return null;
-    }
-  }
-  if (sharedAudioCtx.state === 'suspended') {
-    sharedAudioCtx.resume().catch(() => {});
-  }
-  return sharedAudioCtx;
-}
-
-function playTone(freq, ctx) {
-  if (!ctx) return;
-  try {
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    const reverb = ctx.createConvolver();
-
-    // Soft sine wave — Eno uses pure tones
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(freq, now);
-    // Slight pitch drift for organic feel
-    osc.frequency.linearRampToValueAtTime(freq * 1.002, now + 6);
-
-    // Envelope: quick attack, long fade
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 7);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + 7.5);
-  } catch { /* audio not available */ }
-}
-
-export function createAmbientCanvas({ label = 'Leeg', sublabel = 'Raak aan voor geluid' } = {}) {
+export function createAmbientCanvas({ label = 'Leeg', sublabel = '' } = {}) {
   // ── DOM structure ──────────────────────────────────────────
   const el = document.createElement('div');
   el.className = 'ambient-empty';
@@ -94,7 +35,6 @@ export function createAmbientCanvas({ label = 'Leeg', sublabel = 'Raak aan voor 
   let animFrame = null;
   let particles = [];
   let ripples = [];
-  let audioEnabled = false;
 
   const PARTICLE_COUNT = 40;
 
@@ -201,28 +141,6 @@ export function createAmbientCanvas({ label = 'Leeg', sublabel = 'Raak aan voor 
     setTimeout(() => {
       if (ripples.length < 20) ripples.push(createRipple(x + 5, y + 5));
     }, 120);
-
-    // Audio
-    if (!audioEnabled) {
-      audioEnabled = true;
-      const hint = el.querySelector('.ambient-empty__hint');
-      if (hint) {
-        hint.textContent = 'Blijf raken voor meer tonen';
-        setTimeout(() => { if (hint) hint.style.opacity = '0'; }, 3000);
-      }
-    }
-
-    const ctx = getAudioContext();
-    const freq = PENTATONIC[Math.floor(Math.random() * PENTATONIC.length)];
-    playTone(freq, ctx);
-
-    // Sometimes play a harmony a fifth above
-    if (Math.random() > 0.6) {
-      setTimeout(() => {
-        const ctx2 = getAudioContext();
-        playTone(freq * 1.5, ctx2);
-      }, 300 + Math.random() * 400);
-    }
   }
 
   // ── Lifecycle ──────────────────────────────────────────────
@@ -270,7 +188,7 @@ export function enhanceEmptyHosts(container) {
     const host = placeholder.parentElement;
     if (!host) return;
     placeholder.remove();
-    const ambient = createAmbientCanvas({ label: 'Niets hier', sublabel: 'Tik voor omgevingsgeluid' });
+    const ambient = createAmbientCanvas({ label: 'Niets hier' });
     host.appendChild(ambient.el);
     destroyed.push(ambient);
   });

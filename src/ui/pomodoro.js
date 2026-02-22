@@ -233,34 +233,8 @@ export function createPomodoro({ eventBus, modeManager }) {
     updateDisplay();
     renderStats();
 
-    // Play notification sound (Web Audio API — no external assets)
-    playNotificationTone();
-
     // Auto-open panel to show phase transition
     openPanel();
-  }
-
-  function playNotificationTone() {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const frequencies = phase === 'work' ? [523, 659, 784] : [784, 659, 523]; // C-E-G or reverse
-      let time = ctx.currentTime;
-      frequencies.forEach((freq) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.value = freq;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(0.12, time);
-        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.3);
-        osc.start(time);
-        osc.stop(time + 0.3);
-        time += 0.18;
-      });
-    } catch {
-      // AudioContext unavailable in test/SSR — silently skip
-    }
   }
 
   function startTimer() {

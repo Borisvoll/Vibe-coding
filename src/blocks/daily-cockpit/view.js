@@ -1,4 +1,4 @@
-import { getCockpitItems } from '../../os/cockpitData.js';
+import { getCockpitItems, getCockpitStats } from '../../os/cockpitData.js';
 import { getSetting } from '../../db.js';
 
 /**
@@ -36,6 +36,7 @@ export function renderDailyCockpit(container, context) {
 
   container.insertAdjacentHTML('beforeend', `
     <div class="daily-cockpit" data-mount-id="${mountId}">
+      <div class="daily-cockpit__stats" data-cockpit-stats></div>
       <div class="daily-cockpit__header">
         <span class="daily-cockpit__title">Nog te doen</span>
         <span class="daily-cockpit__pill"></span>
@@ -60,6 +61,33 @@ export function renderDailyCockpit(container, context) {
   const el = container.querySelector(`[data-mount-id="${mountId}"]`);
   const pillEl = el.querySelector('.daily-cockpit__pill');
   const listEl = el.querySelector('.daily-cockpit__list');
+
+  const statsEl = el.querySelector('[data-cockpit-stats]');
+
+  async function renderStats() {
+    try {
+      const mode = modeManager.getMode();
+      const stats = await getCockpitStats(mode);
+      statsEl.innerHTML = `
+        <div class="daily-cockpit__stat">
+          <span class="daily-cockpit__stat-num">${stats.done}</span>
+          <span class="daily-cockpit__stat-label">gedaan</span>
+        </div>
+        <div class="daily-cockpit__stat">
+          <span class="daily-cockpit__stat-num daily-cockpit__stat-num--streak">${stats.streak > 0 ? stats.streak : '–'}</span>
+          <span class="daily-cockpit__stat-label">streak</span>
+        </div>
+        <div class="daily-cockpit__stat">
+          <span class="daily-cockpit__stat-num">${stats.momentum}</span>
+          <span class="daily-cockpit__stat-label">momentum</span>
+        </div>
+        <div class="daily-cockpit__stat ${stats.inbox > 0 ? 'daily-cockpit__stat--warn' : ''}">
+          <span class="daily-cockpit__stat-num">${stats.inbox}</span>
+          <span class="daily-cockpit__stat-label">inbox</span>
+        </div>
+      `;
+    } catch { /* non-critical */ }
+  }
 
   async function render() {
     let items;
@@ -101,16 +129,18 @@ export function renderDailyCockpit(container, context) {
   }
 
   // Event subscriptions for reactive updates
+  function refreshAll() { render(); renderStats(); }
   const unsubs = [
-    eventBus.on('mode:changed', () => render()),
-    eventBus.on('daily:changed', () => render()),
-    eventBus.on('tasks:changed', () => render()),
-    eventBus.on('inbox:changed', () => render()),
-    eventBus.on('projects:changed', () => render()),
-    eventBus.on('bpv:changed', () => render()),
+    eventBus.on('mode:changed', refreshAll),
+    eventBus.on('daily:changed', refreshAll),
+    eventBus.on('tasks:changed', refreshAll),
+    eventBus.on('inbox:changed', refreshAll),
+    eventBus.on('projects:changed', refreshAll),
+    eventBus.on('bpv:changed', refreshAll),
   ];
 
   render();
+  renderStats();
 
   return {
     unmount() {

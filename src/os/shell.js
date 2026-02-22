@@ -1,7 +1,7 @@
-import { getSetting, setSetting } from '../db.js';
+import { getSetting, setSetting, getAll } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
 import { mountCuriosityPage } from './curiosity.js';
-import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
+import { formatDateShort, formatDateLong, formatDateISO, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
 import { WEEKDAY_FULL } from '../constants.js';
@@ -114,6 +114,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (tab === 'today') {
       buildVandaagLayout(mode);
       renderVandaagHeader(mode);
+      renderWeekStrip(mode);
       initSearchBar();
       showMorningNudge(mode);
     }
@@ -389,6 +390,56 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       </div>
       <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum} · <span class="vandaag-header__phase-desc">${phaseMeta.desc}</span></span>
     `;
+  }
+
+  // ── Compact week strip (ma-vr) ──────────────────────────
+  async function renderWeekStrip(mode) {
+    const stripEl = routeContainer.querySelector('[data-vandaag-weekstrip]');
+    if (!stripEl) return;
+
+    const today = getToday();
+    const d = new Date(today + 'T00:00:00');
+    const dayOfWeek = (d.getDay() + 6) % 7; // 0=ma
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - dayOfWeek);
+
+    const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr'];
+    const days = [];
+    for (let i = 0; i < 5; i++) {
+      const date = new Date(monday);
+      date.setDate(monday.getDate() + i);
+      days.push(formatDateISO(date));
+    }
+
+    // Render skeleton first
+    stripEl.innerHTML = `<div class="weekstrip">${days.map((date, i) => {
+      const isToday = date === today;
+      const isFuture = date > today;
+      return `<div class="weekstrip__day ${isToday ? 'weekstrip__day--today' : ''} ${isFuture ? 'weekstrip__day--future' : ''}">
+        <span class="weekstrip__label">${dayNames[i]}</span>
+        <span class="weekstrip__circle"></span>
+      </div>`;
+    }).join('')}</div>`;
+
+    // Load data async
+    try {
+      const allPlans = await getAll('dailyPlans');
+      const planMap = {};
+      for (const plan of allPlans) {
+        if (plan.mode === mode) {
+          planMap[plan.date] = (plan.todos || []).filter(t => t.done).length;
+        }
+      }
+
+      const circleEls = stripEl.querySelectorAll('.weekstrip__circle');
+      days.forEach((date, i) => {
+        const count = planMap[date] || 0;
+        if (count > 0) {
+          circleEls[i].textContent = count;
+          circleEls[i].classList.add('weekstrip__circle--filled');
+        }
+      });
+    } catch { /* non-critical */ }
   }
 
   // ── Search bar (with keyboard navigation) ────────────────
@@ -819,6 +870,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     // Route-specific updates
     if (activeTab === 'today') {
       renderVandaagHeader(mode);
+      renderWeekStrip(mode);
       updateVandaagCollapse(mode);
     }
     updateSectionTitles(mode);

@@ -340,7 +340,7 @@
 }
 
 .agenda-week-col__name {
-  font-size: 9px;
+  font-size: var(--font-xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -818,7 +818,7 @@
 .project-timeline__today-label {
   display: block;
   text-align: center;
-  font-size: 9px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-danger, #ef4444);
   white-space: nowrap;

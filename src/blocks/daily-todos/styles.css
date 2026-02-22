@@ -56,7 +56,7 @@
 .daily-todos__add-btn {
   flex-shrink: 0;
   width: 40px;
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   line-height: 1;
   padding: 0;
   border-radius: 0;
@@ -120,7 +120,7 @@
   border-radius: 0 2px 2px 0;
   background: var(--todo-color, var(--color-accent));
   opacity: 0.6;
-  transition: opacity 200ms;
+  transition: opacity var(--duration-slow);
 }
 
 .daily-todos__item--done::before {
@@ -180,7 +180,7 @@
   border: none;
   background: transparent;
   color: var(--color-text-tertiary);
-  font-size: 1rem;
+  font-size: var(--font-lg);
   cursor: pointer;
   display: flex;
   align-items: center;

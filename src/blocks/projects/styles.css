@@ -232,7 +232,7 @@
 }
 
 .projects-block__focus-pin {
-  font-size: 0.85rem;
+  font-size: var(--font-base);
   line-height: 1;
 }
 

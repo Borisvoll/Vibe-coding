@@ -5,6 +5,7 @@ import {
 import { softDelete, undoDelete } from '../../db.js';
 import { showUndoToast } from '../../toast.js';
 import { escapeHTML } from '../../utils.js';
+import { triageInboxItem } from '../../ai/client.js';
 
 const MODE_OPTIONS = ['BPV', 'School', 'Personal'];
 
@@ -154,6 +155,11 @@ export function renderInboxScreen(container, context) {
         <p class="inbox-processing__text">${escapeHTML(item.text)}</p>
         ${item.url ? `<p class="inbox-processing__url"><a href="${escapeHTML(item.url)}" target="_blank" rel="noopener">${escapeHTML(item.url)}</a></p>` : ''}
 
+        <div class="inbox-processing__ai-bar">
+          <button type="button" class="btn btn-ghost btn-sm" data-action="ai-triage">✨ AI-suggestie</button>
+          <div class="inbox-processing__ai-result" hidden></div>
+        </div>
+
         <div class="inbox-processing__options">
           <div class="inbox-processing__option">
             <h4><kbd>T</kbd> Maak taak</h4>
@@ -190,6 +196,44 @@ export function renderInboxScreen(container, context) {
           t.classList.toggle('selected', t.dataset.processMode === selectedProcessMode);
         });
       });
+    });
+
+    // ── AI Triage ──
+    const aiBtn = processingEl.querySelector('[data-action="ai-triage"]');
+    const aiResult = processingEl.querySelector('.inbox-processing__ai-result');
+    aiBtn?.addEventListener('click', async () => {
+      aiBtn.disabled = true;
+      aiBtn.textContent = 'Bezig…';
+      aiResult.hidden = true;
+      try {
+        const suggestion = await triageInboxItem(item.text);
+        const actionLabel = { task: '📋 Taak', reference: '📚 Referentie', archive: '🗄 Archiveer' }[suggestion.action] || suggestion.action;
+        aiResult.innerHTML = `
+          <div style="display:flex;align-items:baseline;gap:var(--space-2);flex-wrap:wrap;margin-top:var(--space-2)">
+            <strong>${escapeHTML(actionLabel)}</strong>
+            ${suggestion.mode ? `<span class="badge badge-default">${escapeHTML(suggestion.mode)}</span>` : ''}
+            <span style="color:var(--color-text-secondary);font-size:var(--font-sm)">${escapeHTML(suggestion.text || '')}</span>
+            <button type="button" class="btn btn-accent btn-sm" data-ai-accept>Accepteer</button>
+          </div>
+        `;
+        aiResult.hidden = false;
+        aiResult.querySelector('[data-ai-accept]')?.addEventListener('click', () => {
+          if (suggestion.mode) {
+            selectedProcessMode = suggestion.mode;
+            processingEl.querySelectorAll('[data-process-mode]').forEach((t) => {
+              t.classList.toggle('selected', t.dataset.processMode === selectedProcessMode);
+            });
+          }
+          const actionMap = { task: 'task', reference: 'reference', archive: 'archive' };
+          processingEl.querySelector(`[data-process="${actionMap[suggestion.action]}"]`)?.click();
+        });
+      } catch (err) {
+        aiResult.innerHTML = `<p style="color:var(--color-error);font-size:var(--font-sm);margin-top:var(--space-1)">${escapeHTML(err.message)}</p>`;
+        aiResult.hidden = false;
+      } finally {
+        aiBtn.disabled = false;
+        aiBtn.textContent = '✨ AI-suggestie';
+      }
     });
 
     processingEl.querySelector('[data-process="task"]')?.addEventListener('click', async () => {

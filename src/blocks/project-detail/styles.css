@@ -728,7 +728,7 @@
 }
 
 .project-timeline__phase-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   color: var(--color-text);
   white-space: nowrap;
@@ -758,13 +758,13 @@
 }
 
 .project-timeline__diamond {
-  font-size: 14px;
+  font-size: var(--font-md);
   color: var(--color-accent);
   line-height: 1;
 }
 
 .project-timeline__milestone-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 500;
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -785,7 +785,7 @@
   border-radius: 50%;
   background: var(--color-danger, #ef4444);
   color: white;
-  font-size: 10px;
+  font-size: var(--font-xs);
   cursor: pointer;
   opacity: 0;
   transition: opacity var(--duration-fast) var(--ease);

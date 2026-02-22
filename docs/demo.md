@@ -1,3 +1,353 @@
+# Vandaag MVP — Manual Verification Script
+
+> Run this script after implementing the Vandaag MVP.
+> Each step is a **PASS / FAIL** check. Complete all steps in order.
+> Start from a **fresh private/incognito window** (clean localStorage + IDB).
+
+---
+
+## Setup
+
+1. `npm run dev` — dev server on port 3000
+2. Open `http://localhost:3000` in a **private/incognito window**
+3. Open DevTools → Application → IndexedDB → `bpv-tracker` and
+   Local Storage → `localhost:3000` so you can inspect persisted state
+
+---
+
+## Section A — Default Home Screen
+
+### A1 — App opens on Vandaag
+
+| Step | Expected |
+|------|----------|
+| Load `http://localhost:3000` (no hash) | Vandaag tab is active |
+| Look at the tab bar | "Vandaag" is highlighted |
+| URL | `#today` or stays blank but Vandaag is rendered |
+
+**PASS / FAIL**
+
+### A2 — URL hash routing
+
+| Step | Expected |
+|------|----------|
+| Navigate to `http://localhost:3000/#dashboard` | Dashboard tab opens |
+| Press browser Back | Vandaag tab opens |
+| Navigate to `http://localhost:3000/#today` | Vandaag tab opens |
+
+**PASS / FAIL**
+
+---
+
+## Section B — Date Header + Mode Selector
+
+### B1 — Date is correct
+
+| Step | Expected |
+|------|----------|
+| Look at the top of the Vandaag page | Dutch long date shown (e.g. "vrijdag 21 februari 2026") |
+| Date matches your system clock | ✓ |
+
+**PASS / FAIL**
+
+### B2 — Mode pills
+
+| Step | Expected |
+|------|----------|
+| Count the pills in the header | One per active mode (typically 3) |
+| Active mode pill | Accent background, white text |
+| Inactive pills | Surface background, muted text |
+
+**PASS / FAIL**
+
+### B3 — Mode switching persists
+
+| Step | Expected |
+|------|----------|
+| Click "Personal" pill | "Personal" becomes active |
+| Check localStorage | `boris_mode` = `"Personal"` |
+| Hard-reload | "Personal" pill is still active |
+| Click "School" pill | Switches back; content re-renders |
+
+**PASS / FAIL**
+
+### B4 — Keyboard accessible
+
+| Step | Expected |
+|------|----------|
+| Tab to the mode pills | Each pill receives focus ring |
+| Press Enter on "BPV" | BPV mode activates |
+
+**PASS / FAIL**
+
+---
+
+## Section C — Top 3 Outcomes
+
+### C1 — Inputs render
+
+| Step | Expected |
+|------|----------|
+| Top of Vandaag (above collapsible sections) | Three labeled text inputs visible |
+| Labels | "Doel 1", "Doel 2", "Doel 3" |
+| On first use | Placeholder text visible |
+
+**PASS / FAIL**
+
+### C2 — Persist across reload
+
+| Step | Expected |
+|------|----------|
+| Type "Hoofdstuk 3 lezen" in Doel 1, click outside | No error toast |
+| Type "Email beantwoorden" in Doel 2, click outside | Saved |
+| Hard-reload | Both values still in inputs |
+| IDB `dailyPlans` entry | `outcomes[0]` = "Hoofdstuk 3 lezen", `outcomes[1]` = "Email beantwoorden" |
+
+**PASS / FAIL**
+
+### C3 — Mode-isolated
+
+| Step | Expected |
+|------|----------|
+| School mode: type "School goal" in Doel 1 | Saved |
+| Switch to Personal | Doel 1 is empty |
+| Type "Personal goal" in Doel 1 | Saved |
+| Switch back to School | "School goal" is back |
+
+**PASS / FAIL**
+
+### C4 — Enter moves focus
+
+| Step | Expected |
+|------|----------|
+| Type in Doel 1, press Enter | Saves; focus moves to Doel 2 |
+| Type in Doel 2, press Enter | Focus moves to Doel 3 |
+
+**PASS / FAIL**
+
+---
+
+## Section D — Next Actions (Daily Todos)
+
+### D1 — Section renders
+
+| Step | Expected |
+|------|----------|
+| "Taken" collapsible section | Visible and open by default |
+| Inside | Empty list + add input |
+
+**PASS / FAIL**
+
+### D2 — Add todos
+
+| Step | Expected |
+|------|----------|
+| Type "Wiskunde oefeningen", Enter | Todo appears in list |
+| Type "Aardrijkskunde hoofdstuk", Enter | Second todo appears |
+
+**PASS / FAIL**
+
+### D3 — Persist across reload
+
+| Step | Expected |
+|------|----------|
+| Add at least one todo | Visible |
+| Hard-reload | Todo still in list |
+| IDB `dailyPlans` → `todos[]` | Array contains the todo |
+
+**PASS / FAIL**
+
+### D4 — Check off + reload
+
+| Step | Expected |
+|------|----------|
+| Click checkbox on a todo | Marked done |
+| Hard-reload | Still checked |
+| Click again | Reverts to unchecked |
+
+**PASS / FAIL**
+
+### D5 — Mode cap enforced (School cap = 3)
+
+| Step | Expected |
+|------|----------|
+| Add 3 todos in School mode | All 3 visible; add input disabled or hidden |
+| Label shows "3/3 taken" | ✓ |
+| Mark one done | Add input reappears |
+
+**PASS / FAIL**
+
+### D6 — Delete a todo
+
+| Step | Expected |
+|------|----------|
+| Hover/focus a todo | Delete (×) button appears |
+| Click × | Todo removed |
+| Hard-reload | Not reappeared |
+
+**PASS / FAIL**
+
+---
+
+## Section E — Quick Capture → Inbox
+
+### E1 — Section renders
+
+| Step | Expected |
+|------|----------|
+| "Vastleggen" collapsible section | Visible and open |
+| Input placeholder | "Vang een gedachte op..." |
+
+**PASS / FAIL**
+
+### E2 — Capture creates inbox item
+
+| Step | Expected |
+|------|----------|
+| Type "Boek kopen voor project", Enter | Toast: "Vastgelegd in inbox" |
+| Input clears | ✓ |
+| Navigate to `#inbox` | Item is in the list |
+| IDB `os_inbox` | Record with `status: "inbox"`, `mode: "School"` |
+
+**PASS / FAIL**
+
+### E3 — Empty Enter is no-op
+
+| Step | Expected |
+|------|----------|
+| Press Enter with empty input | Nothing happens; no empty item in inbox |
+
+**PASS / FAIL**
+
+### E4 — Respects current mode
+
+| Step | Expected |
+|------|----------|
+| Switch to Personal, type "Idee", Enter | Saved with `mode: "Personal"` |
+| IDB `os_inbox` | New record has `mode: "Personal"` |
+
+**PASS / FAIL**
+
+---
+
+## Section F — BPV Quick Log
+
+### F1 — Visible in School mode
+
+| Step | Expected |
+|------|----------|
+| School mode, Vandaag | BPV/Uren collapsible section visible |
+| Expand it | Time inputs, break, note, Netto label, Opslaan button |
+
+**PASS / FAIL**
+
+### F2 — Visible in BPV mode
+
+| Step | Expected |
+|------|----------|
+| Switch to BPV mode | Same section still visible |
+
+**PASS / FAIL**
+
+### F3 — NOT visible in Personal mode
+
+| Step | Expected |
+|------|----------|
+| Switch to Personal | BPV section NOT present in DOM |
+
+**PASS / FAIL**
+
+### F4 — Net hours computed live
+
+| Step | Expected |
+|------|----------|
+| Start: 08:30, End: 17:00, Pauze: 30 | Netto: "8u 00m" |
+| Change Pauze to 45 | Netto: "7u 45m" |
+| Clear End time | Netto: "—" (not negative) |
+
+**PASS / FAIL**
+
+### F5 — Save and persist
+
+| Step | Expected |
+|------|----------|
+| Start: 09:00, End: 17:30, Pauze: 30, Note: "Klantbezoek" | Netto: "8u 00m" |
+| Click "Opslaan" | Button shows "✓ Opgeslagen" briefly |
+| Hard-reload | Fields pre-filled with saved values |
+| IDB `hours` | Record: `date: today`, `startTime: "09:00"` |
+
+**PASS / FAIL**
+
+### F6 — Update keeps one record
+
+| Step | Expected |
+|------|----------|
+| Change Pauze to 45, click "Opslaan" | No duplicate created |
+| IDB `hours` | Still one record for today |
+
+**PASS / FAIL**
+
+### F7 — Opslaan disabled when net ≤ 0
+
+| Step | Expected |
+|------|----------|
+| Set End before Start | Netto: "—"; "Opslaan" disabled |
+| Set valid End | Button re-enables |
+
+**PASS / FAIL**
+
+---
+
+## Section G — Cross-Cutting
+
+### G1 — Mode switch re-renders all sections
+
+| Step | Expected |
+|------|----------|
+| School: add todos + set outcome | Visible |
+| Switch to Personal | Todos and outcomes clear |
+| Switch back to School | Data returns |
+
+**PASS / FAIL**
+
+### G2 — Dark mode
+
+| Step | Expected |
+|------|----------|
+| Toggle dark mode in Settings | All 5 Vandaag widgets legible |
+| No invisible text or broken contrast | ✓ |
+
+**PASS / FAIL**
+
+### G3 — No console errors
+
+| Step | Expected |
+|------|----------|
+| After completing all sections | DevTools Console: 0 uncaught errors |
+
+**PASS / FAIL**
+
+---
+
+## Results Summary
+
+| Section | Steps | Pass | Fail |
+|---------|-------|------|------|
+| A — Default home | 2 | | |
+| B — Date header + mode | 4 | | |
+| C — Outcomes | 4 | | |
+| D — Next actions | 6 | | |
+| E — Quick capture | 4 | | |
+| F — BPV quick log | 7 | | |
+| G — Cross-cutting | 3 | | |
+| **Total** | **30** | | |
+
+**MVP is shippable when all 30 steps pass.**
+
+---
+
+---
+
 # Project Momentum — QA Script
 
 Manual QA for the project momentum visualization (Milestone 3).

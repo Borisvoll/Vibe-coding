@@ -1,4 +1,4 @@
-import { escapeHTML, getToday } from '../../utils.js';
+import { escapeHTML, getToday, purgeOldLocalStorageKeys } from '../../utils.js';
 
 /**
  * Mode-specific checklists. Resets daily (no persistence — pure activation).
@@ -27,6 +27,9 @@ const CHECKLISTS = {
 };
 
 const STORAGE_PREFIX = 'checklist_';
+
+// Remove checklist keys older than 14 days on first import
+purgeOldLocalStorageKeys(STORAGE_PREFIX, 14);
 
 function getStorageKey(mode) {
   return `${STORAGE_PREFIX}${mode}_${getToday()}`;

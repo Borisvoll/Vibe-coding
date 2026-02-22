@@ -68,6 +68,36 @@
   gap: var(--space-2);
 }
 
+.os-shell__header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+
+.os-shell__header-btn:hover,
+.os-shell__header-btn:active {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+/* Sidebar search button — subtle different styling */
+.os-sidebar__search-btn {
+  margin-bottom: var(--space-2);
+  color: var(--color-text-tertiary);
+  border-bottom: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  padding-bottom: var(--space-3);
+}
+
 .os-shell__title {
   margin: 0;
   font-size: 1rem;
@@ -476,9 +506,9 @@
     margin-left: 240px;
   }
 
-  /* Hide mobile header and mobile nav on desktop */
+  /* Hide mobile header and bottom nav on desktop */
   .os-shell__header--mobile,
-  .os-nav--mobile {
+  .os-bottomnav {
     display: none !important;
   }
 }
@@ -882,74 +912,126 @@
   }
 }
 
-/* ── Mobile Navigation (hidden on desktop) ────────────────── */
-.os-nav--mobile {
-  position: relative;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.os-nav--mobile::-webkit-scrollbar { display: none; }
-
-/* Mode accent line under mobile nav — subtle hint */
-.os-nav--mobile::after {
-  content: '';
-  position: absolute;
+/* ── Mobile Bottom Navigation ──────────────────────────────── */
+.os-bottomnav {
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background: color-mix(in srgb, var(--mode-accent, var(--color-accent)) 40%, var(--color-border));
-  transition: background 300ms var(--ease);
-}
-
-.os-nav__inner {
+  z-index: 100;
   display: flex;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-4);
+  align-items: stretch;
+  justify-content: space-around;
+  height: 56px;
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-.os-nav__button {
+.os-bottomnav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
   border: none;
   background: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-xs);
+  font-weight: 500;
+  cursor: pointer;
+  position: relative;
+  transition: color var(--duration-fast) var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.os-bottomnav__item:active {
+  transform: scale(0.92);
+}
+
+.os-bottomnav__item[aria-pressed="true"] {
+  color: var(--mode-accent, var(--color-accent));
+}
+
+.os-bottomnav__item[aria-pressed="true"] .os-bottomnav__icon {
+  stroke-width: 2.5;
+}
+
+.os-bottomnav__icon {
+  flex-shrink: 0;
+}
+
+.os-bottomnav__label {
+  line-height: 1;
+}
+
+.os-bottomnav__badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 16px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* More menu (slides up from bottom nav) */
+.os-bottomnav__menu {
+  position: fixed;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  right: var(--space-3);
+  z-index: 101;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.12);
+  padding: var(--space-2);
+  min-width: 180px;
+  animation: bottomnav-menu-in 150ms var(--ease);
+}
+
+@keyframes bottomnav-menu-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.os-bottomnav__menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: none;
   border-radius: var(--radius-md);
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--font-base);
+  background: none;
   color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
+  text-align: left;
   transition: color var(--duration-fast) var(--ease),
               background var(--duration-fast) var(--ease);
 }
 
-.os-nav__button:hover {
+.os-bottomnav__menu-item:hover,
+.os-bottomnav__menu-item:active {
   color: var(--color-text);
   background: var(--color-surface-hover);
 }
 
-.os-nav__button[aria-pressed="true"] {
-  background: var(--mode-accent-light, var(--color-accent-light));
+.os-bottomnav__menu-item[aria-pressed="true"] {
   color: var(--mode-accent, var(--color-accent));
-  font-weight: 600;
-}
-
-.os-nav__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 var(--space-1);
-  border-radius: var(--radius-full);
-  background: var(--color-accent);
-  color: var(--color-accent-text);
-  font-size: var(--font-xs);
-  font-weight: 700;
-  line-height: 1;
-  vertical-align: middle;
-  margin-left: var(--space-1);
+  background: var(--mode-accent-light, var(--color-accent-light));
 }
 
 /* ── Dashboard breadcrumb link ────────────────────────────── */
@@ -976,7 +1058,14 @@
 .os-shell__content {
   flex: 1;
   padding: var(--space-5) var(--space-4);
+  padding-bottom: calc(56px + var(--space-5) + env(safe-area-inset-bottom, 0px));
   transition: opacity 300ms var(--ease);
+}
+
+@media (min-width: 768px) {
+  .os-shell__content {
+    padding-bottom: var(--space-8);
+  }
 }
 
 /* Centered content container — Notion-like readable width */
@@ -1051,6 +1140,45 @@
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   font-size: var(--font-base);
+}
+
+/* ── Contextual empty states ──────────────────────────────── */
+.os-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-surface) 50%, transparent);
+  animation: empty-state-in 400ms var(--ease-out) both;
+}
+
+@keyframes empty-state-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.os-empty-state__icon {
+  font-size: 2rem;
+  margin-bottom: var(--space-2);
+  opacity: 0.6;
+}
+
+.os-empty-state__title {
+  margin: 0;
+  font-size: var(--font-base);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.os-empty-state__desc {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
+  max-width: 280px;
 }
 
 /* ── 3-Level visual hierarchy on Vandaag ─────────────────── */
@@ -1498,6 +1626,77 @@
   color: var(--color-text-secondary);
 }
 
+/* ── Morning nudge banner ─────────────────────────────────────── */
+.morning-nudge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--mode-accent, var(--color-accent)) 8%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--mode-accent, var(--color-accent)) 20%, var(--color-border));
+  animation: nudge-in 500ms var(--ease-out) both;
+}
+
+@keyframes nudge-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.morning-nudge--out {
+  animation: nudge-out 200ms var(--ease) forwards;
+}
+
+@keyframes nudge-out {
+  to { opacity: 0; transform: translateY(-8px); }
+}
+
+.morning-nudge__text {
+  flex: 1;
+  font-size: var(--font-base);
+  color: var(--color-text);
+}
+
+.morning-nudge__btn {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--mode-accent, var(--color-accent));
+  color: white;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity var(--duration-fast) var(--ease);
+}
+
+.morning-nudge__btn:hover {
+  opacity: 0.9;
+}
+
+.morning-nudge__dismiss {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: none;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-lg);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color var(--duration-fast) var(--ease),
+              background var(--duration-fast) var(--ease);
+}
+
+.morning-nudge__dismiss:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
 /* ── Vandaag context header ──────────────────────────────────── */
 
 .vandaag-header {
@@ -1516,7 +1715,7 @@
 .vandaag-header__title {
   margin: 0;
   font-family: var(--font-serif);
-  font-size: 1.75rem;
+  font-size: var(--font-2xl);
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;

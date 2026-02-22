@@ -1,6 +1,7 @@
 import { addHoursEntry, getHoursEntry } from '../../stores/bpv.js';
 import { getToday, formatDateShort, calcNetMinutes, formatMinutes, escapeHTML } from '../../utils.js';
 import { DAY_TYPES, DAY_TYPE_LABELS } from '../../constants.js';
+import { expandBPVNote } from '../../ai/client.js';
 
 export function renderBPVQuickLog(container, context) {
   const mountId = `bpv-ql-${crypto.randomUUID()}`;
@@ -35,11 +36,14 @@ export function renderBPVQuickLog(container, context) {
         </label>
         <div class="bpv-ql__net" data-net-display>Netto: —</div>
       </div>
-      <label class="bpv-ql__field bpv-ql__field--full">
-        <span>Notitie</span>
+      <div class="bpv-ql__field bpv-ql__field--full">
+        <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)">
+          <span>Notitie</span>
+          <button type="button" class="btn btn-ghost btn-sm" data-action="ai-note" title="Schrijf professionele notitie met AI">✨</button>
+        </div>
         <input type="text" class="form-input bpv-ql__input"
           data-field="note" placeholder="Korte notitie over de dag…" maxlength="200">
-      </label>
+      </div>
       <div class="bpv-ql__footer">
         <span class="bpv-ql__status" data-status></span>
         <button type="button" class="btn btn-primary btn-sm bpv-ql__save" data-action="save">
@@ -139,6 +143,26 @@ export function renderBPVQuickLog(container, context) {
       setStatus(`Fout: ${err.message}`, true);
     } finally {
       saveBtn.disabled = false;
+    }
+  });
+
+  // ── AI Note Expansion ──
+  const aiNoteBtn = el.querySelector('[data-action="ai-note"]');
+  aiNoteBtn?.addEventListener('click', async () => {
+    const noteInput = el.querySelector('[data-field="note"]');
+    const shortNote = noteInput.value.trim();
+    if (!shortNote) { setStatus('Typ eerst een korte notitie.', true); return; }
+    aiNoteBtn.disabled = true;
+    aiNoteBtn.textContent = '…';
+    try {
+      const expanded = await expandBPVNote(shortNote);
+      noteInput.value = expanded.trim().slice(0, 200);
+      setStatus('Notitie uitgebreid ✓');
+    } catch (err) {
+      setStatus(err.message, true);
+    } finally {
+      aiNoteBtn.disabled = false;
+      aiNoteBtn.textContent = '✨';
     }
   });
 

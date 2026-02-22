@@ -1,4 +1,4 @@
-import { escapeHTML, getToday } from '../utils.js';
+import { escapeHTML, getToday, purgeOldLocalStorageKeys } from '../utils.js';
 import { getDailyEntry, saveOutcomes } from '../stores/daily.js';
 import { getActiveProjects, setPinned, getPinnedProject } from '../stores/projects.js';
 import { getByKey } from '../db.js';
@@ -6,6 +6,9 @@ import { getByKey } from '../db.js';
 const STEPS = ['outcomes', 'actions', 'focus', 'confirm'];
 
 // ── LocalStorage persistence ──────────────────────────────────
+
+// Remove morning-flow keys older than 14 days on first import
+purgeOldLocalStorageKeys('boris_morning_', 14);
 
 function stateKey(date, mode) {
   return `boris_morning_${date}_${mode}`;

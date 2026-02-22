@@ -12,6 +12,7 @@
   color: var(--color-text);
   position: relative;
   overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* ── Ambient mode wash — Eno colour tide (left→right wave) ── */
@@ -24,16 +25,18 @@
   clip-path: inset(0 100% 0 0);  /* hidden: fully clipped from right */
   opacity: 0.15;
   will-change: clip-path;
+  visibility: hidden;
 }
 
 .os-mode-wash--active {
+  visibility: visible;
   animation: mode-wash 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes mode-wash {
-  0%   { clip-path: inset(0 100% 0 0); }  /* tide enters from left  */
-  45%  { clip-path: inset(0 0 0 0); }     /* peak: full screen      */
-  100% { clip-path: inset(0 0 0 100%); }  /* tide recedes rightward */
+  0%   { clip-path: inset(0 100% 0 0); visibility: visible; }
+  45%  { clip-path: inset(0 0 0 0); }
+  100% { clip-path: inset(0 0 0 100%); visibility: hidden; }
 }
 
 /* ── Header ────────────────────────────────────────────────── */
@@ -206,10 +209,12 @@
   align-items: flex-end;
   justify-content: center;
   pointer-events: none;
+  visibility: hidden;
 }
 
 .mode-picker--visible {
   pointer-events: auto;
+  visibility: visible;
 }
 
 @media (min-width: 480px) {
@@ -1228,6 +1233,54 @@
   }
 }
 
+/* ── Mobile — critical touch/layout fixes ─────────────────── */
+@media (max-width: 767px) {
+  /* Ensure content fills viewport below header + nav */
+  .os-shell__content {
+    flex: 1;
+    min-height: 0;
+    padding-bottom: var(--space-8);
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Mobile header must be visible */
+  .os-shell__header--mobile {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* Ensure all buttons and interactive elements are tappable */
+  .os-bottomnav__item,
+  .os-mode-btn,
+  .os-sidebar__item,
+  .os-settings-btn,
+  button,
+  [role="button"],
+  a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  .os-mode-btn {
+    min-height: 40px;
+  }
+
+  /* Cards & blocks need proper spacing on small screens */
+  .os-mini-card {
+    padding: var(--space-4);
+  }
+
+  /* Prevent text from being too small on mobile */
+  .os-section__title {
+    font-size: var(--font-xl);
+    margin-bottom: var(--space-4);
+  }
+}
+
 /* ── Shared block card ─────────────────────────────────────── */
 .os-mini-card {
   border: 1px solid var(--color-border);
@@ -1451,11 +1504,13 @@
   justify-content: center;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 200ms var(--ease);
+  visibility: hidden;
+  transition: opacity 200ms var(--ease), visibility 200ms var(--ease);
 }
 
 .tutorial-overlay--visible {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 
@@ -1889,11 +1944,14 @@
   background: rgba(0, 0, 0, 0.45);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 300ms var(--ease);
+  visibility: hidden;
+  transition: opacity 300ms var(--ease), visibility 300ms var(--ease);
 }
 
 .focus-overlay--visible {
   opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .focus-overlay__panel {

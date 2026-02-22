@@ -111,7 +111,7 @@
 }
 
 .worry-dump__done-check {
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   color: var(--color-emerald, #10b981);
 }
 

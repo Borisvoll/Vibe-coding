@@ -99,7 +99,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 7px;
+  font-size: var(--font-xs);
   font-weight: 700;
   color: var(--color-text-secondary);
   letter-spacing: -0.02em;
@@ -145,7 +145,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  animation: pomo-panel-in 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: pomo-panel-in var(--duration-fast) var(--ease-spring);
   transform-origin: bottom right;
 }
 
@@ -178,7 +178,7 @@
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: color 100ms, background 100ms;
+  transition: color var(--duration-fast), background var(--duration-fast);
 }
 
 .pomodoro-panel__close:hover {
@@ -193,7 +193,7 @@
 }
 
 .pomodoro-panel__countdown {
-  font-size: 3rem;
+  font-size: var(--font-stat);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
@@ -249,11 +249,11 @@
   font-size: var(--font-sm);
   font-weight: 500;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--duration-fast) var(--ease);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-1);
 }
 
 .pomodoro-panel__btn--primary {
@@ -298,7 +298,7 @@
 }
 
 .pomodoro-panel__stat-label {
-  font-size: 10px;
+  font-size: var(--font-xs);
   color: var(--color-text-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.06em;

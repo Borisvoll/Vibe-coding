@@ -94,7 +94,7 @@
 
 .st-task-del {
   opacity: 0;
-  transition: opacity 150ms;
+  transition: opacity var(--duration-fast);
   color: var(--color-text-tertiary);
 }
 .st-task-item:hover .st-task-del {
@@ -171,7 +171,7 @@
   font-size: var(--font-xs);
   font-weight: 700;
   color: var(--color-purple);
-  transition: border-color 150ms, background 150ms;
+  transition: border-color var(--duration-fast), background var(--duration-fast);
   flex-shrink: 0;
   padding: 0;
 }
@@ -236,7 +236,7 @@
 
 .hw-del {
   opacity: 0;
-  transition: opacity 150ms;
+  transition: opacity var(--duration-fast);
   color: var(--color-text-tertiary);
 }
 .hw-item:hover .hw-del {

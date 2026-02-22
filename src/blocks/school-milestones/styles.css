@@ -35,7 +35,7 @@
   color: #fff;
   font-size: var(--font-xs);
   font-weight: 700;
-  padding: 2px 8px;
+  padding: var(--space-0) var(--space-2);
   border-radius: 99px;
   letter-spacing: 0.01em;
 }
@@ -58,7 +58,7 @@
 
 .milestones-add-btn {
   padding: 0 var(--space-3);
-  font-size: 1.1rem;
+  font-size: var(--font-xl);
 }
 
 /* Empty state */
@@ -90,7 +90,7 @@
   background: var(--color-surface);
   border: 1.5px solid var(--color-border);
   box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
-  transition: box-shadow 150ms var(--ease), border-color 150ms var(--ease);
+  transition: box-shadow var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease);
 }
 
 .milestone-card:hover {
@@ -107,7 +107,7 @@
 }
 
 .milestone-card__icon {
-  font-size: 1.1rem;
+  font-size: var(--font-xl);
   line-height: 1;
 }
 
@@ -183,9 +183,9 @@
 
 .milestone-card__delete {
   opacity: 0;
-  transition: opacity 150ms var(--ease);
+  transition: opacity var(--duration-fast) var(--ease);
   color: var(--color-text-tertiary);
-  font-size: 1.1rem;
+  font-size: var(--font-xl);
   padding: 0 var(--space-2);
 }
 

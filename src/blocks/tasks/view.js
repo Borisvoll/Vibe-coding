@@ -36,6 +36,8 @@ export function renderTasks(container, context) {
     const mode = modeManager.getMode();
     const cap = getTaskCap(mode);
     const tasks = await getTasksForToday(mode);
+    const active = tasks.filter((t) => t.status !== 'done');
+    if (active.length >= cap) return;
     await addTask(text, mode);
     input.value = '';
     await render();
@@ -58,16 +60,21 @@ export function renderTasks(container, context) {
     const done = tasks.filter((t) => t.status === 'done');
     const sorted = [...active, ...done];
 
-    // Soft cap: warn but never disable input (user has agency)
+    // Hard cap: disable input when at capacity
     if (active.length >= cap) {
-      input.placeholder = 'Nog een taak toevoegen...';
-      capHint.textContent = `Je hebt al ${active.length}/${cap} taken — focus is kracht`;
+      input.disabled = true;
+      input.placeholder = `Limiet bereikt (${cap}/${cap})`;
+      input.title = `Rond eerst een taak af — maximaal ${cap} actieve taken`;
+      capHint.textContent = `${active.length}/${cap} taken — rond er eerst één af`;
       capHint.classList.add('tasks-block__cap-hint--warning');
       capHint.hidden = false;
     } else {
+      input.disabled = false;
       input.placeholder = 'Nieuwe taak...';
+      input.title = '';
+      capHint.textContent = `${active.length}/${cap}`;
       capHint.classList.remove('tasks-block__cap-hint--warning');
-      capHint.hidden = true;
+      capHint.hidden = active.length === 0;
     }
 
     if (sorted.length === 0) {

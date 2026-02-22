@@ -59,3 +59,20 @@ export async function toggleTask(id) {
 export async function deleteTask(id) {
   return remove(STORE, id);
 }
+
+/**
+ * Permanently delete done tasks whose `doneAt` (or `updated_at`) timestamp
+ * is older than `maxAgeDays`. Runs at startup to keep the store lean.
+ */
+export async function purgeOldDoneTasks(maxAgeDays = 30) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - maxAgeDays);
+  const cutoffStr = cutoff.toISOString();
+
+  const doneTasks = await getByIndex(STORE, 'status', 'done');
+  const stale = doneTasks.filter((t) => {
+    const ts = t.doneAt || t.updated_at || '';
+    return ts < cutoffStr;
+  });
+  await Promise.all(stale.map((t) => remove(STORE, t.id)));
+}

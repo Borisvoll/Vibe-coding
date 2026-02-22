@@ -35,6 +35,18 @@
 .inbox-screen__capture-input {
   width: 100%;
   font-size: var(--font-lg);
+  transition: transform 200ms var(--ease), opacity 200ms var(--ease);
+}
+
+.inbox-screen__capture-input--swoosh {
+  animation: inbox-swoosh 400ms var(--ease) forwards;
+}
+
+@keyframes inbox-swoosh {
+  0%   { transform: translateX(0); opacity: 1; }
+  40%  { transform: translateX(60px); opacity: 0; }
+  41%  { transform: translateX(-20px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
 
 .inbox-screen__list {

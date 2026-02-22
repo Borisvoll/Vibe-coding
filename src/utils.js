@@ -271,3 +271,27 @@ export function daysRemainingInBPV() {
   const diff = Math.ceil((end - today) / (1000 * 60 * 60 * 24));
   return Math.max(0, diff);
 }
+
+/**
+ * Remove localStorage keys that match a prefix and contain a date portion
+ * older than `maxAgeDays`. The date must appear in the key as "YYYY-MM-DD".
+ *
+ * @param {string} prefix - Key prefix to match (e.g. 'boris_morning_')
+ * @param {number} [maxAgeDays=14]
+ */
+export function purgeOldLocalStorageKeys(prefix, maxAgeDays = 14) {
+  try {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - maxAgeDays);
+    const cutoffStr = cutoff.toISOString().slice(0, 10); // 'YYYY-MM-DD'
+    const toRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith(prefix)) continue;
+      // Extract YYYY-MM-DD from anywhere in the key
+      const match = key.match(/(\d{4}-\d{2}-\d{2})/);
+      if (match && match[1] < cutoffStr) toRemove.push(key);
+    }
+    for (const key of toRemove) localStorage.removeItem(key);
+  } catch { /* ignore private-browsing errors */ }
+}

@@ -2,6 +2,353 @@
 
 ---
 
+## Milestone: Quality Pass — Consistency, A11y, Layout
+
+**Date:** 2026-02-21
+**Docs:** `docs/qa.md` (findings), `docs/components.md` (canonical primitives)
+**Branch:** `claude/audit-react-app-docs-UdBBt`
+
+### Overview
+
+Work through three priority tiers from the audit. P1 is accessibility — fix
+before any new feature ships. P2 is consistency — fix when touching a file for
+another reason. P3 is polish — do opportunistically.
+
+---
+
+### Phase QA-P1 — Accessibility (Critical)
+
+- [ ] **QA-P1a** Add `type="button"` to 28 buttons across 12 files:
+  - `src/blocks/bpv-today/view.js` (~24–34)
+  - `src/blocks/personal-energy/view.js` (~17)
+  - `src/blocks/personal-today/view.js` (~25, 27, 33, 35, 39)
+  - `src/blocks/personal-week-planning/view.js` (~19, 22)
+  - `src/blocks/personal-weekly-reflection/view.js` (~18)
+  - `src/blocks/school-concept-vault/view.js` (~27, 39)
+  - `src/blocks/school-current-project/view.js` (~29)
+  - `src/blocks/school-dashboard/view.js` (~62)
+  - `src/blocks/school-milestones/view.js` (~21, 30)
+  - `src/blocks/school-skill-tracker/view.js` (~22)
+  - `src/blocks/school-today/view.js` (~24, 27, 33)
+  - `src/blocks/tasks/view.js` (~80)
+  - Verify with: `grep -rn '<button' src/blocks/ | grep -v 'type='`
+
+- [ ] **QA-P1b** Fix missing focus indicators (10 CSS locations — add
+  `box-shadow: 0 0 0 3px var(--color-accent-light); border-color: var(--color-accent)` after each `outline: none`):
+  - `src/ui/command-palette.css` (~line 66)
+  - `src/ui/theme-studio.css` (~lines 163, 197)
+  - `src/blocks/personal-dashboard/styles.css` (~line 80)
+  - `src/blocks/conversation-debrief/styles.css` (~line 64)
+  - `src/blocks/worry-dump/styles.css` (~line 48)
+  - `src/blocks/lijsten-screen/styles.css` (~line 220)
+  - `src/blocks/project-hub/styles.css` (~lines 1050, 1438)
+  - `src/blocks/done-list/styles.css` (~line 45)
+  - `src/blocks/tasks/styles.css` (~line 29)
+  - Verify with: `grep -rn 'outline: none\|outline: 0' src/blocks/*/styles.css src/ui/*.css`
+
+- [ ] **QA-P1c** Add `aria-label` to 14+ unlabelled inputs (prefer `aria-label`
+  for inline add-inputs; use `<label for=...>` where space allows):
+  - `src/blocks/conversation-debrief/view.js`
+  - `src/blocks/daily-reflection/view.js`
+  - `src/blocks/daily-todos/view.js`
+  - `src/blocks/done-list/view.js`
+  - `src/blocks/inbox/view.js`
+  - `src/blocks/inbox-screen/view.js`
+  - `src/blocks/lijsten/view.js` (2 inputs)
+  - `src/blocks/lijsten-screen/view.js` (4 inputs)
+  - `src/blocks/personal-today/view.js` (4 inputs)
+  - `src/blocks/personal-week-planning/view.js`
+  - `src/blocks/projects/view.js` (3 inputs)
+  - `src/blocks/school-concept-vault/view.js` (4 inputs)
+  - `src/blocks/school-milestones/view.js` (2 inputs)
+  - `src/blocks/school-today/view.js`
+  - `src/blocks/tasks/view.js`
+  - `src/blocks/worry-dump/view.js`
+
+- [ ] **QA-P1d** Add `aria-label` to unlabelled select and checkbox:
+  - `src/blocks/personal-week-planning/view.js` `<select>` (~line 17)
+  - `src/blocks/context-checklist/view.js` `<input type="checkbox">` (~line 72)
+
+- [ ] **QA-P1e** Fix z-index collisions — align to approved scale
+  (see `docs/components.md §5`):
+  - `src/styles/base.css` — toast container: `9999` → `1100`; toast backdrop: `9998` → `1099`
+  - `src/ui/modal.css` — modal overlay: `9999` → `1000`
+  - `src/styles/components.css` — tooltip: `999` → `200`
+  - `src/blocks/styles.css` — mode wash decoration: `999` → `10`
+  - `src/blocks/boundaries/styles.css` — `3000` → `2000` (confirm intent first)
+  - `src/ui/morning-flow.css` — already at `2000`, keep as-is
+  - After change: test that modals open correctly over page content, toasts
+    appear above modals, morning flow appears above everything
+
+- [ ] **QA-P1f** Run full test suite and confirm 0 regressions: `npm test`
+
+- [ ] **QA-P1g** Manual keyboard test (see `docs/qa.md §Testing Guidance`):
+  - Tab through Vandaag: every input gets visible focus ring
+  - Tab through BPV log form: all 4 inputs reachable by keyboard
+  - Open morning flow: Tab stays inside the overlay
+  - Ctrl+K palette: arrow keys navigate results, Enter executes
+
+---
+
+### Phase QA-P2 — Consistency (Incremental, When Touching Files)
+
+These are NOT a dedicated migration sprint. Fix each item the next time the
+file is opened for another reason.
+
+- [ ] **QA-P2a** Replace hardcoded `#fff`, `white` in 8 CSS files with
+  `var(--color-accent-text)` (see `docs/qa.md §P2-A` for exact file/line list)
+  - Verify: `grep -rn 'color: #fff\|color: white\|color: #ffffff' src/blocks/*/styles.css`
+
+- [ ] **QA-P2b** Standardise card padding: change `.os-mini-card` horizontal
+  padding from `var(--space-6)` to `var(--space-5)` (uniform all sides):
+  - `src/blocks/styles.css` — find `.os-mini-card` padding rule, change to `padding: var(--space-5)`
+  - Visual regression: spot-check Vandaag, Dashboard, Settings in browser
+
+- [ ] **QA-P2c** Confirm `--ui-card-radius` is aliased to `--radius-lg` in
+  `src/styles/variables.css`. If not, add: `--ui-card-radius: var(--radius-lg);`
+
+- [ ] **QA-P2d** When editing any block button, replace block-specific class with
+  `btn btn-{variant}` (tracked per-block in `docs/qa.md §P2-B`)
+
+- [ ] **QA-P2e** Remove `button:focus { outline: none }` from any block CSS
+  that has it without a visible replacement (check: project-hub, personal-dashboard)
+
+- [ ] **QA-P2f** Remove `!important` from `src/blocks/lijsten-screen/styles.css`
+  (5 declarations) — replace with higher-specificity selectors
+
+- [ ] **QA-P2g** Replace inline `dot.style.background = meta.color` in
+  `src/os/shell.js` (~line 226) with a CSS custom property on the element:
+  `dot.style.setProperty('--dot-color', meta.color)` + CSS rule `background: var(--dot-color)`
+
+- [ ] **QA-P2h** Remove hex fallbacks from `var(--token, #hexvalue)` calls in
+  `src/ui/command-palette.css` and `src/ui/morning-flow.css`; ensure all
+  referenced tokens are defined in `src/styles/variables.css`
+
+---
+
+### Phase QA-P3 — Polish (Opportunistic)
+
+- [ ] **QA-P3a** Add `aria-live="polite"` to reactive count labels:
+  - DailyTodos cap counter ("3/3 taken")
+  - Inbox nav badge
+  - Cockpit stats counts
+  - BPVQuickLog netto label
+
+- [ ] **QA-P3b** Add `aria-label` to the 8 `<form>` elements that lack one,
+  or replace with `<div>` where form semantics add no value
+
+- [ ] **QA-P3c** Add `aria-controls` to collapsible section header buttons
+  in `src/ui/collapsible-section.js`
+
+- [ ] **QA-P3d** Add focus trap to morning flow overlay in
+  `src/ui/morning-flow.js` (Tab/Shift+Tab cycles within; restore on close)
+
+- [ ] **QA-P3e** Add combobox ARIA pattern to command palette
+  (`role="combobox"` + `aria-controls` + `aria-activedescendant` + `role="listbox/option"`)
+
+---
+
+### Definition of Done (QA Milestone)
+
+- [ ] `npm test` passes
+- [ ] `grep -rn '<button' src/blocks/ | grep -v 'type='` returns 0 results
+- [ ] `grep -rn 'outline: none\|outline: 0' src/blocks/*/styles.css src/ui/*.css` returns only lines with visible replacements
+- [ ] `grep -rn 'color: #fff\|color: white' src/blocks/*/styles.css` returns 0 results
+- [ ] Manual keyboard tab-through of Vandaag and Dashboard: every element has visible focus ring
+- [ ] axe DevTools scan on Vandaag: 0 critical, 0 serious issues
+- [ ] z-index: Modal appears above page; Toast appears above modal; Morning flow appears above toast
+
+---
+
+## Milestone: Vandaag MVP — True Home Screen
+
+**Date:** 2026-02-21
+**Docs:** `docs/vandaag-spec.md`, `docs/demo.md` (Section A–G)
+**Branch:** `claude/audit-react-app-docs-UdBBt`
+
+### Overview
+
+Make `#today` the default landing tab and wire up 5 must-have widgets:
+VandaagHeader (date + mode selector), DailyOutcomes (Top 3), DailyTodos
+(Next actions, existing), QuickCapture (existing), BPVQuickLog (School/BPV only).
+All state persists through hard reload via IndexedDB.
+
+---
+
+### Phase V0 — Default Tab
+
+- [ ] **V0** `src/os/shell.js` — confirm or change the initial tab default to `'today'`:
+  - Find the line that sets `activeTab` (around line 45)
+  - If it is `'dashboard'`, change to `'today'`
+  - If it already is `'today'`, no change needed — add a comment confirming it
+
+---
+
+### Phase V1 — VandaagHeader Component
+
+- [ ] **V1a** Create `src/ui/vandaag-header.js`:
+  - Export `mountVandaagHeader(container, { modeManager, eventBus })`
+    returning `{ unmount() }`
+  - Render: Dutch long date (left) + mode pills (right)
+  - Date: `formatDateLong(getToday())` from `src/utils.js`
+  - Pills: one `<button>` per `modeManager.getModes()`, `aria-pressed="true"` on active
+  - Click: `modeManager.setMode(m)` — no confirmation dialog
+  - Active pill: `--color-accent` bg + white text; inactive: surface bg + muted text
+
+- [ ] **V1b** Subscribe to `mode:changed` on `eventBus` — re-render pills only (not date)
+
+- [ ] **V1c** `src/os/shell.js` — after cloning the `[data-route="today"]` template,
+  call `mountVandaagHeader(section.querySelector('[data-vandaag-header]'), { modeManager, eventBus })`
+  and store the returned handle for `unmount()` on tab change
+
+- [ ] **V1d** `src/ui/vandaag-header.css` — styles ≤ 40 lines:
+  - `.vandaag-header` — flex, space-between, align-center, `padding: var(--space-4) 0`
+  - `.vandaag-header__date` — `font-size: var(--font-base)`, `color: var(--color-text-secondary)`
+  - `.vandaag-header__pills` — flex, `gap: var(--space-2)`
+  - `.mode-pill` — `border-radius: var(--radius-sm)`, `padding: var(--space-1) var(--space-3)`
+  - `.mode-pill[aria-pressed="true"]` — `background: var(--color-accent); color: #fff`
+  - Focus ring: `focus-visible:outline: 2px solid var(--color-accent); outline-offset: 2px`
+
+---
+
+### Phase V2 — DailyOutcomes Block
+
+- [ ] **V2a** Create `src/blocks/daily-outcomes/index.js`:
+  - Export `registerDailyOutcomesBlock(registry)`
+  - Register: `id: 'daily-outcomes'`, `hosts: ['vandaag-hero']`, `modes: []`, `order: 1`
+
+- [ ] **V2b** Create `src/blocks/daily-outcomes/view.js`:
+  - Export `mountDailyOutcomes(container, context)` → `{ unmount() }`
+  - Load: `getDailyEntry(mode, getToday())` from `src/stores/daily.js`
+  - During load: render 3 shimmer bars
+  - Render: 3 `<input type="text">` elements with `<label>` ("Doel 1/2/3")
+  - Prefill from `entry?.outcomes ?? ['', '', '']`
+  - On blur OR Enter: `saveOutcomes(mode, getToday(), [v1, v2, v3])` → emit `daily:changed`
+  - Enter: save and `focus()` next input; on Doel 3 Enter, no-op focus change
+  - On `mode:changed`: reload for new mode, repopulate inputs
+  - `aria-label` on section wrapper: `"Top 3 doelen voor vandaag"`
+  - Error: `showToast('Kon niet opslaan — probeer opnieuw', 'error')` from `src/toast.js`
+  - All text via `escapeHTML()` — inputs use `.value`, not `.innerHTML`
+
+- [ ] **V2c** Create `src/blocks/daily-outcomes/styles.css` (≤ 50 lines):
+  - `.outcomes-card` — `var(--ui-surface)`, `var(--shadow-sm)`, `var(--radius-lg)`, `p: var(--space-5)`
+  - `.outcome-row` — flex, align-center, `gap: var(--space-3)`, `+ .outcome-row { margin-top: var(--space-2) }`
+  - `.outcome-label` — `font-size: var(--font-xs)`, uppercase, muted, fixed `width: 48px`
+  - `.outcome-input` — `flex: 1`, no border (only bottom border on focus), bg transparent
+  - `.skeleton` — shimmer animation
+
+- [ ] **V2d** `src/blocks/registerBlocks.js` — import + call `registerDailyOutcomesBlock(registry)`
+
+---
+
+### Phase V3 — BPV Quick Log Block
+
+- [ ] **V3a** Create `src/blocks/bpv-quick-log/index.js`:
+  - Export `registerBPVQuickLogBlock(registry)`
+  - Register: `id: 'bpv-quick-log'`, `hosts: ['vandaag-mode']`,
+    `modes: ['School', 'BPV']`, `order: 10`
+
+- [ ] **V3b** Create `src/blocks/bpv-quick-log/view.js`:
+  - Export `mountBPVQuickLog(container, context)` → `{ unmount() }`
+  - Load: `getHoursEntry(getToday())` from `src/stores/bpv.js`
+  - During load: shimmer on input fields
+  - Render: `<input type="time">` for Start + Einde, `<input type="number">` for
+    Pauze (min 0, max 480, step 5), `<input type="text">` for Notitie (max 120 chars)
+  - Net hours label: computed on every `input` event via `calcNetMinutes()` from
+    `src/utils.js`; formatted with `formatMinutes()`; shows `"—"` if net ≤ 0
+  - `aria-live="polite"` on net label
+  - Prefill all fields if `getHoursEntry` returns an existing entry
+  - "Opslaan" button: disabled if `netMinutes ≤ 0`
+  - On save: `updateHoursEntry(entry.id, ...)` if entry exists, else
+    `addHoursEntry(getToday(), ...)` — emit `bpv:changed`
+  - Button states: saving → spinner + `disabled`; saved → "✓ Opgeslagen" for 1 s then reset
+  - Error: toast "Kon niet opslaan — probeer opnieuw"
+  - Validation: start required if end present; clamp break to 0–480
+
+- [ ] **V3c** Create `src/blocks/bpv-quick-log/styles.css` (≤ 60 lines):
+  - `.bpv-log-card` — card chrome (`var(--ui-surface)`, shadow, radius, padding)
+  - `.bpv-log-grid` — 2-column grid for Start/Einde row; single col for Pauze + Notitie
+  - `.bpv-log__label` — `font-size: var(--font-xs)`, uppercase, muted
+  - `.bpv-log__net` — right-aligned, `font-size: var(--font-lg)`, `font-weight: 600`
+  - `.bpv-log__save` — primary button, `background: var(--color-accent)`
+  - `input[type="time"]`, `input[type="number"]` — consistent border, radius, padding
+
+- [ ] **V3d** `src/blocks/registerBlocks.js` — import + call `registerBPVQuickLogBlock(registry)`
+
+---
+
+### Phase V4 — Verify Existing Blocks
+
+- [ ] **V4a** Verify `daily-todos` block is registered with `hosts: ['vandaag-tasks']`,
+  `modes: []`, emits `daily:changed` on all mutations, respects `getTaskCap(mode)` cap
+
+- [ ] **V4b** Verify capture block is registered with `hosts: ['vandaag-capture']`,
+  calls `addInboxItem(text, mode)` on Enter, emits `inbox:changed`, clears input
+
+- [ ] **V4c** If either block has a bug found during verify — fix in a single targeted
+  change to the existing file; no rewrites
+
+---
+
+### Phase V5 — Tests
+
+- [ ] **V5a** `tests/ui/vandaag-header.test.js`:
+  - Renders date text (contains current year)
+  - Renders one button per mode from `modeManager.getModes()`
+  - Active mode button has `aria-pressed="true"`
+  - Click inactive pill → `modeManager.setMode()` called with correct mode
+  - `mode:changed` event → active pill updates
+
+- [ ] **V5b** `tests/blocks/daily-outcomes/view.test.js`:
+  - Renders 3 inputs with labels "Doel 1/2/3"
+  - Prefills from `getDailyEntry` result
+  - Blur on input → `saveOutcomes` called with correct args
+  - Enter on Doel 1 → focus moves to Doel 2
+  - `mode:changed` → reloads and repopulates with new mode data
+  - Empty entry (first visit) → all inputs empty, no error
+
+- [ ] **V5c** `tests/blocks/bpv-quick-log/view.test.js`:
+  - Renders time inputs + Pauze + Notitie + Netto label + Opslaan button
+  - Prefills from existing `getHoursEntry` result
+  - No existing entry → all fields blank, Netto = "—"
+  - Start + End set, Break 30 → Netto computed correctly
+  - Net ≤ 0 → Opslaan button disabled
+  - Net > 0 → Opslaan enabled; click → `addHoursEntry` or `updateHoursEntry` called
+  - Valid save → `bpv:changed` emitted
+
+- [ ] **V5d** `npm test` — all tests pass (658 baseline + new tests)
+
+---
+
+### Phase V6 — Manual QA
+
+Run `docs/demo.md` Sections A–G. All 30 steps must pass.
+
+- [ ] Section A — Default home screen (2 checks)
+- [ ] Section B — Date header + mode selector (4 checks)
+- [ ] Section C — Top 3 outcomes (4 checks)
+- [ ] Section D — Next actions (6 checks)
+- [ ] Section E — Quick capture (4 checks)
+- [ ] Section F — BPV quick log (7 checks)
+- [ ] Section G — Cross-cutting (3 checks)
+
+---
+
+### Definition of Done
+
+- [ ] `npm test` passes (all tests)
+- [ ] `npm run build` produces valid `dist/`
+- [ ] App opens on Vandaag by default (no hash)
+- [ ] Hard reload restores: outcomes, todos (with done state), hours entry
+- [ ] Mode switch re-renders all 5 widgets with the new mode's data
+- [ ] BPV quick log absent in Personal mode; present in School + BPV
+- [ ] All new files within line-count limits (spec: `docs/vandaag-spec.md` §Component Size)
+- [ ] All user text through `escapeHTML()`
+- [ ] All event subscriptions cleaned up in `unmount()`
+- [ ] 0 console errors during QA run
+
+---
+
 ## Milestone: Dashboard Redesign — Never Empty, Always Useful
 
 **Date:** 2026-02-21

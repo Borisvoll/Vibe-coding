@@ -55,13 +55,7 @@ body {
   min-height: var(--nav-height);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  background: rgba(255, 255, 255, 0.88);
-}
-
-[data-theme="dark"] .app-header { background: rgba(25, 25, 25, 0.88); }
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .app-header { background: rgba(25, 25, 25, 0.88); }
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
 }
 
 .app-header-left { display: flex; align-items: center; gap: var(--space-2); }

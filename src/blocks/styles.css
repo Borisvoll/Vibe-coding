@@ -1253,16 +1253,8 @@
     border-bottom: 1px solid var(--color-border);
   }
 
-  /* Mobile nav must be visible and scrollable */
-  .os-nav--mobile {
-    display: block;
-    position: sticky;
-    top: auto;
-    z-index: 99;
-  }
-
   /* Ensure all buttons and interactive elements are tappable */
-  .os-nav__button,
+  .os-bottomnav__item,
   .os-mode-btn,
   .os-sidebar__item,
   .os-settings-btn,
@@ -1271,13 +1263,6 @@
   a {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
-  }
-
-  /* Minimum touch target size (44px) */
-  .os-nav__button {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
   }
 
   .os-mode-btn {

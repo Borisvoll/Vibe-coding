@@ -37,7 +37,7 @@
 }
 
 .conv-debrief__emoji {
-  font-size: 1.5rem;
+  font-size: var(--font-2xl);
   line-height: 1;
 }
 
@@ -128,5 +128,5 @@
 }
 
 .conv-debrief__log-emoji {
-  font-size: 0.875rem;
+  font-size: var(--font-md);
 }

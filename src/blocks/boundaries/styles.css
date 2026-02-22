@@ -52,7 +52,7 @@
   font-weight: 600;
   border-radius: var(--radius-md, 8px);
   opacity: 0;
-  transition: opacity 200ms, transform 200ms;
+  transition: opacity var(--duration-slow), transform var(--duration-slow);
   z-index: 3000;
   pointer-events: none;
 }

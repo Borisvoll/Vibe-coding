@@ -39,7 +39,7 @@
   min-width: 48px; text-align: center; line-height: 1;
 }
 .today-summary-text { display: flex; flex-direction: column; gap: var(--space-1); }
-.today-summary-text strong { font-size: 1rem; }
+.today-summary-text strong { font-size: var(--font-lg); }
 .today-summary-time { font-size: var(--font-base); color: var(--color-text-secondary); }
 
 .today-complete {
@@ -103,7 +103,7 @@
 
 /* ===== Hours ===== */
 .hours-week-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-6); }
-.hours-week-label { font-weight: 600; font-size: 1rem; }
+.hours-week-label { font-weight: 600; font-size: var(--font-lg); }
 .hours-day-row {
   display: flex; align-items: center; padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-border-light); cursor: pointer;

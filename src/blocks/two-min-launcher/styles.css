@@ -59,7 +59,7 @@
 }
 
 .two-min-launcher__emoji {
-  font-size: 1.25rem;
+  font-size: var(--font-xl);
   line-height: 1;
 }
 

@@ -197,7 +197,7 @@
 
 .life-dash__pulse-emoji {
   flex-shrink: 0;
-  font-size: 1.4rem;
+  font-size: var(--font-2xl);
   width: 2rem;
   height: 2rem;
   display: flex;
@@ -239,8 +239,8 @@
 .life-dash__pulse-arrow {
   flex-shrink: 0;
   color: var(--color-text-tertiary);
-  font-size: 0.9rem;
-  transition: transform 150ms var(--ease), color 150ms var(--ease);
+  font-size: var(--font-lg);
+  transition: transform var(--duration-fast) var(--ease), color var(--duration-fast) var(--ease);
 }
 
 .life-dash__pulse:hover .life-dash__pulse-arrow {

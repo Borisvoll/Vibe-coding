@@ -14,7 +14,7 @@ import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
 import { createAgentChat } from '../ui/agent-chat.js';
 import { createPomodoro } from '../ui/pomodoro.js';
-import { enhanceEmptyHosts } from '../ui/ambient-canvas.js';
+// ambient-canvas.js still available but empty states now use contextual hints
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
 
@@ -115,6 +115,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       buildVandaagLayout(mode);
       renderVandaagHeader(mode);
       initSearchBar();
+      showMorningNudge(mode);
     }
     if (tab === 'dashboard') {
       updateSectionTitles(mode);
@@ -188,23 +189,39 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   // ── Block mounting ────────────────────────────────────────
-  let cleanupAmbient = null;
+  const EMPTY_STATE_HINTS = {
+    'vandaag-hero':     { icon: '☀️', title: 'Stel je Top 3 in', desc: 'Klik op het ochtendplan om je dag te starten.' },
+    'vandaag-cockpit':  { icon: '📊', title: 'Je cockpit laadt...', desc: 'Zodra je taken toevoegt verschijnen hier je stats.' },
+    'vandaag-tasks':    { icon: '✓', title: 'Geen taken voor vandaag', desc: 'Druk op Ctrl+K → Nieuwe taak om te beginnen.' },
+    'vandaag-projects': { icon: '🚀', title: 'Geen actieve projecten', desc: 'Maak een project aan via het Projecten-tabblad.' },
+    'vandaag-capture':  { icon: '📥', title: 'Je inbox is leeg', desc: 'Goed bezig! Nieuwe ideeën verschijnen hier.' },
+    'vandaag-reflection':{ icon: '🪞', title: 'Reflectie', desc: 'Schrijf vanavond je gedachten van de dag op.' },
+    'vandaag-mode':     { icon: '📚', title: 'Context-blokken', desc: 'Modus-specifieke informatie verschijnt hier.' },
+    'vandaag-weekly':   { icon: '📅', title: 'Weekoverzicht', desc: 'Op vrijdag verschijnt hier je wekelijkse review.' },
+    'dashboard-cards':  { icon: '◫', title: 'Welkom bij BORIS', desc: 'Je dashboard vult zich naarmate je de app gebruikt.' },
+    'inbox-screen':     { icon: '📥', title: 'Je inbox is leeg', desc: 'Alles verwerkt! Gebruik Ctrl+I om snel iets vast te leggen.' },
+    'projects-hub':     { icon: '🚀', title: 'Nog geen projecten', desc: 'Begin met je eerste project — elk groot doel verdient er één.' },
+    'planning-main':    { icon: '📋', title: 'Planning', desc: 'Je planning wordt gevuld door projecten en taken.' },
+    'lijsten-screen':   { icon: '📝', title: 'Geen lijsten', desc: 'Maak je eerste lijst aan voor boodschappen, ideeën, of doelen.' },
+  };
 
   function ensureHostEmptyStates() {
-    if (cleanupAmbient) { cleanupAmbient(); cleanupAmbient = null; }
     routeContainer.querySelectorAll('[data-os-host]').forEach((host) => {
       if (host.children.length === 0) {
-        host.innerHTML = '<p class="os-host-empty">Nog geen actieve blokken voor deze weergave.</p>';
+        const hostName = host.getAttribute('data-os-host');
+        const hint = EMPTY_STATE_HINTS[hostName] || { icon: '·', title: 'Niets hier', desc: '' };
+        host.innerHTML = `
+          <div class="os-empty-state">
+            <span class="os-empty-state__icon">${hint.icon}</span>
+            <p class="os-empty-state__title">${hint.title}</p>
+            ${hint.desc ? `<p class="os-empty-state__desc">${hint.desc}</p>` : ''}
+          </div>
+        `;
       }
     });
-    // Replace blank placeholders with living ambient canvas
-    setTimeout(() => {
-      cleanupAmbient = enhanceEmptyHosts(routeContainer);
-    }, 50);
   }
 
   function unmountAll() {
-    if (cleanupAmbient) { cleanupAmbient(); cleanupAmbient = null; }
     mountedBlocks.forEach((entry) => { entry.instance?.unmount?.(); });
     mountedBlocks = [];
     routeContainer.querySelectorAll('[data-os-host]').forEach((host) => { host.innerHTML = ''; });
@@ -587,6 +604,38 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     app.querySelector('#mode-btn')?.focus();
   }
 
+  // ── Morning nudge (soft banner on Today page) ──────────────
+  async function showMorningNudge(mode) {
+    const shouldShow = await shouldAutoOpen(modeManager);
+    if (!shouldShow) return;
+
+    const headerEl = routeContainer.querySelector('[data-vandaag-header]');
+    if (!headerEl) return;
+
+    // Don't show if already there
+    if (headerEl.querySelector('.morning-nudge')) return;
+
+    const nudge = document.createElement('div');
+    nudge.className = 'morning-nudge';
+    nudge.innerHTML = `
+      <span class="morning-nudge__text">☀️ Goedemorgen! Wil je je dag plannen?</span>
+      <button type="button" class="morning-nudge__btn">Start ochtendplan</button>
+      <button type="button" class="morning-nudge__dismiss" aria-label="Sluiten">&times;</button>
+    `;
+
+    nudge.querySelector('.morning-nudge__btn').addEventListener('click', () => {
+      nudge.remove();
+      morningFlow.open();
+    });
+
+    nudge.querySelector('.morning-nudge__dismiss').addEventListener('click', () => {
+      nudge.classList.add('morning-nudge--out');
+      nudge.addEventListener('animationend', () => nudge.remove());
+    });
+
+    headerEl.insertAdjacentElement('afterend', nudge);
+  }
+
   // ── Shell chrome event listeners ──────────────────────────
 
   // Mode picker — card clicks
@@ -613,12 +662,49 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
   document.addEventListener('keydown', handleEscapeKey);
 
-  // Tab navigation (sidebar + mobile nav)
+  // Tab navigation (sidebar + mobile bottom nav + more menu)
   app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
+    // Skip the more button itself (it has no data-os-tab)
     tabButton.addEventListener('click', () => {
-      setActiveTab(tabButton.getAttribute('data-os-tab'));
+      const tab = tabButton.getAttribute('data-os-tab');
+      if (tab) {
+        setActiveTab(tab);
+        // Close more menu if open
+        const moreMenu = app.querySelector('#mobile-more-menu');
+        if (moreMenu) moreMenu.hidden = true;
+      }
     });
   });
+
+  // Mobile bottom nav — more menu toggle
+  const moreBtn = app.querySelector('#mobile-more-btn');
+  const moreMenu = app.querySelector('#mobile-more-menu');
+  moreBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    moreMenu.hidden = !moreMenu.hidden;
+  });
+  document.addEventListener('click', (e) => {
+    if (moreMenu && !moreMenu.hidden && !moreMenu.contains(e.target) && !moreBtn?.contains(e.target)) {
+      moreMenu.hidden = true;
+    }
+  });
+
+  // Search buttons (sidebar + mobile header) → open command palette
+  app.querySelector('#sidebar-search-btn')?.addEventListener('click', () => {
+    cmdPalette.open();
+  });
+  app.querySelector('#mobile-search-btn')?.addEventListener('click', () => {
+    cmdPalette.open();
+  });
+
+  // Curiosity tab visibility from settings
+  (async () => {
+    const curiosityEnabled = await getSetting('curiosity_enabled');
+    const curiosityBtn = app.querySelector('.os-sidebar__item--curiosity');
+    if (curiosityBtn && curiosityEnabled) {
+      curiosityBtn.hidden = false;
+    }
+  })();
 
   // Desktop topbar — sidebar toggle
   app.querySelector('#sidebar-toggle-btn')?.addEventListener('click', () => {
@@ -757,6 +843,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // inbox:open event
   const unsubscribeInboxOpen = eventBus.on('inbox:open', () => {
     setActiveTab('inbox');
+  });
+
+  // Remove morning nudge when flow completes
+  eventBus.on('morning:completed', () => {
+    const nudge = routeContainer?.querySelector('.morning-nudge');
+    if (nudge) {
+      nudge.classList.add('morning-nudge--out');
+      nudge.addEventListener('animationend', () => nudge.remove());
+    }
   });
 
   // ── Command registry + palette ──────────────────────────────

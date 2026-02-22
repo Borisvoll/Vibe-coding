@@ -31,6 +31,12 @@
   box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
+.tasks-block__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-surface-hover);
+}
+
 .tasks-block__list {
   display: flex;
   flex-direction: column;

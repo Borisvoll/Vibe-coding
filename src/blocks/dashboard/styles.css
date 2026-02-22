@@ -448,6 +448,88 @@
   vertical-align: middle;
 }
 
+/* ── Activity Feed ────────────────────────────────────────── */
+.life-dash__activity-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font-size: var(--font-sm);
+  font-family: inherit;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.life-dash__activity-toggle:hover {
+  color: var(--color-text-secondary);
+}
+
+.life-dash__activity-toggle[aria-expanded="true"] .life-dash__toggle-icon {
+  transform: rotate(180deg);
+}
+
+.life-dash__activity-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  animation: block-enter var(--duration-normal) var(--ease-out) both;
+}
+
+.life-dash__activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.life-dash__activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.life-dash__activity-item:hover {
+  background: var(--color-surface-hover);
+}
+
+.life-dash__activity-icon {
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  line-height: 1.5;
+}
+
+.life-dash__activity-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.life-dash__activity-text {
+  font-size: var(--font-sm);
+  color: var(--color-text);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.life-dash__activity-time {
+  font-size: var(--font-xs);
+  color: var(--color-text-tertiary);
+}
+
 /* ── Responsive ───────────────────────────────────────────── */
 @media (min-width: 600px) {
   .life-dash__layer--intent {

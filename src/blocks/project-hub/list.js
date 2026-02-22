@@ -1,8 +1,9 @@
-import { getProjects, addProject, getPinnedProject } from '../../stores/projects.js';
-import { getTasksByProject } from '../../stores/tasks.js';
+import { getProjects, addProject, updateProject, getPinnedProject } from '../../stores/projects.js';
+import { getTasksByProject, addTask } from '../../stores/tasks.js';
 import { getAllProjectsMomentum } from '../../stores/momentum.js';
 import { renderSparkline } from '../../ui/sparkline.js';
-import { escapeHTML } from '../../utils.js';
+import { escapeHTML, getToday } from '../../utils.js';
+import { PROJECT_TEMPLATES, applyTemplate } from '../../stores/project-templates.js';
 
 const PAGE_SIZE = 3;
 const STATUS_LABELS = { active: 'Actief', paused: 'Gepauzeerd', done: 'Gereed' };
@@ -26,8 +27,18 @@ export function renderProjectList(container, context, onOpen) {
         <button type="button" class="btn btn-primary btn-sm hub-list__new-btn">+ Nieuw project</button>
       </div>
       <form class="hub-list__new-form" hidden>
+        <div class="hub-list__templates" data-templates>
+          ${PROJECT_TEMPLATES.map((t) => `
+            <button type="button" class="hub-list__template-btn ${t.id === 'empty' ? 'hub-list__template-btn--active' : ''}"
+              data-template="${t.id}">
+              <span class="hub-list__template-icon">${t.icon}</span>
+              <span class="hub-list__template-label">${escapeHTML(t.label)}</span>
+            </button>
+          `).join('')}
+        </div>
         <input type="text" class="form-input hub-list__new-title" placeholder="Projectnaam..." autocomplete="off" required />
         <textarea class="form-input hub-list__new-goal" placeholder="Doel (optioneel)" rows="2"></textarea>
+        <input type="hidden" name="template" value="empty" data-template-value />
         <div class="hub-list__new-actions">
           <button type="submit" class="btn btn-primary btn-sm">Aanmaken</button>
           <button type="button" class="btn btn-ghost btn-sm" data-cancel>Annuleer</button>
@@ -57,17 +68,42 @@ export function renderProjectList(container, context, onOpen) {
     newForm.reset();
   });
 
+  // Template selection
+  listEl.querySelectorAll('[data-template]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      listEl.querySelectorAll('[data-template]').forEach((b) => b.classList.remove('hub-list__template-btn--active'));
+      btn.classList.add('hub-list__template-btn--active');
+      const templateInput = listEl.querySelector('[data-template-value]');
+      if (templateInput) templateInput.value = btn.dataset.template;
+    });
+  });
+
   newForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const title = newTitleInput.value.trim();
     if (!title) return;
     const goal = listEl.querySelector('.hub-list__new-goal').value.trim();
     const mode = modeManager.getMode();
-    await addProject(title, goal, mode);
+    const templateId = listEl.querySelector('[data-template-value]')?.value || 'empty';
+
+    const project = await addProject(title, goal, mode);
+
+    // Apply template if not empty
+    if (templateId !== 'empty' && project) {
+      const { milestones, phases, tasks } = applyTemplate(templateId);
+      if (milestones.length || phases.length) {
+        await updateProject(project.id, { milestones, phases });
+      }
+      for (const taskText of tasks) {
+        await addTask(taskText, mode, null, project.id);
+      }
+    }
+
     showNewForm = false;
     newForm.hidden = true;
     newForm.reset();
     eventBus.emit('projects:changed');
+    eventBus.emit('tasks:changed');
     await render();
   });
 

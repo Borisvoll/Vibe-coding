@@ -29,6 +29,8 @@ import './context-checklist/styles.css';
 import './project-detail/styles.css';
 import './project-hub/styles.css';
 import './history-browser/styles.css';
+import './schedule-placeholder/styles.css';
+import './tasks/styles.css';
 import '../ui/theme-studio.css';
 import '../ui/morning-flow.css';
 import { registerMorningFocusBlock } from './morning-focus/index.js';
@@ -62,6 +64,15 @@ import { registerProjectDetailBlock } from './project-detail/index.js';
 import { registerProjectHubBlock } from './project-hub/index.js';
 import { registerHistoryBrowserBlock } from './history-browser/index.js';
 import { registerHabitsBlock } from './habits/index.js';
+import { registerTasksBlock } from './tasks/index.js';
+import { registerSchedulePlaceholderBlock } from './schedule-placeholder/index.js';
+import { registerSchoolConceptVaultBlock } from './school-concept-vault/index.js';
+import { registerSchoolCurrentProjectBlock } from './school-current-project/index.js';
+import { registerSchoolMilestonesBlock } from './school-milestones/index.js';
+import { registerSchoolSkillTrackerBlock } from './school-skill-tracker/index.js';
+import { registerPersonalEnergyBlock } from './personal-energy/index.js';
+import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
+import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
 
 export function registerDefaultBlocks(registry) {
   // Level 1 — Focus (Today): hero + cockpit + tasks
@@ -90,6 +101,8 @@ export function registerDefaultBlocks(registry) {
   registerHistoryBrowserBlock(registry);
 
   // Mode-specific context blocks (vandaag-mode)
+  registerTasksBlock(registry);
+  registerSchedulePlaceholderBlock(registry);
   registerSchoolDashboardBlock(registry);
   registerSchoolTodayBlock(registry);
   registerPersonalDashboardBlock(registry);
@@ -99,6 +112,15 @@ export function registerDefaultBlocks(registry) {
   registerBPVLogSummaryBlock(registry);
   registerBPVWeeklyOverviewBlock(registry);
   registerBoundariesBlock(registry);
+
+  // Mode-specific dashboard cards
+  registerSchoolConceptVaultBlock(registry);
+  registerSchoolCurrentProjectBlock(registry);
+  registerSchoolMilestonesBlock(registry);
+  registerSchoolSkillTrackerBlock(registry);
+  registerPersonalEnergyBlock(registry);
+  registerPersonalWeekPlanningBlock(registry);
+  registerPersonalWeeklyReflectionBlock(registry);
 
   // Planning tab — project detail view
   registerProjectDetailBlock(registry);

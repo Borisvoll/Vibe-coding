@@ -1,5 +1,5 @@
 import { setCover, setAccentColor } from '../../../stores/projects.js';
-import { escapeHTML } from '../../../utils.js';
+import { escapeHTML, sanitizeDataURL } from '../../../utils.js';
 
 const MAX_MB = 15;
 const MAX_PIXELS = 1_000_000;
@@ -54,18 +54,20 @@ export function renderBannerTab(host, project, context) {
   }
 
   function renderCoverPreview() {
-    const isPdf = project.cover.startsWith('data:application/pdf');
+    const safeCover = sanitizeDataURL(project.cover);
+    if (!safeCover) return renderCoverPlaceholder();
+    const isPdf = safeCover.startsWith('data:application/pdf');
     if (isPdf) {
       return `
         <div class="hub-banner__cover-preview hub-banner__cover-preview--pdf">
           <span>\u{1F4D5}</span>
-          <a href="${project.cover}" download="cover.pdf" class="btn btn-ghost btn-sm">Cover downloaden (PDF)</a>
+          <a href="${escapeHTML(safeCover)}" download="cover.pdf" class="btn btn-ghost btn-sm">Cover downloaden (PDF)</a>
           <button type="button" class="btn btn-ghost btn-sm" data-remove-cover>Verwijder</button>
         </div>`;
     }
     return `
       <div class="hub-banner__cover-preview">
-        <img src="${project.cover}" alt="Cover" class="hub-banner__cover-img" />
+        <img src="${escapeHTML(safeCover)}" alt="Cover" class="hub-banner__cover-img" />
         <button type="button" class="btn btn-ghost btn-sm hub-banner__cover-remove" data-remove-cover>
           Cover verwijderen
         </button>

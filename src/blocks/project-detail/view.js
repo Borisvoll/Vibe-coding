@@ -127,7 +127,7 @@ export function renderProjectDetail(container, context) {
   // Check for deep-link project selection from URL hash
   function checkDeepLink() {
     const hash = window.location.hash;
-    const match = hash.match(/planning\/([a-f0-9-]+)/);
+    const match = hash.match(/projects\/([a-f0-9-]+)/);
     if (match) {
       selectedProjectId = match[1];
     }

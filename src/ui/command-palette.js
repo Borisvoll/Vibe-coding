@@ -1,4 +1,5 @@
 import { escapeHTML, debounce } from '../utils.js';
+import { globalSearchGrouped } from '../stores/search.js';
 
 /** Group display order for commands. */
 const CMD_GROUP_ORDER = ['navigate', 'create'];
@@ -140,7 +141,6 @@ export function createCommandPalette({ onNavigate, eventBus, commands }) {
         const timeout = setTimeout(async () => {
           pendingSearches.delete(id);
           try {
-            const { globalSearchGrouped } = await import('../stores/search.js');
             resolve(await globalSearchGrouped(query));
           } catch {
             resolve([]);
@@ -150,7 +150,6 @@ export function createCommandPalette({ onNavigate, eventBus, commands }) {
         worker.postMessage({ type: 'SEARCH', query, id });
       });
     }
-    const { globalSearchGrouped } = await import('../stores/search.js');
     return globalSearchGrouped(query);
   }
 

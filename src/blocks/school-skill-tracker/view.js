@@ -1,4 +1,5 @@
 import { escapeHTML } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import { listSkills, saveSkill } from './store.js';
 import './styles.css';
 
@@ -37,6 +38,7 @@ export function renderSchoolSkillTracker(container) {
           evidenceLinks: item.querySelector('[data-field="evidenceLinks"]').value.trim(),
         };
         await saveSkill(skill);
+        showToast('Opgeslagen');
         render();
       });
     });

@@ -1,7 +1,9 @@
 import { escapeHTML } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import { getBPVTodaySnapshot, getQuickReflection, getTimerState, saveQuickReflection, setTimerState } from './store.js';
 
-export function renderBPVToday(container) {
+export function renderBPVToday(container, context) {
+  const { eventBus } = context || {};
   const mountId = `bpv-today-${crypto.randomUUID()}`;
 
   async function render() {
@@ -37,19 +39,23 @@ export function renderBPVToday(container) {
 
     host.querySelector('[data-action="start"]')?.addEventListener('click', async () => {
       await setTimerState({ running: true, paused: false, startedAt: new Date().toISOString() });
+      eventBus?.emit('bpv:changed');
       render();
     });
     host.querySelector('[data-action="pauze"]')?.addEventListener('click', async () => {
       await setTimerState({ ...timer, running: true, paused: true, pausedAt: new Date().toISOString() });
+      eventBus?.emit('bpv:changed');
       render();
     });
     host.querySelector('[data-action="stop"]')?.addEventListener('click', async () => {
       await setTimerState({ running: false, paused: false, stoppedAt: new Date().toISOString() });
+      eventBus?.emit('bpv:changed');
       render();
     });
     host.querySelector('[data-action="save"]')?.addEventListener('click', async () => {
       const value = host.querySelector('[data-field="reflectie"]').value;
       await saveQuickReflection(value);
+      showToast('Reflectie opgeslagen');
       render();
     });
   }

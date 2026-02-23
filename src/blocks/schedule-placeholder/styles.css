@@ -10,6 +10,61 @@
   color: var(--color-text-secondary);
 }
 
+.schedule-placeholder__section {
+  margin-bottom: var(--space-3);
+}
+
+.schedule-placeholder__subtitle {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.schedule-placeholder__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.schedule-placeholder__goal {
+  padding: var(--space-1) 0;
+  font-size: var(--font-base);
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
+}
+
+.schedule-placeholder__goal::before {
+  content: '◎ ';
+  color: var(--color-accent, var(--color-purple));
+}
+
+.schedule-placeholder__todo {
+  padding: var(--space-1) 0;
+  font-size: var(--font-base);
+  border-bottom: 1px solid var(--color-border-light, var(--color-border));
+}
+
+.schedule-placeholder__todo::before {
+  content: '○ ';
+  color: var(--color-text-tertiary);
+}
+
+.schedule-placeholder__todo--done {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+}
+
+.schedule-placeholder__todo--done::before {
+  content: '✓ ';
+  color: var(--color-success);
+}
+
+.schedule-placeholder__list--done {
+  opacity: 0.7;
+}
+
 .schedule-placeholder__empty {
   padding: var(--space-3);
   border: 1px dashed var(--color-border);

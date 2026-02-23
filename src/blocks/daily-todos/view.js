@@ -78,7 +78,8 @@ export function renderDailyTodos(container, context) {
 
     listEl.querySelectorAll('.daily-todos__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const id = btn.closest('.daily-todos__item').dataset.id;
+        const id = btn.closest('.daily-todos__item')?.dataset?.id;
+        if (!id) return;
         const currentMode = modeManager.getMode();
         await toggleTodo(currentMode, today, id);
         eventBus.emit('daily:changed', { mode: currentMode, date: today });
@@ -87,7 +88,8 @@ export function renderDailyTodos(container, context) {
 
     listEl.querySelectorAll('.daily-todos__delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const id = btn.closest('.daily-todos__item').dataset.id;
+        const id = btn.closest('.daily-todos__item')?.dataset?.id;
+        if (!id) return;
         const currentMode = modeManager.getMode();
         await deleteTodo(currentMode, today, id);
         eventBus.emit('daily:changed', { mode: currentMode, date: today });

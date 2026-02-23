@@ -1,4 +1,5 @@
 import { escapeHTML } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import { deleteConcept, listConcepts, saveConcept } from './store.js';
 import './styles.css';
 
@@ -49,6 +50,7 @@ export function renderSchoolConceptVault(container) {
       const tags = parseTags(host.querySelector('[data-field="tags"]').value);
       if (!title || !explanation) return;
       await saveConcept({ title, projectLink, explanation, tags });
+      showToast('Concept opgeslagen');
       render();
     });
 

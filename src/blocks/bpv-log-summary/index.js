@@ -8,8 +8,8 @@ export function registerBPVLogSummaryBlock(registry) {
     modes: ['BPV'],
     enabled: true,
     order: 30,
-    mount(container) {
-      return renderBPVLogSummary(container);
+    mount(container, context) {
+      return renderBPVLogSummary(container, context);
     },
   });
 }

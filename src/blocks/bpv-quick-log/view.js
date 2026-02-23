@@ -1,5 +1,5 @@
 import { addHoursEntry, getHoursEntry } from '../../stores/bpv.js';
-import { getToday, formatDateShort, calcNetMinutes, formatMinutes, escapeHTML } from '../../utils.js';
+import { getToday, formatDateShort, calcNetMinutes, formatMinutes, escapeHTML, debounce } from '../../utils.js';
 import { DAY_TYPES, DAY_TYPE_LABELS } from '../../constants.js';
 import { expandBPVNote } from '../../ai/client.js';
 
@@ -95,6 +95,8 @@ export function renderBPVQuickLog(container, context) {
     const entry = await getHoursEntry(today);
     if (!entry) {
       setType('work');
+      el.querySelector('[data-field="startTime"]').value = '08:00';
+      updateNet();
       return;
     }
     setType(entry.type || 'work');
@@ -108,37 +110,60 @@ export function renderBPVQuickLog(container, context) {
     setStatus('Bestaande invoer geladen');
   }
 
+  // ── Core save logic (shared between manual + auto-save) ──
+  async function doSave({ silent = false } = {}) {
+    const startTime = el.querySelector('[data-field="startTime"]').value || null;
+    const endTime = el.querySelector('[data-field="endTime"]').value || null;
+    const breakMinutes = Number(el.querySelector('[data-field="breakMinutes"]').value) || 0;
+    const note = el.querySelector('[data-field="note"]').value;
+
+    if (activeType === 'work') {
+      if (!startTime || !endTime) {
+        if (!silent) {
+          setStatus('Vul start- en eindtijd in.', true);
+          const focusField = !startTime ? 'startTime' : 'endTime';
+          el.querySelector(`[data-field="${focusField}"]`)?.focus();
+        }
+        return false;
+      }
+      const net = calcNetMinutes(startTime, endTime, breakMinutes);
+      if (net <= 0) {
+        if (!silent) setStatus('Eindtijd moet na starttijd liggen.', true);
+        return false;
+      }
+    }
+
+    await addHoursEntry(today, { type: activeType, startTime, endTime, breakMinutes, note });
+    if (!silent) setStatus('Opgeslagen ✓');
+    updateNet();
+    eventBus?.emit('bpv:changed', { date: today });
+    return true;
+  }
+
   // Type buttons
   typeRow.addEventListener('click', (e) => {
     const btn = e.target.closest('.bpv-ql__type-btn');
-    if (btn) setType(btn.dataset.type);
+    if (!btn) return;
+    setType(btn.dataset.type);
+    // Auto-save non-work types immediately (no time fields needed)
+    if (btn.dataset.type !== 'work') doSave({ silent: true });
   });
 
-  // Live net calculation
-  el.querySelectorAll('[data-field="startTime"], [data-field="endTime"], [data-field="breakMinutes"]')
-    .forEach((input) => input.addEventListener('input', updateNet));
+  // Auto-save on field change (debounced)
+  const autoSave = debounce(() => doSave({ silent: true }), 800);
 
-  // Save
+  // Live net calculation + auto-save
+  el.querySelectorAll('[data-field="startTime"], [data-field="endTime"], [data-field="breakMinutes"]')
+    .forEach((input) => input.addEventListener('input', () => { updateNet(); autoSave(); }));
+
+  // Auto-save note changes
+  el.querySelector('[data-field="note"]')?.addEventListener('input', autoSave);
+
+  // Manual save (fallback)
   saveBtn.addEventListener('click', async () => {
     saveBtn.disabled = true;
     try {
-      const startTime = el.querySelector('[data-field="startTime"]').value || null;
-      const endTime = el.querySelector('[data-field="endTime"]').value || null;
-      const breakMinutes = Number(el.querySelector('[data-field="breakMinutes"]').value) || 0;
-      const note = el.querySelector('[data-field="note"]').value;
-
-      if (activeType === 'work' && startTime && endTime) {
-        const net = calcNetMinutes(startTime, endTime, breakMinutes);
-        if (net <= 0) {
-          setStatus('Eindtijd moet na starttijd liggen.', true);
-          return;
-        }
-      }
-
-      await addHoursEntry(today, { type: activeType, startTime, endTime, breakMinutes, note });
-      setStatus('Opgeslagen ✓');
-      updateNet();
-      eventBus?.emit('bpv:changed', { date: today });
+      await doSave();
     } catch (err) {
       setStatus(`Fout: ${err.message}`, true);
     } finally {

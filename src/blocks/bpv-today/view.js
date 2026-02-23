@@ -24,9 +24,9 @@ export function renderBPVToday(container, context) {
       </ul>
       <div class="school-inline-form">
         <span class="badge badge-default">Uren: ${escapeHTML(String(snapshot.netHours ?? '--:--'))}</span>
-        <button class="btn btn-secondary btn-sm" data-action="start">Start</button>
-        <button class="btn btn-secondary btn-sm" data-action="pauze">Pauze</button>
-        <button class="btn btn-secondary btn-sm" data-action="stop">Stop</button>
+        <button class="btn btn-secondary btn-sm" data-action="start" ${timer.running ? 'disabled' : ''}>Start</button>
+        <button class="btn btn-secondary btn-sm" data-action="pauze" ${!timer.running ? 'disabled' : ''}>${timer.paused ? 'Hervat' : 'Pauze'}</button>
+        <button class="btn btn-secondary btn-sm" data-action="stop" ${!timer.running ? 'disabled' : ''}>Stop</button>
       </div>
       <p class="school-block__subtitle">Timerstatus: ${timer.running ? (timer.paused ? 'gepauzeerd' : 'actief') : 'gestopt'}</p>
       <p class="school-block__subtitle">Leermoment: ${escapeHTML(snapshot.learningMoment?.title || snapshot.learningMoment?.lesson || 'Nog geen leermoment vandaag.')}</p>
@@ -39,27 +39,39 @@ export function renderBPVToday(container, context) {
     `;
 
     host.querySelector('[data-action="start"]')?.addEventListener('click', async () => {
-      await setTimerState({ running: true, paused: false, startedAt: new Date().toISOString() });
+      await setTimerState({ running: true, paused: false, startedAt: new Date().toISOString(), totalPausedMs: 0 });
       eventBus?.emit('bpv:changed');
       render();
     });
     host.querySelector('[data-action="pauze"]')?.addEventListener('click', async () => {
-      await setTimerState({ ...timer, running: true, paused: true, pausedAt: new Date().toISOString() });
+      if (timer.paused) {
+        // Resume — accumulate paused time
+        const pausedMs = (timer.totalPausedMs || 0) + (Date.now() - new Date(timer.pausedAt).getTime());
+        await setTimerState({ ...timer, paused: false, pausedAt: null, totalPausedMs: pausedMs });
+      } else {
+        // Pause — record pause start
+        await setTimerState({ ...timer, paused: true, pausedAt: new Date().toISOString() });
+      }
       eventBus?.emit('bpv:changed');
       render();
     });
     host.querySelector('[data-action="stop"]')?.addEventListener('click', async () => {
       const now = new Date();
       await setTimerState({ running: false, paused: false, stoppedAt: now.toISOString() });
-      // Save actual hours when timer has a valid start time
       if (timer.startedAt) {
         const start = new Date(timer.startedAt);
         const toHHMM = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        // Calculate total paused time as break minutes
+        let pausedMs = timer.totalPausedMs || 0;
+        if (timer.paused && timer.pausedAt) {
+          pausedMs += now.getTime() - new Date(timer.pausedAt).getTime();
+        }
+        const breakMinutes = Math.round(pausedMs / 60000);
         await addHoursEntry(getToday(), {
           type: 'work',
           startTime: toHHMM(start),
           endTime: toHHMM(now),
-          breakMinutes: 0,
+          breakMinutes,
         });
         showToast('Uren opgeslagen via timer');
       }

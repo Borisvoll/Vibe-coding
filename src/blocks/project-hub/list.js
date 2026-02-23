@@ -2,7 +2,7 @@ import { getProjects, addProject, updateProject, getPinnedProject } from '../../
 import { getTasksByProject, addTask } from '../../stores/tasks.js';
 import { getAllProjectsMomentum } from '../../stores/momentum.js';
 import { renderSparkline } from '../../ui/sparkline.js';
-import { escapeHTML, getToday } from '../../utils.js';
+import { escapeHTML, getToday, sanitizeDataURL } from '../../utils.js';
 import { PROJECT_TEMPLATES, applyTemplate } from '../../stores/project-templates.js';
 
 const PAGE_SIZE = 3;
@@ -202,11 +202,11 @@ export function renderProjectList(container, context, onOpen) {
 
     // Apply cover images via JS (avoids embedding large base64 in HTML attributes)
     gridEl.querySelectorAll('.hub-card').forEach((card, idx) => {
-      const cover = cardData[idx]?.cover;
+      const cover = sanitizeDataURL(cardData[idx]?.cover);
       if (cover) {
         const coverEl = card.querySelector('[data-cover-target]');
         if (coverEl) {
-          coverEl.style.backgroundImage = `url('${cover}')`;
+          coverEl.style.backgroundImage = `url('${cover.replace(/'/g, "\\'")}')`;
           coverEl.style.backgroundSize = 'cover';
           coverEl.style.backgroundPosition = 'center';
         }

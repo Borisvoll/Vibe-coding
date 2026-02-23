@@ -37,6 +37,7 @@ export function renderSchoolSkillTracker(container) {
           evidenceLinks: item.querySelector('[data-field="evidenceLinks"]').value.trim(),
         };
         await saveSkill(skill);
+        render();
       });
     });
   }

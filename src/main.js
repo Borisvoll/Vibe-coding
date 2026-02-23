@@ -12,7 +12,7 @@ import './styles/components.css';
 import './styles/pages.css';
 import './styles/print.css';
 
-import { initDB, getSetting, purgeDeletedOlderThan } from './db.js';
+import { initDB, getSetting, setSetting, getAll, put, purgeDeletedOlderThan } from './db.js';
 import { seedModeConfigIfNeeded, getModeById, archiveMode } from './core/modeConfig.js';
 import { initTheme } from './core/themeEngine.js';
 import { createEventBus } from './core/eventBus.js';
@@ -24,6 +24,12 @@ import { APP_VERSION } from './version.js';
 import { createOSShell } from './os/shell.js';
 import { initBalatro } from './ui/balatro.js';
 import { initClickSound } from './ui/clickSound.js';
+import { BPV_END } from './constants.js';
+import { getToday } from './utils.js';
+import { showToast } from './toast.js';
+import { purgeOldReviewMarkers } from './stores/weekly-review.js';
+import { purgeOldDoneTasks } from './stores/tasks.js';
+import { applyDefaultPresetForMode } from './core/modulePresets.js';
 
 export const SCHEMA_VERSION = 9;
 
@@ -58,9 +64,9 @@ async function init() {
   // Purge soft-deleted tombstones older than 30 days (fire-and-forget)
   purgeDeletedOlderThan(30).catch(() => { /* non-critical */ });
   // Purge weekly-review sent markers older than 52 weeks (fire-and-forget)
-  import('./stores/weekly-review.js').then(m => m.purgeOldReviewMarkers(52)).catch(() => { /* non-critical */ });
+  purgeOldReviewMarkers(52).catch(() => { /* non-critical */ });
   // Purge completed tasks older than 30 days to keep os_tasks store lean (fire-and-forget)
-  import('./stores/tasks.js').then(m => m.purgeOldDoneTasks(30)).catch(() => { /* non-critical */ });
+  purgeOldDoneTasks(30).catch(() => { /* non-critical */ });
   await initServiceWorker();
   initBalatro();
 
@@ -69,8 +75,6 @@ async function init() {
 
 async function checkBPVRetirement() {
   try {
-    const { BPV_END } = await import('./constants.js');
-    const { getToday } = await import('./utils.js');
     const today = getToday();
     if (today <= BPV_END) return;
 
@@ -83,10 +87,8 @@ async function checkBPVRetirement() {
     // Show one-time notification (deferred so it doesn't block init)
     const notified = await getSetting('bpv_retirement_notified');
     if (!notified) {
-      const { setSetting } = await import('./db.js');
       await setSetting('bpv_retirement_notified', true);
-      setTimeout(async () => {
-        const { showToast } = await import('./toast.js');
+      setTimeout(() => {
         showToast('Je BPV-periode is afgelopen. BPV-modus is gearchiveerd. Je data blijft bewaard.', { type: 'info', duration: 8000 });
       }, 2000);
     }
@@ -96,7 +98,6 @@ async function checkBPVRetirement() {
 async function ensureDeviceId() {
   const existing = await getSetting('device_id');
   if (!existing) {
-    const { setSetting } = await import('./db.js');
     await setSetting('device_id', crypto.randomUUID());
   }
 }
@@ -105,7 +106,6 @@ async function migratePersonalTasks() {
   const migrated = await getSetting('migration_personal_tasks_done');
   if (migrated) return;
 
-  const { getAll, put, setSetting } = await import('./db.js');
   const oldTasks = await getAll('os_personal_tasks');
   if (oldTasks.length > 0) {
     for (const task of oldTasks) {
@@ -131,8 +131,7 @@ async function checkExportReminder() {
   const daysSince = Math.floor((Date.now() - new Date(lastExport).getTime()) / 86400000);
   if (daysSince >= 7) {
     // Defer the toast so it doesn't block init
-    setTimeout(async () => {
-      const { showToast } = await import('./toast.js');
+    setTimeout(() => {
       showToast(`Laatste backup: ${daysSince} dagen geleden. Exporteer je data via Instellingen.`, { type: 'info', duration: 8000 });
     }, 2000);
   }
@@ -149,7 +148,6 @@ async function initNewOSShell() {
   await modeManager.loadModes();
 
   // Set mode-appropriate preset on first run (before blocks mount)
-  const { applyDefaultPresetForMode } = await import('./core/modulePresets.js');
   applyDefaultPresetForMode(modeManager.getMode());
 
   const blockRegistry = createBlockRegistry();

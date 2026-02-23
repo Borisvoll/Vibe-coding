@@ -39,7 +39,7 @@ export function renderSchoolToday(container) {
     const host = container.querySelector(`[data-block-id="${mountId}"]`);
     if (!host) return;
 
-    const [tasks, , learning, homework] = await Promise.all([
+    const [tasks, project, learning, homework] = await Promise.all([
       listFocusTasks(),
       getCurrentProjectPointer(),
       getLearningCapture(),
@@ -60,6 +60,24 @@ export function renderSchoolToday(container) {
         ${tasks.map((item) => `<li>${escapeHTML(item.text || item.title || '')} <button class="btn btn-ghost btn-sm" data-action="del" data-id="${item.id}">×</button></li>`).join('') || '<li><small>Geen focustaken.</small></li>'}
       </ul>
       <p class="school-block__subtitle">Projectfocus: ${escapeHTML(project?.building || '–')} / ${escapeHTML(project?.learning || '–')}</p>
+
+      <p class="school-block__subtitle">Huiswerk (${pendingHW} openstaand${overdueHW > 0 ? `, ${overdueHW} te laat` : ''})</p>
+      <div class="school-inline-form">
+        <input class="form-input" data-field="hw-title" placeholder="Huiswerk" style="flex:2">
+        <input class="form-input" data-field="hw-subject" placeholder="Vak" style="flex:1">
+        <input class="form-input" data-field="hw-date" type="date" style="flex:1">
+        <button class="btn btn-secondary btn-sm" data-action="add-hw">+</button>
+      </div>
+      <ul class="personal-list">
+        ${homework.length === 0 ? '<li><small>Geen huiswerk.</small></li>' : homework.map((hw) => `
+          <li class="hw-item ${hwUrgencyClass(hw.dueDate)} ${hw.done ? 'hw-item--done' : ''}">
+            <button class="btn btn-ghost btn-sm" data-action="toggle-hw" data-id="${hw.id}">${hw.done ? '✓' : '○'}</button>
+            <span>${escapeHTML(hw.title)}${hw.subject ? ` <small>(${escapeHTML(hw.subject)})</small>` : ''}${hw.dueDate ? ` <small class="hw-due">${hwDueLabel(hw.dueDate)}</small>` : ''}</span>
+            <button class="btn btn-ghost btn-sm" data-action="del-hw" data-id="${hw.id}">×</button>
+          </li>
+        `).join('')}
+      </ul>
+
       <label class="school-block__field"><span>Wat heb ik vandaag echt begrepen?</span><input class="form-input" data-field="learning" value="${escapeHTML(learning)}"></label>
       <div class="school-inline-form">
         <a class="btn btn-ghost btn-sm" href="#planning">Naar mijlpalen</a>

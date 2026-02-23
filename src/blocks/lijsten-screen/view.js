@@ -4,7 +4,7 @@ import {
   toggleItem, updateItem, deleteItem, getItemCount,
   reorderItems,
 } from '../../stores/lists.js';
-import { escapeHTML } from '../../utils.js';
+import { escapeHTML, sanitizeColor } from '../../utils.js';
 import { showConfirm, showPrompt } from '../../ui/modal.js';
 
 const PRIORITY_META = [
@@ -127,7 +127,7 @@ export function mountLijstenScreen(container, context) {
       const icon = list.icon ? escapeHTML(list.icon) : '📋';
       const remaining = c.total - c.done;
       const countText = remaining > 0 ? `${remaining}` : '';
-      const colorDot = list.color ? `<span class="lijsten-screen__nav-dot" style="background:${list.color}"></span>` : '';
+      const colorDot = list.color ? `<span class="lijsten-screen__nav-dot" style="background:${sanitizeColor(list.color)}"></span>` : '';
       return `
         <button type="button" class="lijsten-screen__nav-item ${active ? 'lijsten-screen__nav-item--active' : ''}" data-list-id="${list.id}">
           ${colorDot}

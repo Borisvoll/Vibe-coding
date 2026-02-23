@@ -2,7 +2,7 @@ import { APP_VERSION } from '../version.js';
 import { ACCENT_COLORS } from '../constants.js';
 import { setTheme } from '../core/themeEngine.js';
 import { getSetting, setSetting } from '../db.js';
-import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList } from '../core/tutorial.js';
+import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList, startTutorial } from '../core/tutorial.js';
 import { createThemeStudio } from '../ui/theme-studio.js';
 import { getApiKey, setApiKey } from '../ai/client.js';
 
@@ -221,7 +221,7 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         container.querySelectorAll('[data-tutorial="on"]').forEach((b) => b.classList.add('settings-mode-pill--active'));
         container.querySelectorAll('[data-tutorial="off"]').forEach((b) => b.classList.remove('settings-mode-pill--active'));
         // Start tutorial immediately after restart
-        import('../core/tutorial.js').then(({ startTutorial }) => startTutorial());
+        startTutorial();
       }
     });
   });

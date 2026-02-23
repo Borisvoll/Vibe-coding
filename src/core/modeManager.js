@@ -1,4 +1,4 @@
-import { isValidModeSync } from './modeConfig.js';
+import { isValidModeSync, getActiveModeIds } from './modeConfig.js';
 
 const FALLBACK_MODES = ['BPV', 'School', 'Personal'];
 const STORAGE_KEY = 'boris_mode';
@@ -53,7 +53,6 @@ export function createModeManager(eventBus, initialMode = 'School') {
    */
   async function loadModes() {
     try {
-      const { getActiveModeIds } = await import('./modeConfig.js');
       const activeIds = await getActiveModeIds();
       if (activeIds.length > 0) {
         activeModes = activeIds;

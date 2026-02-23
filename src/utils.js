@@ -248,6 +248,29 @@ export function escapeHTML(str) {
 }
 
 /**
+ * Sanitize a data URL for safe use in src/href attributes.
+ * Only allows data: URIs. Returns '' for anything else.
+ */
+export function sanitizeDataURL(url) {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('data:')) return url;
+  return '';
+}
+
+/**
+ * Sanitize a CSS color value for safe use in inline style attributes.
+ * Allows hex, var() references, rgb/hsl functions, and named colors.
+ * Returns '' for anything that doesn't match.
+ */
+const SAFE_COLOR_RE = /^(#[0-9a-fA-F]{3,8}|var\(--[a-zA-Z0-9_-]+(?:,\s*[^)]+)?\)|(?:rgb|hsl)a?\([^()]*\)|[a-zA-Z]{3,20})$/;
+export function sanitizeColor(value) {
+  if (!value || typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (SAFE_COLOR_RE.test(trimmed)) return trimmed;
+  return '';
+}
+
+/**
  * Truncate text to max length
  */
 export function truncate(str, max = 120) {

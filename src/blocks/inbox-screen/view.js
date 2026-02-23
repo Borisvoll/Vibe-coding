@@ -3,7 +3,7 @@ import {
   saveToReference, archiveItem, deleteItem, getInboxCount,
 } from '../../stores/inbox.js';
 import { softDelete, undoDelete } from '../../db.js';
-import { showUndoToast } from '../../toast.js';
+import { showUndoToast, showToast } from '../../toast.js';
 import { escapeHTML } from '../../utils.js';
 import { triageInboxItem } from '../../ai/client.js';
 
@@ -56,8 +56,6 @@ export function renderInboxScreen(container, context) {
     await addInboxItem(text, mode !== 'BPV' ? mode : null);
     captureInput.value = '';
 
-    // Toast feedback
-    const { showToast } = await import('../../toast.js');
     showToast('Vastgelegd!');
 
     eventBus.emit('inbox:changed');

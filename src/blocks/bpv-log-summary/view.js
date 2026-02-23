@@ -1,7 +1,8 @@
 import { getTodayHours, getTodayLogbook, formatHoursSummary } from './store.js';
 import { getToday, escapeHTML, truncate } from '../../utils.js';
 
-export function renderBPVLogSummary(container) {
+export function renderBPVLogSummary(container, context) {
+  const { eventBus } = context || {};
   const mountId = crypto.randomUUID();
   const today = getToday();
 
@@ -43,8 +44,11 @@ export function renderBPVLogSummary(container) {
 
   render();
 
+  const unsubBPV = eventBus?.on('bpv:changed', () => render());
+
   return {
     unmount() {
+      unsubBPV?.();
       el?.remove();
     },
   };

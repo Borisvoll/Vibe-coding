@@ -1,5 +1,5 @@
-import { addMilestone, removeMilestone, addPhase, removePhase } from '../../../stores/projects.js';
-import { escapeHTML, getToday } from '../../../utils.js';
+import { addMilestone, removeMilestone, addPhase, removePhase, updateProject } from '../../../stores/projects.js';
+import { escapeHTML, getToday, sanitizeColor } from '../../../utils.js';
 
 const MONTH_NAMES = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
   'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
@@ -128,7 +128,7 @@ export function renderTimelineTab(host, project, context) {
                 </div>
                 <div class="hub-timeline__day-body">
                   ${dayPhases.map((p) => `
-                    <div class="hub-timeline__phase-dot" style="background:${p.color || 'var(--color-accent)'}"
+                    <div class="hub-timeline__phase-dot" style="background:${sanitizeColor(p.color) || 'var(--color-accent)'}"
                       title="${escapeHTML(p.title)}"></div>
                   `).join('')}
                   ${dayMilestones.map((m) => `
@@ -275,7 +275,7 @@ export function renderTimelineTab(host, project, context) {
                 <div class="hub-gantt__track">
                   <div class="hub-gantt__bar ${isOverdue ? 'hub-gantt__bar--overdue' : ''}"
                     data-gantt-phase="${phase.id}"
-                    style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%;--phase-color:${phase.color || 'var(--color-accent)'}"
+                    style="left:${left.toFixed(2)}%;width:${width.toFixed(2)}%;--phase-color:${sanitizeColor(phase.color) || 'var(--color-accent)'}"
                     title="${escapeHTML(phase.title)}: ${phase.startDate} → ${phase.endDate}">
                     <span class="hub-gantt__bar-label">${escapeHTML(phase.title)}</span>
                     <span class="hub-gantt__bar-dates">${phase.startDate} – ${phase.endDate}</span>
@@ -318,7 +318,7 @@ export function renderTimelineTab(host, project, context) {
       <div class="hub-timeline__phase-legend">
         ${phases.map((p) => `
           <div class="hub-timeline__phase-entry">
-            <span class="hub-timeline__phase-swatch" style="background:${p.color || 'var(--color-accent)'}"></span>
+            <span class="hub-timeline__phase-swatch" style="background:${sanitizeColor(p.color) || 'var(--color-accent)'}"></span>
             <span>${escapeHTML(p.title)}</span>
             <small>${p.startDate} → ${p.endDate}</small>
             <button type="button" class="hub-timeline__remove" data-remove-phase="${p.id}" aria-label="Verwijder fase">×</button>
@@ -459,7 +459,7 @@ export function renderTimelineTab(host, project, context) {
         const milestone = currentMs.find((m) => m.id === milestoneId);
         if (!milestone || milestone.date === newDate) return;
         const updatedMs = currentMs.map((m) => m.id === milestoneId ? { ...m, date: newDate } : m);
-        const { updateProject } = await import('../../../stores/projects.js');
+
         const result = await updateProject(project.id, { milestones: updatedMs });
         if (result) { project.milestones = result.milestones; }
         eventBus.emit('projects:changed');
@@ -581,7 +581,6 @@ export function renderTimelineTab(host, project, context) {
       const updatedPhases = (project.phases || []).map((p) =>
         p.id === phaseId ? { ...p, startDate: newStart, endDate: newEnd } : p
       );
-      const { updateProject } = await import('../../../stores/projects.js');
       const result = await updateProject(project.id, { phases: updatedPhases });
       if (result) project.phases = result.phases;
       eventBus.emit('projects:changed');

@@ -231,7 +231,8 @@ export function renderProjects(container, context) {
     // Expand/collapse
     listEl.querySelectorAll('[data-expand]').forEach((summary) => {
       summary.addEventListener('click', () => {
-        const projectId = summary.closest('[data-project-id]').dataset.projectId;
+        const projectId = summary.closest('[data-project-id]')?.dataset?.projectId;
+        if (!projectId) return;
         expandedId = (expandedId === projectId) ? null : projectId;
         render();
       });
@@ -241,7 +242,8 @@ export function renderProjects(container, context) {
     listEl.querySelectorAll('[data-set-next-action]').forEach((form) => {
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const projectId = form.closest('[data-project-id]').dataset.projectId;
+        const projectId = form.closest('[data-project-id]')?.dataset?.projectId;
+        if (!projectId) return;
         const input = form.querySelector('[data-next-action-input]');
         const text = input.value.trim();
         if (!text) return;
@@ -258,7 +260,8 @@ export function renderProjects(container, context) {
     // Clear next action
     listEl.querySelectorAll('[data-clear-next-action]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const projectId = btn.closest('[data-project-id]').dataset.projectId;
+        const projectId = btn.closest('[data-project-id]')?.dataset?.projectId;
+        if (!projectId) return;
         await clearNextAction(projectId);
         eventBus.emit('projects:changed');
         await render();
@@ -268,7 +271,8 @@ export function renderProjects(container, context) {
     // Status change (active/paused/done)
     listEl.querySelectorAll('[data-project-status]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const projectId = btn.closest('[data-project-id]').dataset.projectId;
+        const projectId = btn.closest('[data-project-id]')?.dataset?.projectId;
+        if (!projectId) return;
         const status = btn.dataset.projectStatus;
         await updateProject(projectId, { status });
         if (expandedId === projectId) expandedId = null;
@@ -280,7 +284,8 @@ export function renderProjects(container, context) {
     // Delete
     listEl.querySelectorAll('[data-delete-project]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const projectId = btn.closest('[data-project-id]').dataset.projectId;
+        const projectId = btn.closest('[data-project-id]')?.dataset?.projectId;
+        if (!projectId) return;
         await deleteProject(projectId);
         if (expandedId === projectId) expandedId = null;
         eventBus.emit('projects:changed');

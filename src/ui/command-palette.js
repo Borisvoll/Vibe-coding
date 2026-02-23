@@ -1,4 +1,5 @@
 import { escapeHTML, debounce } from '../utils.js';
+import { globalSearchGrouped } from '../stores/search.js';
 
 /** Group display order for commands. */
 const CMD_GROUP_ORDER = ['navigate', 'create'];
@@ -140,7 +141,6 @@ export function createCommandPalette({ onNavigate, eventBus, commands }) {
         const timeout = setTimeout(async () => {
           pendingSearches.delete(id);
           try {
-            const { globalSearchGrouped } = await import('../stores/search.js');
             resolve(await globalSearchGrouped(query));
           } catch {
             resolve([]);
@@ -150,7 +150,6 @@ export function createCommandPalette({ onNavigate, eventBus, commands }) {
         worker.postMessage({ type: 'SEARCH', query, id });
       });
     }
-    const { globalSearchGrouped } = await import('../stores/search.js');
     return globalSearchGrouped(query);
   }
 
@@ -308,7 +307,7 @@ export function createCommandPalette({ onNavigate, eventBus, commands }) {
     if (altKey && item.type === 'project' && item.id) {
       onNavigate({ tab: 'projects', focus: null });
       setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('projects:open', { detail: { id: item.id } }));
+        eventBus?.emit('projects:open', { projectId: item.id });
       }, 120);
     } else {
       onNavigate({ tab: group.tab, focus: group.focus });

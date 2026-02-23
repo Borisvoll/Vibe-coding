@@ -88,6 +88,14 @@ export function scrollToFocus(root, focus) {
     try {
       const el = root.querySelector(sel);
       if (el) {
+        // Auto-expand parent collapsible section if collapsed
+        const section = el.closest('.collapsible-section');
+        if (section) {
+          const header = section.querySelector('.collapsible-section__header');
+          if (header && header.getAttribute('aria-expanded') === 'false') {
+            header.click();
+          }
+        }
         setTimeout(() => {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 200);

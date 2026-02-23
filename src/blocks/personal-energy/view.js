@@ -1,4 +1,5 @@
 import { escapeHTML } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import { getWellbeing, saveWellbeing } from './store.js';
 
 export function renderPersonalEnergy(container) {
@@ -23,6 +24,7 @@ export function renderPersonalEnergy(container) {
         mood: host.querySelector('[data-field="mood"]').value.trim(),
         gratitude: host.querySelector('[data-field="gratitude"]').value.trim(),
       });
+      showToast('Opgeslagen');
       render();
     });
   }

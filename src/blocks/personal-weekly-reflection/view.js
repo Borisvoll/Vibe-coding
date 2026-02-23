@@ -1,4 +1,5 @@
 import { escapeHTML, getISOWeek, getToday } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import { getReflection, saveReflection } from './store.js';
 
 export function renderPersonalWeeklyReflection(container) {
@@ -23,6 +24,7 @@ export function renderPersonalWeeklyReflection(container) {
         balanced: host.querySelector('[data-field="balanced"]').value.trim(),
         adjust: host.querySelector('[data-field="adjust"]').value.trim(),
       });
+      showToast('Opgeslagen');
       render();
     });
   }

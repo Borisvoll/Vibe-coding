@@ -1,5 +1,5 @@
 import { getAll, getSetting, setSetting } from '../../db.js';
-import { getToday } from '../../utils.js';
+import { getToday, formatMinutes } from '../../utils.js';
 
 const TIMER_KEY = 'os_bpv_timer_state';
 const REFLECTION_KEY = 'os_bpv_today_reflectie';
@@ -24,7 +24,7 @@ export async function getBPVTodaySnapshot() {
 
   return {
     topTasks: Array.isArray(todayPlan?.top3) ? todayPlan.top3.slice(0, 3) : [],
-    netHours: todayHours?.net || todayHours?.total || null,
+    netHours: todayHours?.netMinutes ? formatMinutes(todayHours.netMinutes) : null,
     learningMoment: todayLearning,
     activeGoal,
     activeProject,

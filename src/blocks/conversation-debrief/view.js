@@ -35,7 +35,7 @@ export function renderConversationDebrief(container) {
     return logs.sort((a, b) => (b.timestamp || '').localeCompare(a.timestamp || '')).slice(0, 10);
   }
 
-  function render() {
+  async function render() {
     if (step === 'rate') {
       wrapper.innerHTML = `
         <h3 class="conv-debrief__title">Gesprekscheck</h3>
@@ -102,7 +102,7 @@ export function renderConversationDebrief(container) {
         render();
       });
     } else {
-      renderHistory();
+      await renderHistory();
     }
   }
 

@@ -1,4 +1,4 @@
-import { getAll, getByIndex, getByIndexRange, getSetting, setSetting } from '../db.js';
+import { getAll, getByIndex, getByIndexRange, getSetting, setSetting, remove } from '../db.js';
 import { getToday, getISOWeek, getWeekDates, formatMinutes, formatDateShort } from '../utils.js';
 import { getWeeklyOverview } from './bpv.js';
 
@@ -161,7 +161,6 @@ export function isFriday() {
  * older than `maxWeeks` weeks. Safe to call at startup.
  */
 export async function purgeOldReviewMarkers(maxWeeks = 52) {
-  const { getAll, remove } = await import('../db.js');
   try {
     const allSettings = await getAll('settings');
     const cutoff = new Date();

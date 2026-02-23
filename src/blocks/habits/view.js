@@ -145,7 +145,8 @@ export function renderHabitsBlock(container, context) {
   function attachListeners() {
     listEl.querySelectorAll('.habits-block__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const id = btn.closest('.habits-block__item').dataset.habitId;
+        const id = btn.closest('.habits-block__item')?.dataset?.habitId;
+        if (!id) return;
         await toggleHabitLog(id);
         eventBus.emit('habits:changed');
       });

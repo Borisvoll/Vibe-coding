@@ -21,7 +21,7 @@ export const PRESETS = {
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
       'inbox', 'inbox-screen', 'projects', 'dashboard',
-      'school-dashboard', 'school-today', 'tasks', 'schedule-placeholder',
+      'school-dashboard', 'school-today', 'tasks', 'school-mini-card',
       'school-concept-vault', 'school-current-project',
       'school-milestones', 'school-skill-tracker',
       'weekly-review', 'lijsten', 'lijsten-screen',
@@ -35,7 +35,7 @@ export const PRESETS = {
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
       'inbox', 'inbox-screen', 'projects', 'dashboard',
       'bpv-today', 'bpv-quick-log', 'bpv-weekly-overview',
-      'bpv-log-summary', 'weekly-review', 'tasks', 'schedule-placeholder',
+      'bpv-log-summary', 'weekly-review', 'tasks', 'bpv-mini-card',
       'lijsten', 'lijsten-screen',
     ],
   },
@@ -46,7 +46,7 @@ export const PRESETS = {
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
       'inbox', 'inbox-screen', 'projects', 'dashboard',
-      'personal-dashboard', 'personal-today', 'tasks', 'schedule-placeholder',
+      'personal-dashboard', 'personal-today', 'tasks', 'personal-mini-card',
       'personal-energy', 'personal-week-planning', 'personal-weekly-reflection',
       'weekly-review', 'lijsten', 'lijsten-screen',
       // Personality-driven blocks

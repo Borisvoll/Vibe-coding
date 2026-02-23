@@ -40,7 +40,7 @@ const PHASE_COLLAPSE_DEFAULTS = {
   morning: {
     School:   { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
     Personal: { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
-    BPV:      { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
+    BPV:      { tasks: true,  projects: false, capture: false, reflection: false, mode: true,  weekly: false, history: false },
   },
   afternoon: {
     School:   { tasks: true,  projects: true,  capture: true,  reflection: false, mode: true,  weekly: false, history: false },

@@ -1,6 +1,7 @@
-import { escapeHTML } from '../../utils.js';
+import { escapeHTML, getToday } from '../../utils.js';
 import { showToast } from '../../toast.js';
 import { getBPVTodaySnapshot, getQuickReflection, getTimerState, saveQuickReflection, setTimerState } from './store.js';
+import { addHoursEntry } from '../../stores/bpv.js';
 
 export function renderBPVToday(container, context) {
   const { eventBus } = context || {};
@@ -48,7 +49,20 @@ export function renderBPVToday(container, context) {
       render();
     });
     host.querySelector('[data-action="stop"]')?.addEventListener('click', async () => {
-      await setTimerState({ running: false, paused: false, stoppedAt: new Date().toISOString() });
+      const now = new Date();
+      await setTimerState({ running: false, paused: false, stoppedAt: now.toISOString() });
+      // Save actual hours when timer has a valid start time
+      if (timer.startedAt) {
+        const start = new Date(timer.startedAt);
+        const toHHMM = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        await addHoursEntry(getToday(), {
+          type: 'work',
+          startTime: toHHMM(start),
+          endTime: toHHMM(now),
+          breakMinutes: 0,
+        });
+        showToast('Uren opgeslagen via timer');
+      }
       eventBus?.emit('bpv:changed');
       render();
     });

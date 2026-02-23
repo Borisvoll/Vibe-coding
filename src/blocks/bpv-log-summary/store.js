@@ -1,5 +1,5 @@
 import { getHoursByDate, getAll } from '../../db.js';
-import { getToday, formatMinutes, calcNetMinutes } from '../../utils.js';
+import { getToday, formatMinutes } from '../../utils.js';
 
 export async function getTodayHours() {
   const today = getToday();
@@ -14,9 +14,11 @@ export async function getTodayLogbook() {
 
 export function formatHoursSummary(hours) {
   if (!hours) return null;
-  const net = calcNetMinutes(hours.startTime, hours.endTime, hours.breakMinutes);
+  const net = hours.netMinutes || 0;
   return {
     formatted: formatMinutes(net),
-    detail: `${hours.startTime || '?'}–${hours.endTime || '?'}, ${hours.breakMinutes || 0}m pauze`,
+    detail: hours.type === 'work'
+      ? `${hours.startTime || '?'}–${hours.endTime || '?'}, ${hours.breakMinutes || 0}m pauze`
+      : hours.type || 'werk',
   };
 }

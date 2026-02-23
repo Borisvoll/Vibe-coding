@@ -122,7 +122,8 @@ export function renderLijsten(container, context) {
     // Attach header click handlers
     listsEl.querySelectorAll('.lijsten-block__list-header').forEach((header) => {
       header.addEventListener('click', () => {
-        const listId = header.closest('[data-list-id]').dataset.listId;
+        const listId = header.closest('[data-list-id]')?.dataset?.listId;
+        if (!listId) return;
         expandedListId = expandedListId === listId ? null : listId;
         render();
       });
@@ -179,7 +180,8 @@ export function renderLijsten(container, context) {
     // Toggle items
     bodyEl.querySelectorAll('.lijsten-block__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         await toggleItem(itemId);
         eventBus.emit('lists:changed');
       });
@@ -188,7 +190,8 @@ export function renderLijsten(container, context) {
     // Delete items
     bodyEl.querySelectorAll('.lijsten-block__item-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         await deleteItem(itemId);
         eventBus.emit('lists:changed');
       });

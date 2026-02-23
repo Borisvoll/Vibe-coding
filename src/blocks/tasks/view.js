@@ -91,7 +91,8 @@ export function renderTasks(container, context) {
 
     listEl.querySelectorAll('.tasks-block__checkbox').forEach((checkbox) => {
       checkbox.addEventListener('change', async () => {
-        const taskId = checkbox.closest('[data-task-id]').getAttribute('data-task-id');
+        const taskId = checkbox.closest('[data-task-id]')?.getAttribute('data-task-id');
+        if (!taskId) return;
         await toggleTask(taskId);
         await render();
       });

@@ -238,6 +238,7 @@ export function renderInboxScreen(container, context) {
       await promoteToTask(item.id, selectedProcessMode);
       eventBus.emit('tasks:changed');
       eventBus.emit('inbox:changed');
+      showToast(`Taak aangemaakt in ${selectedProcessMode === 'Personal' ? 'Persoonlijk' : selectedProcessMode}`);
       closeProcessing();
       await render();
     });
@@ -245,6 +246,7 @@ export function renderInboxScreen(container, context) {
     processingEl.querySelector('[data-process="reference"]')?.addEventListener('click', async () => {
       await saveToReference(item.id);
       eventBus.emit('inbox:changed');
+      showToast('Opgeslagen als referentie');
       closeProcessing();
       await render();
     });
@@ -252,6 +254,7 @@ export function renderInboxScreen(container, context) {
     processingEl.querySelector('[data-process="archive"]')?.addEventListener('click', async () => {
       await archiveItem(item.id);
       eventBus.emit('inbox:changed');
+      showToast('Gearchiveerd');
       closeProcessing();
       await render();
     });

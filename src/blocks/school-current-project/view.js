@@ -1,4 +1,5 @@
 import { escapeHTML } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import { getCurrentProject, saveCurrentProject } from './store.js';
 import './styles.css';
 
@@ -35,6 +36,7 @@ export function renderSchoolCurrentProject(container) {
       const learning = host.querySelector('[data-field="learning"]').value.trim();
       const milestone = host.querySelector('[data-field="milestone"]').value.trim();
       await saveCurrentProject({ building, learning, milestone });
+      showToast('Project opgeslagen');
       render();
     });
   }

@@ -285,7 +285,8 @@ export function mountLijstenScreen(container, context) {
     // Toggle items (top-level + subtasks)
     mainEl.querySelectorAll('.lijsten-screen__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         await toggleItem(itemId);
         eventBus.emit('lists:changed');
       });
@@ -294,7 +295,8 @@ export function mountLijstenScreen(container, context) {
     // Delete items
     mainEl.querySelectorAll('.lijsten-screen__item-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         await deleteItem(itemId);
         eventBus.emit('lists:changed');
       });
@@ -303,7 +305,8 @@ export function mountLijstenScreen(container, context) {
     // Inline priority change
     mainEl.querySelectorAll('.lijsten-screen__item-priority').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         const current = parseInt(btn.dataset.priority, 10) || 4;
         const next = current === 4 ? 1 : current + 1;
         await updateItem(itemId, { priority: next });

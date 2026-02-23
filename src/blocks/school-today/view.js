@@ -1,4 +1,5 @@
 import { escapeHTML } from '../../utils.js';
+import { showToast } from '../../toast.js';
 import {
   addFocusTask, getCurrentProjectPointer, getLearningCapture,
   listFocusTasks, removeFocusTask, saveLearningCapture,
@@ -121,6 +122,7 @@ export function renderSchoolToday(container) {
     // Learning save
     host.querySelector('[data-action="save"]')?.addEventListener('click', async () => {
       await saveLearningCapture(host.querySelector('[data-field="learning"]').value);
+      showToast('Opgeslagen');
       render();
     });
   }

@@ -307,7 +307,7 @@ export function createCommandPalette({ onNavigate, eventBus, commands }) {
     if (altKey && item.type === 'project' && item.id) {
       onNavigate({ tab: 'projects', focus: null });
       setTimeout(() => {
-        document.dispatchEvent(new CustomEvent('projects:open', { detail: { id: item.id } }));
+        eventBus?.emit('projects:open', { projectId: item.id });
       }, 120);
     } else {
       onNavigate({ tab: group.tab, focus: group.focus });

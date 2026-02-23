@@ -63,13 +63,22 @@ export function renderInbox(container, context) {
     if (expanded) renderList();
   });
 
+  let submitting = false;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = input.value.trim();
-    if (!text) return;
-    await addInboxItem(text, selectedMode);
+    if (!text || submitting) return;
+    submitting = true;
     input.value = '';
-    await refresh();
+    try {
+      await addInboxItem(text, selectedMode);
+      eventBus.emit('inbox:changed');
+      await refresh();
+    } catch {
+      input.value = text;
+    } finally {
+      submitting = false;
+    }
   });
 
   input.addEventListener('keydown', (e) => {
@@ -112,6 +121,7 @@ export function renderInbox(container, context) {
         } else {
           await archiveItem(itemId);
         }
+        eventBus.emit('inbox:changed');
         await refresh();
       });
     });
@@ -127,8 +137,11 @@ export function renderInbox(container, context) {
   setSelectedMode('');
   refresh();
 
+  const unsubInbox = eventBus.on('inbox:changed', () => refresh());
+
   return {
     unmount() {
+      unsubInbox?.();
       el?.remove();
     },
   };

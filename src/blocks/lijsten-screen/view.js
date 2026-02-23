@@ -55,6 +55,7 @@ export function mountLijstenScreen(container, context) {
         <div class="lijsten-screen__list-nav"></div>
         <div class="lijsten-screen__new-form" hidden>
           <input type="text" class="form-input lijsten-screen__new-input" placeholder="Lijstnaam..." maxlength="60" autocomplete="off" />
+          <button type="button" class="btn btn-ghost btn-sm lijsten-screen__new-cancel" aria-label="Annuleer">Annuleer</button>
         </div>
       </div>
       <div class="lijsten-screen__main">
@@ -71,8 +72,14 @@ export function mountLijstenScreen(container, context) {
   const addBtn = el.querySelector('.lijsten-screen__add-btn');
   const newForm = el.querySelector('.lijsten-screen__new-form');
   const newInput = el.querySelector('.lijsten-screen__new-input');
+  const newCancelBtn = el.querySelector('.lijsten-screen__new-cancel');
 
   // ── New list ──────────────────────────────────────────────
+
+  function closeNewForm() {
+    newForm.hidden = true;
+    newInput.value = '';
+  }
 
   addBtn.addEventListener('click', () => {
     newForm.hidden = !newForm.hidden;
@@ -81,6 +88,8 @@ export function mountLijstenScreen(container, context) {
       newInput.focus();
     }
   });
+
+  newCancelBtn.addEventListener('click', closeNewForm);
 
   newInput.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
@@ -93,7 +102,7 @@ export function mountLijstenScreen(container, context) {
       eventBus.emit('lists:changed');
     }
     if (e.key === 'Escape') {
-      newForm.hidden = true;
+      closeNewForm();
     }
   });
 
@@ -417,7 +426,7 @@ export function mountLijstenScreen(container, context) {
     });
 
     // Auto-focus add input
-    setTimeout(() => addInput?.focus(), 50);
+    requestAnimationFrame(() => addInput?.focus());
   }
 
   // ── Drag-to-reorder ─────────────────────────────────────────

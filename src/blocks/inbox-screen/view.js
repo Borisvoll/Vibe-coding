@@ -43,23 +43,30 @@ export function renderInboxScreen(container, context) {
   let processingItem = null;
 
   // --- Capture with swoosh + toast ---
+  let capturing = false;
   captureForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const text = captureInput.value.trim();
-    if (!text) return;
+    if (!text || capturing) return;
+    capturing = true;
     const mode = modeManager.getMode();
 
     // Swoosh animation on input
     captureInput.classList.add('inbox-screen__capture-input--swoosh');
     setTimeout(() => captureInput.classList.remove('inbox-screen__capture-input--swoosh'), 400);
-
-    await addInboxItem(text, mode !== 'BPV' ? mode : null);
     captureInput.value = '';
 
-    showToast('Vastgelegd!');
-
-    eventBus.emit('inbox:changed');
-    await render();
+    try {
+      await addInboxItem(text, mode !== 'BPV' ? mode : null);
+      showToast('Vastgelegd!');
+      eventBus.emit('inbox:changed');
+      await render();
+    } catch {
+      captureInput.value = text;
+      showToast('Opslaan mislukt — probeer opnieuw');
+    } finally {
+      capturing = false;
+    }
   });
 
   captureInput.addEventListener('keydown', (e) => {

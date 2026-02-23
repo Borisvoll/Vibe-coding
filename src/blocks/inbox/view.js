@@ -104,7 +104,8 @@ export function renderInbox(container, context) {
 
     listEl.querySelectorAll('[data-action]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').getAttribute('data-item-id');
+        const itemId = btn.closest('[data-item-id]')?.getAttribute('data-item-id');
+        if (!itemId) return;
         if (btn.getAttribute('data-action') === 'promote') {
           await promoteToTask(itemId);
           eventBus.emit('tasks:changed');

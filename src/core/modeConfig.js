@@ -10,6 +10,8 @@
  * Archived modes are hidden from the mode picker but data is preserved.
  */
 
+import { getSetting, setSetting } from '../db.js';
+
 const DEFAULT_MODES = [
   {
     id: 'School',
@@ -56,7 +58,6 @@ export async function getModeConfig() {
   if (cachedConfig) return cachedConfig;
 
   try {
-    const { getSetting } = await import('../db.js');
     const stored = await getSetting('mode_config');
     if (Array.isArray(stored) && stored.length > 0) {
       cachedConfig = stored;
@@ -72,7 +73,6 @@ export async function getModeConfig() {
  * Save mode config to IDB settings and update cache.
  */
 export async function saveModeConfig(config) {
-  const { setSetting } = await import('../db.js');
   await setSetting('mode_config', config);
   cachedConfig = config;
 }
@@ -81,7 +81,6 @@ export async function saveModeConfig(config) {
  * Seed default modes on first run (if mode_config doesn't exist yet).
  */
 export async function seedModeConfigIfNeeded() {
-  const { getSetting } = await import('../db.js');
   const existing = await getSetting('mode_config');
   if (!existing) {
     await saveModeConfig(getDefaultModes());

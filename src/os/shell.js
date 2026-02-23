@@ -12,8 +12,11 @@ import { createCommandRegistry } from '../core/commands.js';
 import { createMorningFlow, shouldAutoOpen } from '../ui/morning-flow.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
-import { createAgentChat } from '../ui/agent-chat.js';
 import { createPomodoro } from '../ui/pomodoro.js';
+import { showPrompt } from '../ui/modal.js';
+import { addTask } from '../stores/tasks.js';
+import { addProject } from '../stores/projects.js';
+import { globalSearch } from '../stores/search.js';
 // ambient-canvas.js still available but empty states now use contextual hints
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
@@ -37,7 +40,7 @@ const PHASE_COLLAPSE_DEFAULTS = {
   morning: {
     School:   { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
     Personal: { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
-    BPV:      { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
+    BPV:      { tasks: true,  projects: false, capture: false, reflection: false, mode: true,  weekly: false, history: false },
   },
   afternoon: {
     School:   { tasks: true,  projects: true,  capture: true,  reflection: false, mode: true,  weekly: false, history: false },
@@ -533,7 +536,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       if (q.length < 2) { closeResults(); results.innerHTML = ''; currentHits = []; return; }
       debounceTimer = setTimeout(async () => {
         try {
-          const { globalSearch } = await import('../stores/search.js');
           const hits = await globalSearch(q);
           openResults(hits);
         } catch { closeResults(); }
@@ -962,10 +964,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     group: 'create',
     keywords: ['taak', 'task', 'nieuw', 'toevoegen', 'add'],
     handler: async () => {
-      const { showPrompt } = await import('../ui/modal.js');
       const text = await showPrompt('Wat moet er gebeuren?', '', { title: 'Nieuwe taak' });
       if (!text?.trim()) return;
-      const { addTask } = await import('../stores/tasks.js');
       await addTask(text.trim(), modeManager.getMode());
       eventBus.emit('tasks:changed');
     },
@@ -976,10 +976,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     group: 'create',
     keywords: ['project', 'nieuw', 'toevoegen', 'add'],
     handler: async () => {
-      const { showPrompt } = await import('../ui/modal.js');
       const title = await showPrompt('Projectnaam:', '', { title: 'Nieuw project' });
       if (!title?.trim()) return;
-      const { addProject } = await import('../stores/projects.js');
       await addProject(title.trim(), '', modeManager.getMode());
       eventBus.emit('projects:changed');
     },
@@ -1010,11 +1008,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const morningFlow = createMorningFlow({ modeManager, eventBus });
   app.querySelector('#new-os-shell')?.appendChild(morningFlow.el);
 
-  // ── Agent Chat ────────────────────────────────────────────
-  const agentChat = createAgentChat({ modeManager, eventBus });
-  document.body.appendChild(agentChat.fab);
-  document.body.appendChild(agentChat.panel);
-
   // ── Pomodoro floating timer ───────────────────────────────
   const pomodoro = createPomodoro({ eventBus, modeManager });
   document.body.appendChild(pomodoro.el);
@@ -1038,15 +1031,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (e.altKey && e.key === 'g' && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       setActiveTab('projects');
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !e.shiftKey && !e.altKey) {
-      // Only intercept when not inside a text input / textarea
-      if (document.activeElement?.tagName !== 'INPUT' &&
-          document.activeElement?.tagName !== 'TEXTAREA' &&
-          !document.activeElement?.isContentEditable) {
-        e.preventDefault();
-        agentChat.toggle();
-      }
     }
   }
   document.addEventListener('keydown', handleGlobalKeydown);
@@ -1144,7 +1128,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     cmdPalette.destroy();
     morningFlow.destroy();
     focusOverlay.destroy();
-    agentChat.destroy();
     pomodoro.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);

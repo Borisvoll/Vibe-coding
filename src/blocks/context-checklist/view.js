@@ -93,8 +93,11 @@ export function renderContextChecklist(container, context) {
   render();
   container.appendChild(wrapper);
 
+  const unsubMode = context.eventBus?.on('mode:changed', () => render());
+
   return {
     unmount() {
+      unsubMode?.();
       wrapper.remove();
     },
   };

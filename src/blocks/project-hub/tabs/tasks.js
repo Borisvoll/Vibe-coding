@@ -69,7 +69,8 @@ export function renderTasksTab(host, project, context) {
     // Toggle done
     listEl?.querySelectorAll('[data-toggle]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const taskId = btn.closest('[data-task-id]').dataset.taskId;
+        const taskId = btn.closest('[data-task-id]')?.dataset?.taskId;
+        if (!taskId) return;
         await toggleTask(taskId);
         eventBus.emit('tasks:changed');
         await render();
@@ -79,7 +80,8 @@ export function renderTasksTab(host, project, context) {
     // Push to Today
     listEl?.querySelectorAll('[data-push-today]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const taskId = btn.closest('[data-task-id]').dataset.taskId;
+        const taskId = btn.closest('[data-task-id]')?.dataset?.taskId;
+        if (!taskId) return;
         const isToday = btn.classList.contains('hub-tasks__today-btn--active');
         if (!isToday) {
           await updateTask(taskId, { date: today });
@@ -92,7 +94,8 @@ export function renderTasksTab(host, project, context) {
     // Delete
     listEl?.querySelectorAll('[data-delete]').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const taskId = btn.closest('[data-task-id]').dataset.taskId;
+        const taskId = btn.closest('[data-task-id]')?.dataset?.taskId;
+        if (!taskId) return;
         await deleteTask(taskId);
         eventBus.emit('tasks:changed');
         await render();

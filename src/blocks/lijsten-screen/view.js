@@ -4,7 +4,7 @@ import {
   toggleItem, updateItem, deleteItem, getItemCount,
   reorderItems,
 } from '../../stores/lists.js';
-import { escapeHTML } from '../../utils.js';
+import { escapeHTML, sanitizeColor } from '../../utils.js';
 import { showConfirm, showPrompt } from '../../ui/modal.js';
 
 const PRIORITY_META = [
@@ -127,7 +127,7 @@ export function mountLijstenScreen(container, context) {
       const icon = list.icon ? escapeHTML(list.icon) : '📋';
       const remaining = c.total - c.done;
       const countText = remaining > 0 ? `${remaining}` : '';
-      const colorDot = list.color ? `<span class="lijsten-screen__nav-dot" style="background:${list.color}"></span>` : '';
+      const colorDot = list.color ? `<span class="lijsten-screen__nav-dot" style="background:${sanitizeColor(list.color)}"></span>` : '';
       return `
         <button type="button" class="lijsten-screen__nav-item ${active ? 'lijsten-screen__nav-item--active' : ''}" data-list-id="${list.id}">
           ${colorDot}
@@ -285,7 +285,8 @@ export function mountLijstenScreen(container, context) {
     // Toggle items (top-level + subtasks)
     mainEl.querySelectorAll('.lijsten-screen__check').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         await toggleItem(itemId);
         eventBus.emit('lists:changed');
       });
@@ -294,7 +295,8 @@ export function mountLijstenScreen(container, context) {
     // Delete items
     mainEl.querySelectorAll('.lijsten-screen__item-delete').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         await deleteItem(itemId);
         eventBus.emit('lists:changed');
       });
@@ -303,7 +305,8 @@ export function mountLijstenScreen(container, context) {
     // Inline priority change
     mainEl.querySelectorAll('.lijsten-screen__item-priority').forEach((btn) => {
       btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]').dataset.itemId;
+        const itemId = btn.closest('[data-item-id]')?.dataset?.itemId;
+        if (!itemId) return;
         const current = parseInt(btn.dataset.priority, 10) || 4;
         const next = current === 4 ? 1 : current + 1;
         await updateItem(itemId, { priority: next });

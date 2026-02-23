@@ -8,8 +8,8 @@ export function registerBPVTodayBlock(registry) {
     modes: ['BPV'],
     enabled: true,
     order: 40,
-    mount(container) {
-      return renderBPVToday(container);
+    mount(container, context) {
+      return renderBPVToday(container, context);
     },
   });
 }

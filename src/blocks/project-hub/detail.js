@@ -1,5 +1,5 @@
 import { getProjectById, updateProject, setPinned, unpinProject, getPinnedProject } from '../../stores/projects.js';
-import { escapeHTML } from '../../utils.js';
+import { escapeHTML, sanitizeDataURL } from '../../utils.js';
 import { renderBannerTab } from './tabs/banner.js';
 import { renderTasksTab } from './tabs/tasks.js';
 import { renderTimelineTab } from './tabs/timeline.js';
@@ -109,16 +109,17 @@ export function renderProjectDetail(container, context, projectId, onBack) {
   }
 
   function renderHero() {
-    if (project.cover) {
-      const isPdf = project.cover.startsWith('data:application/pdf');
+    const safeCover = sanitizeDataURL(project.cover);
+    if (safeCover) {
+      const isPdf = safeCover.startsWith('data:application/pdf');
       if (isPdf) {
         heroEl.innerHTML = `
           <div class="hub-detail__hero-pdf">
             <span>📕</span>
-            <a href="${project.cover}" download="cover.pdf" class="btn btn-ghost btn-sm">Cover downloaden (PDF)</a>
+            <a href="${escapeHTML(safeCover)}" download="cover.pdf" class="btn btn-ghost btn-sm">Cover downloaden (PDF)</a>
           </div>`;
       } else {
-        heroEl.innerHTML = `<img src="${project.cover}" alt="Cover" class="hub-detail__hero-img" />`;
+        heroEl.innerHTML = `<img src="${escapeHTML(safeCover)}" alt="Cover" class="hub-detail__hero-img" />`;
       }
     } else {
       heroEl.innerHTML = `

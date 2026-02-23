@@ -3,7 +3,7 @@ import {
   saveToReference, archiveItem, deleteItem, getInboxCount,
 } from '../../stores/inbox.js';
 import { softDelete, undoDelete } from '../../db.js';
-import { showUndoToast } from '../../toast.js';
+import { showUndoToast, showToast } from '../../toast.js';
 import { escapeHTML } from '../../utils.js';
 import { triageInboxItem } from '../../ai/client.js';
 
@@ -56,8 +56,6 @@ export function renderInboxScreen(container, context) {
     await addInboxItem(text, mode !== 'BPV' ? mode : null);
     captureInput.value = '';
 
-    // Toast feedback
-    const { showToast } = await import('../../toast.js');
     showToast('Vastgelegd!');
 
     eventBus.emit('inbox:changed');
@@ -240,6 +238,7 @@ export function renderInboxScreen(container, context) {
       await promoteToTask(item.id, selectedProcessMode);
       eventBus.emit('tasks:changed');
       eventBus.emit('inbox:changed');
+      showToast(`Taak aangemaakt in ${selectedProcessMode === 'Personal' ? 'Persoonlijk' : selectedProcessMode}`);
       closeProcessing();
       await render();
     });
@@ -247,6 +246,7 @@ export function renderInboxScreen(container, context) {
     processingEl.querySelector('[data-process="reference"]')?.addEventListener('click', async () => {
       await saveToReference(item.id);
       eventBus.emit('inbox:changed');
+      showToast('Opgeslagen als referentie');
       closeProcessing();
       await render();
     });
@@ -254,6 +254,7 @@ export function renderInboxScreen(container, context) {
     processingEl.querySelector('[data-process="archive"]')?.addEventListener('click', async () => {
       await archiveItem(item.id);
       eventBus.emit('inbox:changed');
+      showToast('Gearchiveerd');
       closeProcessing();
       await render();
     });

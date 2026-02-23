@@ -1,7 +1,8 @@
 import { getTodayHours, getTodayLogbook, formatHoursSummary } from './store.js';
 import { getToday, escapeHTML, truncate } from '../../utils.js';
 
-export function renderBPVLogSummary(container) {
+export function renderBPVLogSummary(container, context) {
+  const { eventBus } = context || {};
   const mountId = crypto.randomUUID();
   const today = getToday();
 
@@ -27,7 +28,7 @@ export function renderBPVLogSummary(container) {
             ? `<span>${escapeHTML(hoursSummary.formatted)}</span> <span class="bpv-log__detail">${escapeHTML(hoursSummary.detail)}</span>`
             : '<span class="bpv-log__empty-val">Nog niet ingevuld</span>'}
         </div>
-        <a href="#hours/${today}" class="btn btn-ghost btn-sm">${hoursSummary ? 'Bewerken' : 'Nu invullen'}</a>
+        <a href="#today?focus=mode" class="btn btn-ghost btn-sm">${hoursSummary ? 'Bewerken' : 'Nu invullen'}</a>
       </div>
       <div class="bpv-log__row">
         <div class="bpv-log__row-label">Logboek</div>
@@ -36,15 +37,18 @@ export function renderBPVLogSummary(container) {
             ? `<span>${escapeHTML(truncate(logbook.description, 60))}</span>`
             : '<span class="bpv-log__empty-val">Nog niet geschreven</span>'}
         </div>
-        <a href="${logbook ? `#logbook/${logbook.id}` : '#logbook/new'}" class="btn btn-ghost btn-sm">${logbook ? 'Bekijken' : 'Schrijven'}</a>
+        <a href="#today?focus=mode" class="btn btn-ghost btn-sm">${logbook ? 'Bekijken' : 'Schrijven'}</a>
       </div>
     `;
   }
 
   render();
 
+  const unsubBPV = eventBus?.on('bpv:changed', () => render());
+
   return {
     unmount() {
+      unsubBPV?.();
       el?.remove();
     },
   };

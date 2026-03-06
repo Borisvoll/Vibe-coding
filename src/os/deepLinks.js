@@ -37,6 +37,10 @@ export function parseHash() {
   if (route === 'projects' && segments[1]) {
     params.id = segments[1];
   }
+  // verslag section deep link: #verslag?section=3
+  if (route === 'verslag' && qs.has('section')) {
+    params.section = qs.get('section');
+  }
 
   return {
     tab: route && VALID_ROUTES.includes(route) ? route : null,

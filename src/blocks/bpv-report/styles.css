@@ -45,6 +45,13 @@
   margin: 0;
 }
 
+.report-header__kbd {
+  display: inline-block;
+  font-size: var(--font-xs, 0.75rem);
+  opacity: 0.6;
+  margin-left: 0.5rem;
+}
+
 /* Progress bar */
 .report-progress {
   margin-bottom: var(--space-6, 1.5rem);
@@ -73,6 +80,12 @@
 /* Section navigation groups */
 .report-nav-groups {
   margin-bottom: var(--space-6, 1.5rem);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-bg, #fafafa);
+  padding-top: var(--space-3, 0.75rem);
+  padding-bottom: var(--space-3, 0.75rem);
 }
 
 .report-nav-group {

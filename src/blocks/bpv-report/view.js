@@ -30,7 +30,11 @@ const SECTION_GROUPS = [
  */
 export function renderBPVReport(container, context) {
   const mountId = crypto.randomUUID();
-  let activeSection = 0;
+  // Deep link: check for ?section=N in hash
+  const hashQ = window.location.hash.split('?')[1] || '';
+  const hashParams = new URLSearchParams(hashQ);
+  const initialSection = hashParams.has('section') ? Math.max(0, Math.min(Number(hashParams.get('section')) || 0, REPORT_SECTIONS.length - 1)) : 0;
+  let activeSection = initialSection;
   let sectionData = {};
   let listeners = [];
 
@@ -41,7 +45,7 @@ export function renderBPVReport(container, context) {
           <h2 class="report-header__title">Stageverslag</h2>
           <button type="button" class="report-export-btn" data-report-export>Exporteer als PDF</button>
         </div>
-        <p class="report-header__subtitle">Vul je verslag sectie voor sectie in. Alles wordt automatisch opgeslagen.</p>
+        <p class="report-header__subtitle">Vul je verslag sectie voor sectie in. Alles wordt automatisch opgeslagen. <span class="report-header__kbd">Alt+←/→ wissel secties</span></p>
       </div>
       <div class="report-progress">
         <div class="report-progress__bar"><div class="report-progress__fill" data-report-progress-fill></div></div>
@@ -100,18 +104,20 @@ export function renderBPVReport(container, context) {
   }
 
   // ── Section completeness check ─────────────────────────────
-  function isSectionComplete(sectionDef) {
+  function getSectionProgress(sectionDef) {
     const data = sectionData[sectionDef.id] || {};
-    // Only count required fields (those without "optioneel" in label)
     const required = sectionDef.fields.filter(f => !f.label.toLowerCase().includes('optioneel'));
-    if (required.length === 0) return sectionDef.fields.some(f => {
+    const fields = required.length > 0 ? required : sectionDef.fields;
+    const filled = fields.filter(f => {
       const val = data[f.key];
       return val && String(val).trim().length > 0;
-    });
-    return required.every(f => {
-      const val = data[f.key];
-      return val && String(val).trim().length > 0;
-    });
+    }).length;
+    return { filled, total: fields.length, percent: fields.length > 0 ? Math.round((filled / fields.length) * 100) : 0 };
+  }
+
+  function isSectionComplete(sectionDef) {
+    const { percent } = getSectionProgress(sectionDef);
+    return percent === 100;
   }
 
   // ── Nav with grouped sections ──────────────────────────────
@@ -120,16 +126,19 @@ export function renderBPVReport(container, context) {
       const pills = [];
       for (let i = group.from; i <= group.to && i < REPORT_SECTIONS.length; i++) {
         const section = REPORT_SECTIONS[i];
-        const complete = isSectionComplete(section);
+        const { percent } = getSectionProgress(section);
+        const complete = percent === 100;
         const active = i === activeSection;
         const classes = [
           'report-nav__item',
           active ? 'report-nav__item--active' : '',
           complete ? 'report-nav__item--complete' : '',
+          (percent > 0 && !complete) ? 'report-nav__item--partial' : '',
         ].filter(Boolean).join(' ');
-        // Show short label
+        // Show short label + percentage when partially filled
         const shortTitle = section.title.replace(/^OP\d — /, '');
-        pills.push(`<button type="button" class="${classes}" data-nav-index="${i}">${escapeHTML(shortTitle)}</button>`);
+        const badge = (percent > 0 && !complete) ? ` <span class="report-nav__pct">${percent}%</span>` : '';
+        pills.push(`<button type="button" class="${classes}" data-nav-index="${i}">${escapeHTML(shortTitle)}${badge}</button>`);
       }
       return `
         <div class="report-nav-group">
@@ -151,14 +160,22 @@ export function renderBPVReport(container, context) {
   // ── Debounced save for a section ───────────────────────────
   function createAutoSave(sectionId) {
     return debounce(async () => {
-      await saveReportSection(sectionId, sectionData[sectionId]);
       const statusEl = sectionContainer.querySelector('[data-report-status]');
-      if (statusEl) {
-        statusEl.textContent = 'Opgeslagen';
-        statusEl.className = 'report-status report-status--saved';
-        setTimeout(() => {
-          if (statusEl) statusEl.textContent = '';
-        }, 2500);
+      try {
+        await saveReportSection(sectionId, sectionData[sectionId]);
+        if (statusEl) {
+          statusEl.textContent = '✓ Opgeslagen';
+          statusEl.className = 'report-status report-status--saved';
+          setTimeout(() => {
+            if (statusEl) statusEl.textContent = '';
+          }, 2500);
+        }
+      } catch (err) {
+        console.error('Report save failed:', err);
+        if (statusEl) {
+          statusEl.textContent = '✗ Opslaan mislukt — probeer opnieuw';
+          statusEl.className = 'report-status report-status--error';
+        }
       }
       updateProgress();
       renderNav();
@@ -271,16 +288,58 @@ export function renderBPVReport(container, context) {
   }
 
   // ── Init ───────────────────────────────────────────────────
-  loadAllData().then(() => {
-    renderNav();
-    renderSection();
-    updateProgress();
-  });
+  function showError() {
+    sectionContainer.innerHTML = `
+      <div class="report-error">
+        <p class="report-error__title">Kon verslagdata niet laden</p>
+        <p class="report-error__desc">Controleer of je browser IndexedDB ondersteunt en probeer opnieuw.</p>
+        <button type="button" class="report-error__retry" data-report-retry>Probeer opnieuw</button>
+      </div>
+    `;
+    const retryBtn = sectionContainer.querySelector('[data-report-retry]');
+    if (retryBtn) retryBtn.addEventListener('click', initReport);
+  }
+
+  function initReport() {
+    sectionContainer.innerHTML = '';
+    loadAllData().then(() => {
+      renderNav();
+      renderSection();
+      updateProgress();
+    }).catch((err) => {
+      console.error('Report load failed:', err);
+      showError();
+    });
+  }
+
+  initReport();
+
+  // Keyboard navigation: Alt+ArrowLeft / Alt+ArrowRight to switch sections
+  function handleKeyNav(e) {
+    // Don't intercept when typing in a field
+    const tag = e.target.tagName;
+    if (!e.altKey || (tag !== 'BODY' && tag !== 'BUTTON' && tag !== 'DIV' && tag !== 'SECTION' && tag !== 'NAV')) {
+      if (!e.altKey) return;
+    }
+    if (e.key === 'ArrowLeft' && activeSection > 0) {
+      e.preventDefault();
+      activeSection--;
+      renderSection();
+      renderNav();
+    } else if (e.key === 'ArrowRight' && activeSection < REPORT_SECTIONS.length - 1) {
+      e.preventDefault();
+      activeSection++;
+      renderSection();
+      renderNav();
+    }
+  }
+  document.addEventListener('keydown', handleKeyNav);
 
   return {
     unmount() {
       listeners.forEach(fn => fn());
       listeners = [];
+      document.removeEventListener('keydown', handleKeyNav);
       root?.remove();
     },
   };

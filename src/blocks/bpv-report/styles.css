@@ -1,0 +1,225 @@
+/* ── BPV Report Form ────────────────────────────────────────── */
+
+.report-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 var(--space-4, 1rem);
+}
+
+.report-header {
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.report-header__title {
+  font-size: var(--font-xl, 1.25rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.report-header__subtitle {
+  font-size: var(--font-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  margin: 0;
+}
+
+/* Progress bar */
+.report-progress {
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.report-progress__bar {
+  height: 6px;
+  background: var(--color-surface-alt, #f3f4f6);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.report-progress__fill {
+  height: 100%;
+  background: var(--color-accent, #4f6ef7);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.report-progress__label {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--color-text-muted, #6b7280);
+  margin-top: var(--space-1, 0.25rem);
+}
+
+/* Section navigation */
+.report-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 0.5rem);
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.report-nav__item {
+  padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+  font-size: var(--font-xs, 0.75rem);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.report-nav__item:hover {
+  border-color: var(--color-accent, #4f6ef7);
+  color: var(--color-accent, #4f6ef7);
+}
+
+.report-nav__item--active {
+  background: var(--color-accent, #4f6ef7);
+  border-color: var(--color-accent, #4f6ef7);
+  color: #fff;
+}
+
+.report-nav__item--complete {
+  border-color: var(--color-green, #10b981);
+  color: var(--color-green, #10b981);
+}
+
+.report-nav__item--active.report-nav__item--complete {
+  background: var(--color-green, #10b981);
+  border-color: var(--color-green, #10b981);
+  color: #fff;
+}
+
+/* Section card */
+.report-section {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-lg, 12px);
+  padding: var(--space-5, 1.25rem);
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.report-section__title {
+  font-size: var(--font-base, 1rem);
+  font-weight: 600;
+  margin: 0 0 var(--space-1, 0.25rem);
+}
+
+.report-section__desc {
+  font-size: var(--font-sm, 0.875rem);
+  color: var(--color-text-muted, #6b7280);
+  margin: 0 0 var(--space-4, 1rem);
+}
+
+/* Form fields */
+.report-field {
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.report-field:last-child {
+  margin-bottom: 0;
+}
+
+.report-field__label {
+  display: block;
+  font-size: var(--font-sm, 0.875rem);
+  font-weight: 500;
+  margin-bottom: var(--space-1, 0.25rem);
+  color: var(--color-text, #111);
+}
+
+.report-field__hint {
+  display: block;
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+.report-field__input,
+.report-field__textarea {
+  width: 100%;
+  padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+  font-size: var(--font-sm, 0.875rem);
+  font-family: inherit;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111);
+  transition: border-color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.report-field__input:focus,
+.report-field__textarea:focus {
+  outline: none;
+  border-color: var(--color-accent, #4f6ef7);
+  box-shadow: 0 0 0 2px var(--color-accent-light, rgba(79, 110, 247, 0.12));
+}
+
+.report-field__textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Status messages */
+.report-status {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--color-text-muted, #6b7280);
+  margin-top: var(--space-3, 0.75rem);
+  min-height: 1.2em;
+}
+
+.report-status--saved {
+  color: var(--color-green, #10b981);
+}
+
+/* Section navigation footer */
+.report-section__nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-5, 1.25rem);
+  padding-top: var(--space-4, 1rem);
+  border-top: 1px solid var(--color-border, #e5e7eb);
+}
+
+.report-section__nav-btn {
+  padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+  font-size: var(--font-sm, 0.875rem);
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: var(--radius-md, 8px);
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #111);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.report-section__nav-btn:hover {
+  border-color: var(--color-accent, #4f6ef7);
+  color: var(--color-accent, #4f6ef7);
+}
+
+.report-section__nav-btn--primary {
+  background: var(--color-accent, #4f6ef7);
+  border-color: var(--color-accent, #4f6ef7);
+  color: #fff;
+}
+
+.report-section__nav-btn--primary:hover {
+  opacity: 0.9;
+}
+
+/* Word count for English section */
+.report-field__wordcount {
+  font-size: var(--font-xs, 0.75rem);
+  color: var(--color-text-muted, #6b7280);
+  margin-top: var(--space-1, 0.25rem);
+  text-align: right;
+}
+
+.report-field__wordcount--warning {
+  color: var(--color-orange, #f97316);
+}
+
+.report-field__wordcount--ok {
+  color: var(--color-green, #10b981);
+}

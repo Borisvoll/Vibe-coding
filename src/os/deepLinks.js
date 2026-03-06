@@ -5,7 +5,7 @@
  * Legacy format (backward compat): #tab=today&focus=tasks
  */
 
-const VALID_ROUTES = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
+const VALID_ROUTES = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'verslag', 'settings', 'curiosity'];
 
 /**
  * Parse the current URL hash into structured route info.

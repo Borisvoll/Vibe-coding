@@ -1,7 +1,7 @@
 /**
  * BPV Report Form — Internship report builder.
  *
- * Renders a multi-section form following the LiS report structure.
+ * Renders a multi-section form matching the LiS BPV OP3 assignments.
  * Each section auto-saves to IndexedDB via the report store.
  */
 import { escapeHTML, debounce } from '../../utils.js';
@@ -12,6 +12,15 @@ import {
   getReportProgress,
 } from '../../stores/report.js';
 
+// Assignment group labels for visual grouping in the nav
+const SECTION_GROUPS = [
+  { label: 'Gegevens', from: 0, to: 0 },
+  { label: 'OP1 — Leerdoelen & Bedrijf', from: 1, to: 5 },
+  { label: 'OP2 — Product & Verbeteren', from: 6, to: 10 },
+  { label: 'OP4 — Presentatie', from: 11, to: 11 },
+  { label: 'Reflectie', from: 12, to: 12 },
+];
+
 /**
  * Mount the report form into a container.
  * @param {HTMLElement} container
@@ -19,7 +28,6 @@ import {
  * @returns {{ unmount: () => void }}
  */
 export function renderBPVReport(container, context) {
-  const { eventBus } = context;
   const mountId = crypto.randomUUID();
   let activeSection = 0;
   let sectionData = {};
@@ -35,7 +43,7 @@ export function renderBPVReport(container, context) {
         <div class="report-progress__bar"><div class="report-progress__fill" data-report-progress-fill></div></div>
         <div class="report-progress__label" data-report-progress-label></div>
       </div>
-      <nav class="report-nav" data-report-nav></nav>
+      <nav class="report-nav-groups" data-report-nav></nav>
       <div data-report-section-container></div>
     </div>
   `);
@@ -46,11 +54,31 @@ export function renderBPVReport(container, context) {
   const progressFill = root.querySelector('[data-report-progress-fill]');
   const progressLabel = root.querySelector('[data-report-progress-label]');
 
-  // ── Load all section data ──────────────────────────────────
+  // ── Load all section data + apply prefills ─────────────────
   async function loadAllData() {
     for (const section of REPORT_SECTIONS) {
       const record = await getReportSection(section.id);
-      sectionData[section.id] = record?.data || {};
+      const saved = record?.data || {};
+
+      // Apply prefills for fields that have no saved value yet
+      for (const field of section.fields) {
+        if (field.prefill && !saved[field.key]) {
+          saved[field.key] = field.prefill;
+        }
+      }
+
+      sectionData[section.id] = saved;
+    }
+
+    // Auto-save prefilled sections so they persist
+    for (const section of REPORT_SECTIONS) {
+      const hasPrefills = section.fields.some(f => f.prefill);
+      if (hasPrefills) {
+        const existing = await getReportSection(section.id);
+        if (!existing) {
+          await saveReportSection(section.id, sectionData[section.id]);
+        }
+      }
     }
   }
 
@@ -64,23 +92,41 @@ export function renderBPVReport(container, context) {
   // ── Section completeness check ─────────────────────────────
   function isSectionComplete(sectionDef) {
     const data = sectionData[sectionDef.id] || {};
-    return sectionDef.fields.every(f => {
+    // Only count required fields (those without "optioneel" in label)
+    const required = sectionDef.fields.filter(f => !f.label.toLowerCase().includes('optioneel'));
+    if (required.length === 0) return sectionDef.fields.some(f => {
+      const val = data[f.key];
+      return val && String(val).trim().length > 0;
+    });
+    return required.every(f => {
       const val = data[f.key];
       return val && String(val).trim().length > 0;
     });
   }
 
-  // ── Nav pills ──────────────────────────────────────────────
+  // ── Nav with grouped sections ──────────────────────────────
   function renderNav() {
-    navEl.innerHTML = REPORT_SECTIONS.map((section, i) => {
-      const complete = isSectionComplete(section);
-      const active = i === activeSection;
-      const classes = [
-        'report-nav__item',
-        active ? 'report-nav__item--active' : '',
-        complete ? 'report-nav__item--complete' : '',
-      ].filter(Boolean).join(' ');
-      return `<button type="button" class="${classes}" data-nav-index="${i}">${escapeHTML(section.title)}</button>`;
+    navEl.innerHTML = SECTION_GROUPS.map(group => {
+      const pills = [];
+      for (let i = group.from; i <= group.to && i < REPORT_SECTIONS.length; i++) {
+        const section = REPORT_SECTIONS[i];
+        const complete = isSectionComplete(section);
+        const active = i === activeSection;
+        const classes = [
+          'report-nav__item',
+          active ? 'report-nav__item--active' : '',
+          complete ? 'report-nav__item--complete' : '',
+        ].filter(Boolean).join(' ');
+        // Show short label
+        const shortTitle = section.title.replace(/^OP\d — /, '');
+        pills.push(`<button type="button" class="${classes}" data-nav-index="${i}">${escapeHTML(shortTitle)}</button>`);
+      }
+      return `
+        <div class="report-nav-group">
+          <div class="report-nav-group__label">${escapeHTML(group.label)}</div>
+          <div class="report-nav">${pills.join('')}</div>
+        </div>
+      `;
     }).join('');
 
     navEl.querySelectorAll('[data-nav-index]').forEach(btn => {
@@ -111,7 +157,6 @@ export function renderBPVReport(container, context) {
 
   // ── Render active section ──────────────────────────────────
   function renderSection() {
-    // Clean up old listeners
     listeners.forEach(fn => fn());
     listeners = [];
 
@@ -122,7 +167,7 @@ export function renderBPVReport(container, context) {
     const fieldsHTML = section.fields.map(field => {
       const value = escapeHTML(data[field.key] || '');
       const hintHTML = field.hint ? `<span class="report-field__hint">${escapeHTML(field.hint)}</span>` : '';
-      const isEnglish = field.key === 'english_description' || field.key === 'engelse_uitleg';
+      const isEnglish = field.key === 'english_description';
 
       if (field.type === 'textarea') {
         return `
@@ -172,9 +217,7 @@ export function renderBPVReport(container, context) {
         sectionData[section.id][key] = input.value;
         autoSave();
 
-        // Word count for English fields
-        const isEnglish = key === 'english_description' || key === 'engelse_uitleg';
-        if (isEnglish) {
+        if (key === 'english_description') {
           updateWordCount(key, input.value);
         }
       };
@@ -182,9 +225,7 @@ export function renderBPVReport(container, context) {
       input.addEventListener('input', handler);
       listeners.push(() => input.removeEventListener('input', handler));
 
-      // Show initial word count for English fields
-      const isEnglish = key === 'english_description' || key === 'engelse_uitleg';
-      if (isEnglish) {
+      if (key === 'english_description') {
         updateWordCount(key, input.value);
       }
     });

@@ -47,12 +47,28 @@
   margin-top: var(--space-1, 0.25rem);
 }
 
-/* Section navigation */
+/* Section navigation groups */
+.report-nav-groups {
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.report-nav-group {
+  margin-bottom: var(--space-3, 0.75rem);
+}
+
+.report-nav-group__label {
+  font-size: var(--font-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--color-text-muted, #6b7280);
+  margin-bottom: var(--space-1, 0.25rem);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .report-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2, 0.5rem);
-  margin-bottom: var(--space-6, 1.5rem);
+  gap: var(--space-1, 0.25rem);
 }
 
 .report-nav__item {

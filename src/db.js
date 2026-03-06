@@ -1,5 +1,5 @@
 export const DB_NAME = 'bpv-tracker';
-export const DB_VERSION = 9;
+export const DB_VERSION = 10;
 
 let dbInstance = null;
 
@@ -249,6 +249,12 @@ export function initDB() {
         osPomodoroSessions.createIndex('date', 'date', { unique: false });
         osPomodoroSessions.createIndex('task_id', 'task_id', { unique: false });
         osPomodoroSessions.createIndex('updated_at', 'updated_at', { unique: false });
+      }
+
+      if (oldVersion < 10) {
+        // BPV internship report sections
+        const osReport = db.createObjectStore('os_report', { keyPath: 'id' });
+        osReport.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
     };
 
@@ -560,7 +566,7 @@ export async function getAllLogbookSorted() {
 export async function clearAllData() {
   return withWriteAccess(async () => {
     const db = getDB();
-    const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts', 'os_personal_tasks', 'os_personal_agenda', 'os_personal_actions', 'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan', 'os_inbox', 'os_tasks', 'os_projects', 'os_lists', 'os_list_items'];
+    const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts', 'os_personal_tasks', 'os_personal_agenda', 'os_personal_actions', 'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan', 'os_inbox', 'os_tasks', 'os_projects', 'os_lists', 'os_list_items', 'os_report'];
     return new Promise((resolve, reject) => {
       const tx = db.transaction(storeNames, 'readwrite');
       storeNames.forEach(name => tx.objectStore(name).clear());
@@ -594,7 +600,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts', 'os_personal_tasks', 'os_personal_agenda', 'os_personal_actions', 'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan', 'os_inbox', 'os_tasks', 'os_projects', 'os_lists', 'os_list_items'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'os_school_projects', 'os_school_milestones', 'os_school_skills', 'os_school_concepts', 'os_personal_tasks', 'os_personal_agenda', 'os_personal_actions', 'os_personal_wellbeing', 'os_personal_reflections', 'os_personal_week_plan', 'os_inbox', 'os_tasks', 'os_projects', 'os_lists', 'os_list_items', 'os_report'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

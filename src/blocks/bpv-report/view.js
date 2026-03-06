@@ -30,7 +30,11 @@ const SECTION_GROUPS = [
  */
 export function renderBPVReport(container, context) {
   const mountId = crypto.randomUUID();
-  let activeSection = 0;
+  // Deep link: check for ?section=N in hash
+  const hashQ = window.location.hash.split('?')[1] || '';
+  const hashParams = new URLSearchParams(hashQ);
+  const initialSection = hashParams.has('section') ? Math.max(0, Math.min(Number(hashParams.get('section')) || 0, REPORT_SECTIONS.length - 1)) : 0;
+  let activeSection = initialSection;
   let sectionData = {};
   let listeners = [];
 
@@ -41,7 +45,7 @@ export function renderBPVReport(container, context) {
           <h2 class="report-header__title">Stageverslag</h2>
           <button type="button" class="report-export-btn" data-report-export>Exporteer als PDF</button>
         </div>
-        <p class="report-header__subtitle">Vul je verslag sectie voor sectie in. Alles wordt automatisch opgeslagen.</p>
+        <p class="report-header__subtitle">Vul je verslag sectie voor sectie in. Alles wordt automatisch opgeslagen. <span class="report-header__kbd">Alt+←/→ wissel secties</span></p>
       </div>
       <div class="report-progress">
         <div class="report-progress__bar"><div class="report-progress__fill" data-report-progress-fill></div></div>
@@ -310,10 +314,32 @@ export function renderBPVReport(container, context) {
 
   initReport();
 
+  // Keyboard navigation: Alt+ArrowLeft / Alt+ArrowRight to switch sections
+  function handleKeyNav(e) {
+    // Don't intercept when typing in a field
+    const tag = e.target.tagName;
+    if (!e.altKey || (tag !== 'BODY' && tag !== 'BUTTON' && tag !== 'DIV' && tag !== 'SECTION' && tag !== 'NAV')) {
+      if (!e.altKey) return;
+    }
+    if (e.key === 'ArrowLeft' && activeSection > 0) {
+      e.preventDefault();
+      activeSection--;
+      renderSection();
+      renderNav();
+    } else if (e.key === 'ArrowRight' && activeSection < REPORT_SECTIONS.length - 1) {
+      e.preventDefault();
+      activeSection++;
+      renderSection();
+      renderNav();
+    }
+  }
+  document.addEventListener('keydown', handleKeyNav);
+
   return {
     unmount() {
       listeners.forEach(fn => fn());
       listeners = [];
+      document.removeEventListener('keydown', handleKeyNav);
       root?.remove();
     },
   };

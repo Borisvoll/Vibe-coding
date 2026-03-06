@@ -1,6 +1,7 @@
 import { escapeHTML, getToday } from '../../utils.js';
 import { getHoursEntry } from '../../stores/bpv.js';
 import { getCockpitStats } from '../../os/cockpitData.js';
+import { getReportProgress } from '../../stores/report.js';
 import './styles.css';
 
 const MOTIVATIONS = [
@@ -23,9 +24,10 @@ export function renderBPVMiniCard(container, context) {
 
   async function render() {
     const today = getToday();
-    const [hours, stats] = await Promise.all([
+    const [hours, stats, reportProgress] = await Promise.all([
       getHoursEntry(today).catch(() => null),
       getCockpitStats('BPV').catch(() => ({ done: 0, streak: 0, inbox: 0 })),
+      getReportProgress().catch(() => ({ percent: 0 })),
     ]);
 
     const hoursLabel = hours?.startTime && hours?.endTime
@@ -52,12 +54,22 @@ export function renderBPVMiniCard(container, context) {
           <span class="mini-card__stat-value">${stats.done}</span>
           <span class="mini-card__stat-label">Gedaan</span>
         </div>
+        <div class="mini-card__stat mini-card__stat--link" data-action="open-report" style="cursor:pointer" title="Open stageverslag">
+          <span class="mini-card__stat-value">${reportProgress.percent}%</span>
+          <span class="mini-card__stat-label">Verslag</span>
+        </div>
       </div>
       <p class="mini-card__tip">${escapeHTML(tip)}</p>
     `;
   }
 
   render();
+
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="open-report"]')) {
+      window.location.hash = '#verslag';
+    }
+  });
 
   const unsub = eventBus?.on('bpv:changed', () => render());
 

@@ -12,6 +12,7 @@ export const PRESETS = {
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection',
       'inbox', 'inbox-screen', 'dashboard', 'daily-cockpit',
+      'bpv-report',
     ],
   },
   school: {
@@ -25,6 +26,7 @@ export const PRESETS = {
       'school-concept-vault', 'school-current-project',
       'school-milestones', 'school-skill-tracker',
       'weekly-review', 'lijsten', 'lijsten-screen',
+      'bpv-report',
     ],
   },
   bpv: {
@@ -36,7 +38,7 @@ export const PRESETS = {
       'inbox', 'inbox-screen', 'projects', 'dashboard',
       'bpv-today', 'bpv-quick-log', 'bpv-weekly-overview',
       'bpv-log-summary', 'weekly-review', 'tasks', 'bpv-mini-card',
-      'lijsten', 'lijsten-screen',
+      'lijsten', 'lijsten-screen', 'bpv-report',
     ],
   },
   persoonlijk: {
@@ -51,6 +53,7 @@ export const PRESETS = {
       'weekly-review', 'lijsten', 'lijsten-screen',
       // Personality-driven blocks
       'brain-state', 'worry-dump', 'conversation-debrief', 'boundaries',
+      'bpv-report',
     ],
   },
   alles: {

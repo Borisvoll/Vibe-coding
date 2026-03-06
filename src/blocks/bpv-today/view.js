@@ -2,6 +2,7 @@ import { escapeHTML, getToday } from '../../utils.js';
 import { showToast } from '../../toast.js';
 import { getBPVTodaySnapshot, getQuickReflection, getTimerState, saveQuickReflection, setTimerState } from './store.js';
 import { addHoursEntry } from '../../stores/bpv.js';
+import { getReportProgress } from '../../stores/report.js';
 
 export function renderBPVToday(container, context) {
   const { eventBus } = context || {};
@@ -10,10 +11,11 @@ export function renderBPVToday(container, context) {
   async function render() {
     const host = container.querySelector(`[data-block-id="${mountId}"]`);
     if (!host) return;
-    const [snapshot, timer, reflection] = await Promise.all([
+    const [snapshot, timer, reflection, reportProgress] = await Promise.all([
       getBPVTodaySnapshot(),
       getTimerState(),
       getQuickReflection(),
+      getReportProgress().catch(() => ({ filled: 0, total: 52, percent: 0 })),
     ]);
 
     host.innerHTML = `
@@ -31,6 +33,19 @@ export function renderBPVToday(container, context) {
       <p class="school-block__subtitle">Timerstatus: ${timer.running ? (timer.paused ? 'gepauzeerd' : 'actief') : 'gestopt'}</p>
       <p class="school-block__subtitle">Leermoment: ${escapeHTML(snapshot.learningMoment?.title || snapshot.learningMoment?.lesson || 'Nog geen leermoment vandaag.')}</p>
       <label class="school-block__field"><span>Korte reflectie</span><input class="form-input" data-field="reflectie" value="${escapeHTML(reflection)}" placeholder="Wat ging goed en wat neem je mee?"></label>
+      <div class="bpv-report-shortcut" style="margin:0.75rem 0;padding:0.6rem 0.75rem;border:1px solid var(--color-border,#e5e7eb);border-radius:8px;display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <span style="font-size:1.1rem">📄</span>
+          <div>
+            <div style="font-size:0.8rem;font-weight:600">Stageverslag</div>
+            <div style="font-size:0.7rem;color:var(--color-text-muted,#6b7280)">${reportProgress.filled}/${reportProgress.total} velden (${reportProgress.percent}%)</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.5rem">
+          <div style="width:60px;height:5px;border-radius:3px;background:var(--color-surface-alt,#f3f4f6);overflow:hidden"><div style="height:100%;width:${reportProgress.percent}%;background:var(--color-accent,#4f6ef7);border-radius:3px"></div></div>
+          <a class="btn btn-secondary btn-sm" href="#verslag" style="white-space:nowrap">Openen</a>
+        </div>
+      </div>
       <div class="school-inline-form">
         <a class="btn btn-ghost btn-sm" href="#planning">BPV-doelen</a>
         <a class="btn btn-ghost btn-sm" href="#projects">Actief project</a>

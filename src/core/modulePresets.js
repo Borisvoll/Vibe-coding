@@ -36,7 +36,7 @@ export const PRESETS = {
       'inbox', 'inbox-screen', 'projects', 'dashboard',
       'bpv-today', 'bpv-quick-log', 'bpv-weekly-overview',
       'bpv-log-summary', 'weekly-review', 'tasks', 'bpv-mini-card',
-      'lijsten', 'lijsten-screen',
+      'lijsten', 'lijsten-screen', 'bpv-report',
     ],
   },
   persoonlijk: {

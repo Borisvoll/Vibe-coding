@@ -27,11 +27,11 @@ const BRAND = {
 
 // Section group metadata for the export layout
 const EXPORT_GROUPS = [
-  { label: null, sections: ['titelpagina'] },
-  { label: 'Opdracht 1 — Persoonlijke leerdoelen & bedrijfsoriëntatie', sections: ['bedrijfsbeschrijving', 'bedrijfsprocessen', 'competenties', 'leerdoelen', 'motivatie'] },
-  { label: 'Opdracht 2 — Productgericht werken en verbeteren', sections: ['product_machines', 'product_proces', 'product_assemblage', 'product_verbetering', 'product_engels'] },
-  { label: 'Opdracht 4 — Terugkomdag presentatie', sections: ['presentatie'] },
-  { label: 'Reflectie', sections: ['reflectie'] },
+  { label: null, sections: ['titelpagina'], tocLabel: null },
+  { label: 'Opdracht 1 — Persoonlijke leerdoelen & bedrijfsoriëntatie', sections: ['bedrijfsbeschrijving', 'bedrijfsprocessen', 'competenties', 'leerdoelen', 'motivatie'], tocLabel: '1. Persoonlijke leerdoelen & bedrijfsoriëntatie' },
+  { label: 'Opdracht 2 — Productgericht werken en verbeteren', sections: ['product_machines', 'product_proces', 'product_assemblage', 'product_verbetering', 'product_engels'], tocLabel: '2. Productgericht werken en verbeteren' },
+  { label: 'Opdracht 4 — Terugkomdag presentatie', sections: ['presentatie'], tocLabel: '3. Terugkomdag presentatie' },
+  { label: 'Reflectie', sections: ['reflectie'], tocLabel: '4. Reflectie' },
 ];
 
 /**
@@ -39,7 +39,6 @@ const EXPORT_GROUPS = [
  * Opens in a new tab ready for print / save as PDF.
  */
 export async function exportReport() {
-  // Load all section data
   const dataMap = {};
   for (const section of REPORT_SECTIONS) {
     const record = await getReportSection(section.id);
@@ -52,13 +51,13 @@ export async function exportReport() {
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const win = window.open(url, '_blank');
-  // Clean up after a delay
   setTimeout(() => URL.revokeObjectURL(url), 10000);
   return win;
 }
 
 function buildHTML(dataMap, title) {
   const coverData = dataMap.titelpagina || {};
+  const today = new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
 
   return `<!DOCTYPE html>
 <html lang="nl">
@@ -70,7 +69,14 @@ function buildHTML(dataMap, title) {
   @page {
     margin: 2cm 2.5cm;
     size: A4;
+    @bottom-center {
+      content: counter(page);
+      font-size: 8pt;
+      color: #999;
+    }
   }
+
+  @page :first { @bottom-center { content: none; } }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -80,6 +86,7 @@ function buildHTML(dataMap, title) {
     line-height: 1.6;
     color: ${BRAND.black};
     background: #fff;
+    counter-reset: page;
   }
 
   /* ── Cover page ── */
@@ -91,6 +98,16 @@ function buildHTML(dataMap, title) {
     min-height: 100vh;
     text-align: center;
     page-break-after: always;
+    position: relative;
+  }
+
+  .cover__top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: ${BRAND.red};
   }
 
   .cover__accent-bar {
@@ -102,27 +119,91 @@ function buildHTML(dataMap, title) {
 
   .cover__title {
     font-family: ${BRAND.fontHeading};
-    font-size: 28pt;
+    font-size: 32pt;
     font-weight: 700;
     color: ${BRAND.red};
-    margin-bottom: 0.5rem;
-    letter-spacing: -0.01em;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.02em;
   }
 
   .cover__subtitle {
-    font-size: 14pt;
+    font-size: 16pt;
     color: #444;
-    margin-bottom: 3rem;
+    margin-bottom: 3.5rem;
+    font-weight: 300;
   }
 
   .cover__meta {
     font-size: 11pt;
-    line-height: 2;
+    line-height: 2.2;
     color: #333;
+    text-align: left;
+    min-width: 280px;
   }
 
-  .cover__meta strong {
+  .cover__meta-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .cover__meta-label {
+    color: ${BRAND.red};
+    font-weight: 600;
+    min-width: 130px;
+    display: inline-block;
+  }
+
+  .cover__date {
+    margin-top: 3rem;
+    font-size: 9pt;
+    color: #999;
+  }
+
+  /* ── Table of contents ── */
+  .toc {
+    page-break-after: always;
+    padding-top: 2rem;
+  }
+
+  .toc__title {
+    font-family: ${BRAND.fontHeading};
+    font-size: 22pt;
+    font-weight: 700;
+    color: ${BRAND.red};
+    margin-bottom: 2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid ${BRAND.red};
+  }
+
+  .toc__group {
+    margin-bottom: 1.2rem;
+  }
+
+  .toc__group-title {
+    font-family: ${BRAND.fontHeading};
+    font-size: 13pt;
+    font-weight: 700;
     color: ${BRAND.black};
+    margin-bottom: 0.3rem;
+  }
+
+  .toc__items {
+    list-style: none;
+    padding-left: 1.2rem;
+  }
+
+  .toc__item {
+    font-size: 10pt;
+    line-height: 1.8;
+    color: #444;
+    border-bottom: 1px dotted #ddd;
+    padding: 0.1rem 0;
+  }
+
+  .toc__item::before {
+    content: '—';
+    color: ${BRAND.red};
+    margin-right: 0.5rem;
   }
 
   /* ── Group headers ── */
@@ -140,7 +221,7 @@ function buildHTML(dataMap, title) {
   /* ── Section headers ── */
   .section-title {
     font-family: ${BRAND.fontHeading};
-    font-size: 14pt;
+    font-size: 13pt;
     font-weight: 600;
     color: ${BRAND.black};
     margin: 1.5rem 0 0.3rem;
@@ -149,7 +230,7 @@ function buildHTML(dataMap, title) {
 
   .section-desc {
     font-size: 9pt;
-    color: #666;
+    color: #888;
     margin-bottom: 0.8rem;
     font-style: italic;
   }
@@ -174,21 +255,14 @@ function buildHTML(dataMap, title) {
   }
 
   .field__empty {
-    color: #aaa;
+    color: #bbb;
     font-style: italic;
     font-size: 10pt;
   }
 
-  /* ── Footer ── */
-  .page-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    text-align: center;
-    font-size: 8pt;
-    color: #999;
-    padding: 0.5rem;
+  /* ── Horizontal rule between groups ── */
+  .group-break {
+    page-break-before: always;
   }
 
   /* ── Print tweaks ── */
@@ -198,7 +272,7 @@ function buildHTML(dataMap, title) {
     .no-print { display: none !important; }
   }
 
-  /* ── Screen: print button ── */
+  /* ── Screen: print button bar ── */
   .print-bar {
     position: sticky;
     top: 0;
@@ -233,30 +307,61 @@ function buildHTML(dataMap, title) {
   <button onclick="window.print()">Afdrukken / PDF opslaan</button>
 </div>
 
-<!-- Cover page -->
+<!-- ═══ PAGE 1: VOORBLAD ═══ -->
 <div class="cover">
+  <div class="cover__top-bar"></div>
   <div class="cover__accent-bar"></div>
   <h1 class="cover__title">BPV Stageverslag</h1>
   <p class="cover__subtitle">Boers en Co.</p>
   <div class="cover__meta">
-    <strong>Naam:</strong> ${escapeHTML(coverData.naam || STUDENT_DEFAULTS.naam)}<br>
-    <strong>Studentnummer:</strong> ${escapeHTML(coverData.studentnummer || STUDENT_DEFAULTS.studentnummer)}<br>
-    <strong>Bedrijf:</strong> ${escapeHTML(coverData.bedrijf || STUDENT_DEFAULTS.bedrijf)}<br>
-    <strong>Periode:</strong> ${escapeHTML(coverData.periode || STUDENT_DEFAULTS.periode)}<br>
-    <strong>Opleiding:</strong> LiS — Leidse instrumentmakers School
+    <div class="cover__meta-row"><span class="cover__meta-label">Naam</span> ${escapeHTML(coverData.naam || STUDENT_DEFAULTS.naam)}</div>
+    <div class="cover__meta-row"><span class="cover__meta-label">Studentnummer</span> ${escapeHTML(coverData.studentnummer || STUDENT_DEFAULTS.studentnummer)}</div>
+    <div class="cover__meta-row"><span class="cover__meta-label">Bedrijf</span> ${escapeHTML(coverData.bedrijf || STUDENT_DEFAULTS.bedrijf)}</div>
+    <div class="cover__meta-row"><span class="cover__meta-label">Periode</span> ${escapeHTML(coverData.periode || STUDENT_DEFAULTS.periode)}</div>
+    <div class="cover__meta-row"><span class="cover__meta-label">Opleiding</span> LiS — Leidse instrumentmakers School</div>
   </div>
+  <div class="cover__date">${escapeHTML(today)}</div>
 </div>
 
+<!-- ═══ PAGE 2: INHOUDSOPGAVE ═══ -->
+${renderTOC()}
+
+<!-- ═══ PAGES 3+: INHOUD ═══ -->
 ${renderGroups(dataMap)}
 
 </body>
 </html>`;
 }
 
+function renderTOC() {
+  const groups = EXPORT_GROUPS.filter(g => g.tocLabel);
+
+  const items = groups.map(group => {
+    const subItems = group.sections.map(sectionId => {
+      const def = REPORT_SECTIONS.find(s => s.id === sectionId);
+      return def ? `<li class="toc__item">${escapeHTML(def.title)}</li>` : '';
+    }).join('');
+
+    return `
+      <div class="toc__group">
+        <div class="toc__group-title">${escapeHTML(group.tocLabel)}</div>
+        <ul class="toc__items">${subItems}</ul>
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="toc">
+      <h2 class="toc__title">Inhoudsopgave</h2>
+      ${items}
+    </div>
+  `;
+}
+
 function renderGroups(dataMap) {
   return EXPORT_GROUPS
-    .filter(g => g.label) // skip titelpagina (already on cover)
-    .map(group => {
+    .filter(g => g.label)
+    .map((group, i) => {
       const groupHTML = group.sections.map(sectionId => {
         const sectionDef = REPORT_SECTIONS.find(s => s.id === sectionId);
         if (!sectionDef) return '';
@@ -265,8 +370,10 @@ function renderGroups(dataMap) {
       }).join('');
 
       return `
-        <h2 class="group-header">${escapeHTML(group.label)}</h2>
-        ${groupHTML}
+        <div class="${i > 0 ? 'group-break' : ''}">
+          <h2 class="group-header">${escapeHTML(group.label)}</h2>
+          ${groupHTML}
+        </div>
       `;
     }).join('');
 }

@@ -19,7 +19,7 @@ import { addProject } from '../stores/projects.js';
 import { globalSearch } from '../stores/search.js';
 // ambient-canvas.js still available but empty states now use contextual hints
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings', 'curiosity'];
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'verslag', 'settings', 'curiosity'];
 
 // ── Time-of-day phase ─────────────────────────────────────────
 function getTimePhase() {
@@ -207,6 +207,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     'projects-hub':     { icon: '🚀', title: 'Nog geen projecten', desc: 'Begin met je eerste project — elk groot doel verdient er één.' },
     'planning-main':    { icon: '📋', title: 'Planning', desc: 'Je planning wordt gevuld door projecten en taken.' },
     'lijsten-screen':   { icon: '📝', title: 'Geen lijsten', desc: 'Maak je eerste lijst aan voor boodschappen, ideeën, of doelen.' },
+    'report-screen':    { icon: '📄', title: 'Stageverslag', desc: 'Bouw hier je BPV-verslag op, sectie voor sectie.' },
   };
 
   function ensureHostEmptyStates() {
@@ -948,6 +949,13 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     group: 'navigate',
     keywords: ['planning', 'week', 'schema'],
     handler: () => setActiveTab('planning'),
+  });
+  commandRegistry.register('nav:verslag', {
+    label: 'Ga naar Stageverslag',
+    icon: '📄',
+    group: 'navigate',
+    keywords: ['verslag', 'report', 'stage', 'bpv', 'stageverslag'],
+    handler: () => setActiveTab('verslag'),
   });
   commandRegistry.register('nav:settings', {
     label: 'Ga naar Instellingen',

@@ -30,6 +30,7 @@ import './project-detail/styles.css';
 import './project-hub/styles.css';
 import './history-browser/styles.css';
 import './tasks/styles.css';
+import './bpv-report/styles.css';
 import './bpv-mini-card/styles.css';
 import '../ui/theme-studio.css';
 import '../ui/morning-flow.css';
@@ -72,6 +73,7 @@ import { registerSchoolSkillTrackerBlock } from './school-skill-tracker/index.js
 import { registerPersonalEnergyBlock } from './personal-energy/index.js';
 import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
 import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
+import { registerBPVReportBlock } from './bpv-report/index.js';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerSchoolMiniCard } from './school-mini-card/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
@@ -112,6 +114,7 @@ export function registerDefaultBlocks(registry) {
   registerBPVQuickLogBlock(registry);
   registerBPVLogSummaryBlock(registry);
   registerBPVWeeklyOverviewBlock(registry);
+  registerBPVReportBlock(registry);
   registerBoundariesBlock(registry);
 
   // Mode-specific dashboard mini-cards (snapshot overview per mode)

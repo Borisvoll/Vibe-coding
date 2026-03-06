@@ -11,6 +11,7 @@ import {
   saveReportSection,
   getReportProgress,
 } from '../../stores/report.js';
+import { exportReport } from './export.js';
 
 // Assignment group labels for visual grouping in the nav
 const SECTION_GROUPS = [
@@ -36,7 +37,10 @@ export function renderBPVReport(container, context) {
   container.insertAdjacentHTML('beforeend', `
     <div class="report-page" id="report-${mountId}">
       <div class="report-header">
-        <h2 class="report-header__title">Stageverslag</h2>
+        <div class="report-header__row">
+          <h2 class="report-header__title">Stageverslag</h2>
+          <button type="button" class="report-export-btn" data-report-export>Exporteer als PDF</button>
+        </div>
         <p class="report-header__subtitle">Vul je verslag sectie voor sectie in. Alles wordt automatisch opgeslagen.</p>
       </div>
       <div class="report-progress">
@@ -53,6 +57,12 @@ export function renderBPVReport(container, context) {
   const sectionContainer = root.querySelector('[data-report-section-container]');
   const progressFill = root.querySelector('[data-report-progress-fill]');
   const progressLabel = root.querySelector('[data-report-progress-label]');
+
+  // Export button
+  const exportBtn = root.querySelector('[data-report-export]');
+  if (exportBtn) {
+    exportBtn.addEventListener('click', () => exportReport());
+  }
 
   // ── Load all section data + apply prefills ─────────────────
   async function loadAllData() {

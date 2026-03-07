@@ -17,9 +17,46 @@
   font-weight: 600;
 }
 
-.bpv-ql__date {
-  font-size: var(--font-base);
+.bpv-ql__date-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.bpv-ql__date-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-bg);
   color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--font-sm);
+  transition: border-color 150ms var(--ease), color 150ms var(--ease);
+}
+
+.bpv-ql__date-btn:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.bpv-ql__date-input {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  cursor: pointer;
+}
+
+.bpv-ql__date-label {
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+  text-align: center;
 }
 
 /* Day-type toggle */

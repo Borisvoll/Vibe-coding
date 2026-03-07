@@ -9,12 +9,14 @@
  *   Zwart (Z):          CMYK 30 30 30 100 → RGB #000000
  *   Blauw (B):          CMYK 79 26 0 0   → RGB #0099CC
  */
-import { escapeHTML } from '../../utils.js';
+import { escapeHTML, formatMinutes } from '../../utils.js';
 import {
   REPORT_SECTIONS,
   STUDENT_DEFAULTS,
   getReportSection,
 } from '../../stores/report.js';
+import { exportEntries } from '../../stores/bpv.js';
+import { DAY_TYPE_LABELS } from '../../constants.js';
 
 // ── Boers en Co. brand colors (CMYK → RGB approximations) ──
 const BRAND = {
@@ -32,6 +34,7 @@ const EXPORT_GROUPS = [
   { label: 'Opdracht 2 — Productgericht werken en verbeteren', sections: ['product_machines', 'product_proces', 'product_assemblage', 'product_verbetering', 'product_engels'], tocLabel: '2. Productgericht werken en verbeteren' },
   { label: 'Opdracht 4 — Terugkomdag presentatie', sections: ['presentatie'], tocLabel: '3. Terugkomdag presentatie' },
   { label: 'Reflectie', sections: ['reflectie'], tocLabel: '4. Reflectie' },
+  { label: null, sections: ['_hours_table'], tocLabel: '5. Urenverantwoording' },
 ];
 
 /**
@@ -45,8 +48,15 @@ export async function exportReport() {
     dataMap[section.id] = record?.data || {};
   }
 
+  // Load hours data for the hours table
+  let hoursRows = [];
+  try {
+    const json = await exportEntries('json');
+    hoursRows = JSON.parse(json);
+  } catch { /* no hours data */ }
+
   const title = `BPV Stageverslag — ${STUDENT_DEFAULTS.naam}`;
-  const html = buildHTML(dataMap, title);
+  const html = buildHTML(dataMap, title, hoursRows);
 
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -55,7 +65,7 @@ export async function exportReport() {
   return win;
 }
 
-function buildHTML(dataMap, title) {
+function buildHTML(dataMap, title, hoursRows = []) {
   const coverData = dataMap.titelpagina || {};
   const today = new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -265,6 +275,53 @@ function buildHTML(dataMap, title) {
     page-break-before: always;
   }
 
+  /* ── Hours table ── */
+  .hours-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9pt;
+    margin: 1rem 0;
+  }
+
+  .hours-table th {
+    background: ${BRAND.red};
+    color: #fff;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.4rem 0.5rem;
+    border: 1px solid ${BRAND.red};
+  }
+
+  .hours-table td {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ddd;
+    vertical-align: top;
+  }
+
+  .hours-table tr:nth-child(even) td {
+    background: #f9f9f9;
+  }
+
+  .hours-table .hours-table__week-row td {
+    background: #f0f0f0;
+    font-weight: 600;
+    font-size: 8pt;
+    color: #555;
+    border-top: 2px solid #ccc;
+  }
+
+  .hours-table__total td {
+    background: ${BRAND.red} !important;
+    color: #fff;
+    font-weight: 700;
+    border-color: ${BRAND.red};
+  }
+
+  .hours-table__missed td {
+    color: ${BRAND.red};
+    font-style: italic;
+  }
+
   /* ── Print tweaks ── */
   @media print {
     body { font-size: 10pt; }
@@ -328,6 +385,9 @@ ${renderTOC()}
 
 <!-- ═══ PAGES 3+: INHOUD ═══ -->
 ${renderGroups(dataMap)}
+
+<!-- ═══ URENVERANTWOORDING ═══ -->
+${renderHoursTable(hoursRows)}
 
 </body>
 </html>`;
@@ -398,5 +458,114 @@ function renderSection(sectionDef, data) {
     <h3 class="section-title">${escapeHTML(sectionDef.title)}</h3>
     <p class="section-desc">${escapeHTML(sectionDef.description)}</p>
     ${fieldsHTML}
+  `;
+}
+
+/**
+ * Render the hours table grouped by week with totals.
+ */
+function renderHoursTable(rows) {
+  if (!rows || rows.length === 0) {
+    return `
+      <div class="group-break">
+        <h2 class="group-header">Opdracht 3 — Urenverantwoording</h2>
+        <p class="section-desc">Nog geen uren geregistreerd.</p>
+      </div>
+    `;
+  }
+
+  // Sort by date
+  const sorted = [...rows].sort((a, b) => a.date.localeCompare(b.date));
+
+  // Group by week
+  const weekGroups = [];
+  let currentWeek = null;
+  let currentGroup = null;
+  for (const row of sorted) {
+    if (row.week !== currentWeek) {
+      currentWeek = row.week;
+      currentGroup = { week: row.week, rows: [] };
+      weekGroups.push(currentGroup);
+    }
+    currentGroup.rows.push(row);
+  }
+
+  // Format date to "dd-mm"
+  function fmtDate(dateStr) {
+    const [, m, d] = dateStr.split('-');
+    return `${d}-${m}`;
+  }
+
+  // Format day name
+  const dayNames = ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'];
+  function dayName(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return dayNames[d.getDay()];
+  }
+
+  let totalMinutesAll = 0;
+
+  const tableRows = weekGroups.map(group => {
+    let weekMinutes = 0;
+    const dayRows = group.rows.map(r => {
+      const typeLabel = DAY_TYPE_LABELS[r.type] || r.type;
+      const time = r.startTime && r.endTime
+        ? `${r.startTime} – ${r.endTime}`
+        : '—';
+      const brk = r.type === 'work' ? `${r.breakMinutes}m` : '—';
+      const net = r.type === 'work' ? formatMinutes(r.netMinutes) : '—';
+      weekMinutes += r.netMinutes || 0;
+      const note = r.note || r.description || '';
+      const isMissed = r.type !== 'work' && r.type !== 'holiday';
+
+      return `<tr${isMissed ? ' class="hours-table__missed"' : ''}>
+        <td>${escapeHTML(fmtDate(r.date))}</td>
+        <td>${escapeHTML(dayName(r.date))}</td>
+        <td>${escapeHTML(typeLabel)}</td>
+        <td>${escapeHTML(time)}</td>
+        <td>${escapeHTML(brk)}</td>
+        <td>${escapeHTML(net)}</td>
+        <td>${escapeHTML(note.length > 60 ? note.slice(0, 57) + '…' : note)}</td>
+      </tr>`;
+    }).join('');
+
+    totalMinutesAll += weekMinutes;
+
+    return `
+      <tr class="hours-table__week-row">
+        <td colspan="5">${escapeHTML(group.week)}</td>
+        <td>${escapeHTML(formatMinutes(weekMinutes))}</td>
+        <td></td>
+      </tr>
+      ${dayRows}
+    `;
+  }).join('');
+
+  return `
+    <div class="group-break">
+      <h2 class="group-header">Opdracht 3 — Urenverantwoording</h2>
+      <p class="section-desc">Overzicht van alle geregistreerde uren tijdens de stageperiode.</p>
+      <table class="hours-table">
+        <thead>
+          <tr>
+            <th>Datum</th>
+            <th>Dag</th>
+            <th>Type</th>
+            <th>Tijd</th>
+            <th>Pauze</th>
+            <th>Netto</th>
+            <th>Notitie</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+          <tr class="hours-table__total">
+            <td colspan="5">Totaal</td>
+            <td>${escapeHTML(formatMinutes(totalMinutesAll))}</td>
+            <td>${sorted.length} dagen</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   `;
 }

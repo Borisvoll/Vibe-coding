@@ -1,20 +1,26 @@
 import { addHoursEntry, getHoursEntry } from '../../stores/bpv.js';
-import { getToday, formatDateShort, calcNetMinutes, formatMinutes, escapeHTML, debounce } from '../../utils.js';
-import { DAY_TYPES, DAY_TYPE_LABELS } from '../../constants.js';
+import { getToday, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, debounce } from '../../utils.js';
+import { DAY_TYPES, DAY_TYPE_LABELS, BPV_START, BPV_END } from '../../constants.js';
 import { expandBPVNote } from '../../ai/client.js';
 
 export function renderBPVQuickLog(container, context) {
   const mountId = `bpv-ql-${crypto.randomUUID()}`;
   const { eventBus } = context;
   const today = getToday();
-  const todayLabel = formatDateShort(today);
+  let selectedDate = today;
 
   container.insertAdjacentHTML('beforeend', `
     <article class="bpv-ql os-mini-card" data-mount-id="${mountId}">
       <div class="bpv-ql__header">
         <h3 class="bpv-ql__title">Snel loggen</h3>
-        <span class="bpv-ql__date">${escapeHTML(todayLabel)}</span>
+        <div class="bpv-ql__date-nav">
+          <button type="button" class="bpv-ql__date-btn" data-action="prev-day" title="Vorige dag">&larr;</button>
+          <input type="date" class="bpv-ql__date-input" data-action="pick-date"
+            value="${today}" min="${BPV_START}" max="${BPV_END}">
+          <button type="button" class="bpv-ql__date-btn" data-action="next-day" title="Volgende dag">&rarr;</button>
+        </div>
       </div>
+      <div class="bpv-ql__date-label" data-date-label>${escapeHTML(formatDateShort(today))}${today === getToday() ? ' (vandaag)' : ''}</div>
       <div class="bpv-ql__type-row" role="group" aria-label="Dagtype">
         ${DAY_TYPES.map((t) => `
           <button type="button" class="bpv-ql__type-btn" data-type="${t}">${DAY_TYPE_LABELS[t]}</button>
@@ -92,10 +98,13 @@ export function renderBPVQuickLog(container, context) {
   }
 
   async function populateFromExisting() {
-    const entry = await getHoursEntry(today);
+    const entry = await getHoursEntry(selectedDate);
     if (!entry) {
       setType('work');
       el.querySelector('[data-field="startTime"]').value = '08:00';
+      el.querySelector('[data-field="endTime"]').value = '';
+      el.querySelector('[data-field="breakMinutes"]').value = '45';
+      el.querySelector('[data-field="note"]').value = '';
       updateNet();
       return;
     }
@@ -108,6 +117,26 @@ export function renderBPVQuickLog(container, context) {
     el.querySelector('[data-field="note"]').value = entry.note || '';
     updateNet();
     setStatus('Bestaande invoer geladen');
+  }
+
+  function updateDateLabel() {
+    const label = el.querySelector('[data-date-label]');
+    if (label) {
+      const suffix = selectedDate === getToday() ? ' (vandaag)' : '';
+      label.textContent = formatDateShort(selectedDate) + suffix;
+    }
+  }
+
+  function navigateDate(offset) {
+    const d = new Date(selectedDate + 'T00:00:00');
+    d.setDate(d.getDate() + offset);
+    const newDate = formatDateISO(d);
+    if (newDate < BPV_START || newDate > BPV_END) return;
+    selectedDate = newDate;
+    const dateInput = el.querySelector('[data-action="pick-date"]');
+    if (dateInput) dateInput.value = selectedDate;
+    updateDateLabel();
+    populateFromExisting();
   }
 
   // ── Core save logic (shared between manual + auto-save) ──
@@ -133,10 +162,10 @@ export function renderBPVQuickLog(container, context) {
       }
     }
 
-    await addHoursEntry(today, { type: activeType, startTime, endTime, breakMinutes, note });
+    await addHoursEntry(selectedDate, { type: activeType, startTime, endTime, breakMinutes, note });
     if (!silent) setStatus('Opgeslagen ✓');
     updateNet();
-    eventBus?.emit('bpv:changed', { date: today });
+    eventBus?.emit('bpv:changed', { date: selectedDate });
     return true;
   }
 
@@ -188,6 +217,18 @@ export function renderBPVQuickLog(container, context) {
     } finally {
       aiNoteBtn.disabled = false;
       aiNoteBtn.textContent = '✨';
+    }
+  });
+
+  // Date navigation
+  el.querySelector('[data-action="prev-day"]')?.addEventListener('click', () => navigateDate(-1));
+  el.querySelector('[data-action="next-day"]')?.addEventListener('click', () => navigateDate(1));
+  el.querySelector('[data-action="pick-date"]')?.addEventListener('change', (e) => {
+    const newDate = e.target.value;
+    if (newDate >= BPV_START && newDate <= BPV_END) {
+      selectedDate = newDate;
+      updateDateLabel();
+      populateFromExisting();
     }
   });
 

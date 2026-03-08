@@ -1,6 +1,12 @@
-import { addHoursEntry, getHoursEntry } from '../../stores/bpv.js';
-import { getToday, getISOWeek, getWeekDates, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, debounce } from '../../utils.js';
+import { addHoursEntry, getHoursEntry, addPhoto, getPhotosForDate, deletePhoto } from '../../stores/bpv.js';
+import { getToday, getISOWeek, getWeekDates, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, sanitizeDataURL, debounce, resizeImage } from '../../utils.js';
 import { DAY_TYPES, DAY_TYPE_LABELS, BPV_START, BPV_END } from '../../constants.js';
+
+const DAY_TEMPLATES = [
+  { id: 'productie', label: 'Productiedag', startTime: '07:30', endTime: '16:00', breakMinutes: 45, activities: ['CNC-productie', 'Kwaliteitscontrole', 'Opruimen werkplek'] },
+  { id: 'kantoor', label: 'Kantoordag', startTime: '08:30', endTime: '17:00', breakMinutes: 60, activities: ['Tekeningen uitwerken', 'Overleg team', 'Administratie'] },
+  { id: 'meet', label: 'Meetdag', startTime: '08:00', endTime: '16:30', breakMinutes: 45, activities: ['Meetinstrumenten kalibreren', 'Producten inmeten', 'Meetrapporten opstellen'] },
+];
 import { expandBPVNote } from '../../ai/client.js';
 
 const WEEKDAY_SHORT = ['ma', 'di', 'wo', 'do', 'vr'];
@@ -26,6 +32,10 @@ export function renderBPVQuickLog(container, context) {
       </div>
       <div class="bpv-ql__week-strip" data-week-strip></div>
       <div class="bpv-ql__date-label" data-date-label>${escapeHTML(formatDateShort(today))}${today === getToday() ? ' (vandaag)' : ''}</div>
+      <div class="bpv-ql__templates" data-templates>
+        <button type="button" class="btn btn-ghost btn-sm" data-action="copy-yesterday" title="Kopieer uren en activiteiten van gisteren">Kopieer van gisteren</button>
+        ${DAY_TEMPLATES.map(t => `<button type="button" class="btn btn-ghost btn-sm" data-template="${t.id}" title="${escapeHTML(t.label)}">${escapeHTML(t.label)}</button>`).join('')}
+      </div>
       <div class="bpv-ql__type-row" role="group" aria-label="Dagtype">
         ${DAY_TYPES.map((t) => `
           <button type="button" class="bpv-ql__type-btn" data-type="${t}">${DAY_TYPE_LABELS[t]}</button>
@@ -74,6 +84,16 @@ export function renderBPVQuickLog(container, context) {
         </div>
         <input type="text" class="form-input bpv-ql__input"
           data-field="note" placeholder="Korte notitie over de dag…" maxlength="200">
+      </div>
+      <div class="bpv-ql__photos-section" data-photos-section>
+        <div class="bpv-ql__photos-header">
+          <span class="bpv-ql__photos-label">Foto's</span>
+          <label class="btn btn-ghost btn-sm bpv-ql__photo-btn" title="Foto toevoegen">
+            📷 Foto
+            <input type="file" accept="image/*" capture="environment" class="bpv-ql__photo-input" data-action="add-photo" hidden>
+          </label>
+        </div>
+        <div class="bpv-ql__photos-grid" data-photos-grid></div>
       </div>
       <div class="bpv-ql__footer">
         <span class="bpv-ql__status" data-status></span>
@@ -193,7 +213,6 @@ export function renderBPVQuickLog(container, context) {
       el.querySelector('[data-field="note"]').value = '';
       setActivities([]);
       updateNet();
-      // Update activities label for the selected date
       updateActivitiesLabel();
       return;
     }
@@ -349,8 +368,83 @@ export function renderBPVQuickLog(container, context) {
     }
   });
 
+  // ── Templates ──
+  el.querySelector('[data-action="copy-yesterday"]')?.addEventListener('click', async () => {
+    const d = new Date(selectedDate + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    const yesterday = formatDateISO(d);
+    const entry = await getHoursEntry(yesterday);
+    if (!entry) {
+      setStatus('Geen gegevens van gisteren gevonden.', true);
+      return;
+    }
+    setType(entry.type || 'work');
+    if (entry.startTime) el.querySelector('[data-field="startTime"]').value = entry.startTime;
+    if (entry.endTime) el.querySelector('[data-field="endTime"]').value = entry.endTime;
+    el.querySelector('[data-field="breakMinutes"]').value = entry.breakMinutes ?? 45;
+    setActivities(entry.activities);
+    updateNet();
+    setStatus('Gekopieerd van gisteren');
+  });
+
+  el.querySelectorAll('[data-template]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tmpl = DAY_TEMPLATES.find(t => t.id === btn.dataset.template);
+      if (!tmpl) return;
+      setType('work');
+      el.querySelector('[data-field="startTime"]').value = tmpl.startTime;
+      el.querySelector('[data-field="endTime"]').value = tmpl.endTime;
+      el.querySelector('[data-field="breakMinutes"]').value = tmpl.breakMinutes;
+      setActivities(tmpl.activities);
+      updateNet();
+      setStatus(`Template "${tmpl.label}" toegepast`);
+    });
+  });
+
+  // ── Photos ──
+  const photosGrid = el.querySelector('[data-photos-grid]');
+
+  async function renderPhotos() {
+    const photos = await getPhotosForDate(selectedDate);
+    if (photos.length === 0) {
+      photosGrid.innerHTML = '<span class="bpv-ql__photos-empty">Nog geen foto\'s</span>';
+      return;
+    }
+    photosGrid.innerHTML = photos.map(p => `
+      <div class="bpv-ql__photo-item" data-photo-id="${p.id}">
+        <img src="${sanitizeDataURL(p.data)}" alt="Foto" class="bpv-ql__photo-thumb">
+        <button type="button" class="bpv-ql__photo-delete" data-action="delete-photo" data-photo-id="${p.id}" title="Verwijder foto">&times;</button>
+      </div>
+    `).join('');
+    photosGrid.querySelectorAll('[data-action="delete-photo"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await deletePhoto(btn.dataset.photoId);
+        renderPhotos();
+      });
+    });
+  }
+
+  el.querySelector('[data-action="add-photo"]')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const resized = await resizeImage(file, 800);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        await addPhoto(selectedDate, reader.result);
+        renderPhotos();
+        setStatus('Foto toegevoegd');
+      };
+      reader.readAsDataURL(resized);
+    } catch (err) {
+      setStatus('Foto kon niet worden verwerkt', true);
+    }
+    e.target.value = '';
+  });
+
   setType('work');
   populateFromExisting();
+  renderPhotos();
   renderWeekStrip();
 
   const unsubBPV = eventBus?.on('bpv:changed', ({ date } = {}) => {

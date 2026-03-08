@@ -1,0 +1,96 @@
+.bpv-countdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bpv-countdown__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bpv-countdown__icon {
+  font-size: 1.2rem;
+}
+
+.bpv-countdown__title {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.bpv-countdown__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  text-align: center;
+}
+
+.bpv-countdown__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent) 6%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 12%, var(--color-border));
+}
+
+.bpv-countdown__stat-value {
+  font-size: var(--font-xl, 1.25rem);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.bpv-countdown__stat-label {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.bpv-countdown__progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bpv-countdown__progress-label {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.bpv-countdown__pct {
+  color: var(--color-text-tertiary, var(--color-text-secondary));
+}
+
+.bpv-countdown__progress-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-alt, #f3f4f6);
+  overflow: hidden;
+}
+
+.bpv-countdown__progress-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width 300ms var(--ease);
+}
+
+.bpv-countdown__projection {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-success) 20%, var(--color-border));
+}
+
+.bpv-countdown__loading {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+  padding: var(--space-3);
+  text-align: center;
+}

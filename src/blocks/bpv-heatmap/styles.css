@@ -1,0 +1,110 @@
+.bpv-heatmap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bpv-heatmap__title {
+  margin: 0;
+  font-size: var(--font-lg);
+  font-weight: 600;
+}
+
+.bpv-heatmap__body {
+  overflow-x: auto;
+}
+
+.bpv-heatmap__months {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 4px;
+  padding-left: 24px;
+}
+
+.bpv-heatmap__month {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.bpv-heatmap__day-spacer {
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.bpv-heatmap__grid {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+}
+
+.bpv-heatmap__row-label {
+  font-size: 9px;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 4px;
+  width: 20px;
+}
+
+.bpv-heatmap__cell {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--color-surface-alt, #ebedf0);
+  cursor: default;
+}
+
+.bpv-heatmap__cell--filled {
+  background: var(--color-success, #10b981);
+  cursor: pointer;
+}
+
+.bpv-heatmap__cell--missed {
+  background: var(--color-error, #ef4444);
+  cursor: pointer;
+}
+
+.bpv-heatmap__cell--weekend {
+  background: color-mix(in srgb, var(--color-text-secondary) 10%, var(--color-bg));
+}
+
+.bpv-heatmap__cell--future {
+  background: var(--color-surface-alt, #ebedf0);
+  cursor: pointer;
+}
+
+.bpv-heatmap__cell--outside {
+  background: transparent;
+}
+
+.bpv-heatmap__cell--today {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.bpv-heatmap__cell[role="button"]:hover {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.bpv-heatmap__legend {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.bpv-heatmap__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+}
+
+.bpv-heatmap__legend-item .bpv-heatmap__cell {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}

@@ -19,10 +19,10 @@
 }
 
 .bpv-wo__week-label {
-  font-size: var(--font-md);
+  font-size: var(--font-sm);
   font-weight: 600;
   color: var(--color-text);
-  min-width: 80px;
+  min-width: 160px;
   text-align: center;
 }
 
@@ -104,8 +104,26 @@
   color: var(--color-text-secondary);
 }
 
+.bpv-wo__day-indicators {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  min-height: 14px;
+}
+
 .bpv-wo__lb-dot {
   font-size: var(--font-xs);
+}
+
+.bpv-wo__act-dot {
+  font-size: 6px;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+.bpv-wo__more {
+  font-style: italic;
+  color: var(--color-text-tertiary, var(--color-text-secondary));
 }
 
 /* Day states */

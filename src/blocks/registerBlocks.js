@@ -8,6 +8,7 @@ import './inbox-screen/styles.css';
 import './bpv-log-summary/styles.css';
 import './bpv-quick-log/styles.css';
 import './bpv-weekly-overview/styles.css';
+import './bpv-data-manager/styles.css';
 import './school-dashboard/styles.css';
 import './personal-dashboard/styles.css';
 import './weekly-review/styles.css';
@@ -74,6 +75,7 @@ import { registerPersonalEnergyBlock } from './personal-energy/index.js';
 import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
 import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
 import { registerBPVReportBlock } from './bpv-report/index.js';
+import { registerBPVDataManagerBlock } from './bpv-data-manager/index.js';
 import { registerBPVMiniCard } from './bpv-mini-card/index.js';
 import { registerSchoolMiniCard } from './school-mini-card/index.js';
 import { registerPersonalMiniCard } from './personal-mini-card/index.js';
@@ -114,6 +116,7 @@ export function registerDefaultBlocks(registry) {
   registerBPVQuickLogBlock(registry);
   registerBPVLogSummaryBlock(registry);
   registerBPVWeeklyOverviewBlock(registry);
+  registerBPVDataManagerBlock(registry);
   registerBPVReportBlock(registry);
   registerBoundariesBlock(registry);
 

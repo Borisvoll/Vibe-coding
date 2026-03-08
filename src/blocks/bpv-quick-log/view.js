@@ -1,7 +1,9 @@
 import { addHoursEntry, getHoursEntry } from '../../stores/bpv.js';
-import { getToday, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, debounce } from '../../utils.js';
+import { getToday, getISOWeek, getWeekDates, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, debounce } from '../../utils.js';
 import { DAY_TYPES, DAY_TYPE_LABELS, BPV_START, BPV_END } from '../../constants.js';
 import { expandBPVNote } from '../../ai/client.js';
+
+const WEEKDAY_SHORT = ['ma', 'di', 'wo', 'do', 'vr'];
 
 export function renderBPVQuickLog(container, context) {
   const mountId = `bpv-ql-${crypto.randomUUID()}`;
@@ -12,14 +14,17 @@ export function renderBPVQuickLog(container, context) {
   container.insertAdjacentHTML('beforeend', `
     <article class="bpv-ql os-mini-card" data-mount-id="${mountId}">
       <div class="bpv-ql__header">
-        <h3 class="bpv-ql__title">Snel loggen</h3>
+        <h3 class="bpv-ql__title">Uren &amp; activiteiten</h3>
         <div class="bpv-ql__date-nav">
+          <button type="button" class="bpv-ql__date-btn" data-action="prev-week" title="Vorige week">&#171;</button>
           <button type="button" class="bpv-ql__date-btn" data-action="prev-day" title="Vorige dag">&larr;</button>
           <input type="date" class="bpv-ql__date-input" data-action="pick-date"
             value="${today}" min="${BPV_START}" max="${BPV_END}">
           <button type="button" class="bpv-ql__date-btn" data-action="next-day" title="Volgende dag">&rarr;</button>
+          <button type="button" class="bpv-ql__date-btn" data-action="next-week" title="Volgende week">&#187;</button>
         </div>
       </div>
+      <div class="bpv-ql__week-strip" data-week-strip></div>
       <div class="bpv-ql__date-label" data-date-label>${escapeHTML(formatDateShort(today))}${today === getToday() ? ' (vandaag)' : ''}</div>
       <div class="bpv-ql__type-row" role="group" aria-label="Dagtype">
         ${DAY_TYPES.map((t) => `
@@ -42,6 +47,26 @@ export function renderBPVQuickLog(container, context) {
         </label>
         <div class="bpv-ql__net" data-net-display>Netto: —</div>
       </div>
+      <div class="bpv-ql__activities" data-activities-section>
+        <div class="bpv-ql__activities-label">Wat heb je vandaag gedaan?</div>
+        <div class="bpv-ql__activities-fields">
+          <div class="bpv-ql__activity-row">
+            <span class="bpv-ql__activity-num">1</span>
+            <input type="text" class="form-input bpv-ql__input" data-field="activity-0"
+              placeholder="Bijv. CNC-freeswerk afgerond" maxlength="200">
+          </div>
+          <div class="bpv-ql__activity-row">
+            <span class="bpv-ql__activity-num">2</span>
+            <input type="text" class="form-input bpv-ql__input" data-field="activity-1"
+              placeholder="Bijv. Tekening uitgewerkt in SolidWorks" maxlength="200">
+          </div>
+          <div class="bpv-ql__activity-row">
+            <span class="bpv-ql__activity-num">3</span>
+            <input type="text" class="form-input bpv-ql__input" data-field="activity-2"
+              placeholder="Bijv. Kwaliteitscontrole uitgevoerd" maxlength="200">
+          </div>
+        </div>
+      </div>
       <div class="bpv-ql__field bpv-ql__field--full">
         <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)">
           <span>Notitie</span>
@@ -52,9 +77,12 @@ export function renderBPVQuickLog(container, context) {
       </div>
       <div class="bpv-ql__footer">
         <span class="bpv-ql__status" data-status></span>
-        <button type="button" class="btn btn-primary btn-sm bpv-ql__save" data-action="save">
-          Opslaan
-        </button>
+        <div class="bpv-ql__footer-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-action="today" title="Ga naar vandaag">Vandaag</button>
+          <button type="button" class="btn btn-primary btn-sm bpv-ql__save" data-action="save">
+            Opslaan
+          </button>
+        </div>
       </div>
     </article>
   `);
@@ -65,8 +93,50 @@ export function renderBPVQuickLog(container, context) {
   const netDisplay = el.querySelector('[data-net-display]');
   const statusEl = el.querySelector('[data-status]');
   const saveBtn = el.querySelector('[data-action="save"]');
+  const weekStrip = el.querySelector('[data-week-strip]');
 
   let activeType = 'work';
+
+  // ── Week strip rendering ──
+  async function renderWeekStrip() {
+    const week = getISOWeek(selectedDate);
+    const dates = getWeekDates(week);
+    const entries = await Promise.all(dates.map(d => getHoursEntry(d).catch(() => null)));
+
+    weekStrip.innerHTML = dates.map((d, i) => {
+      const entry = entries[i];
+      const isSelected = d === selectedDate;
+      const isToday = d === getToday();
+      const hasEntry = !!entry;
+      const dayNum = d.split('-')[2].replace(/^0/, '');
+      const statusCls = hasEntry ? 'bpv-ql__ws-day--filled' : '';
+      const selectedCls = isSelected ? 'bpv-ql__ws-day--active' : '';
+      const todayCls = isToday ? 'bpv-ql__ws-day--today' : '';
+      const inRange = d >= BPV_START && d <= BPV_END;
+      return `
+        <button type="button" class="bpv-ql__ws-day ${statusCls} ${selectedCls} ${todayCls}"
+          data-ws-date="${d}" ${!inRange ? 'disabled' : ''} title="${escapeHTML(formatDateShort(d))}">
+          <span class="bpv-ql__ws-name">${WEEKDAY_SHORT[i]}</span>
+          <span class="bpv-ql__ws-num">${dayNum}</span>
+          ${hasEntry ? '<span class="bpv-ql__ws-dot"></span>' : ''}
+        </button>
+      `;
+    }).join('');
+
+    weekStrip.querySelectorAll('[data-ws-date]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = btn.dataset.wsDate;
+        if (d >= BPV_START && d <= BPV_END) {
+          selectedDate = d;
+          const dateInput = el.querySelector('[data-action="pick-date"]');
+          if (dateInput) dateInput.value = selectedDate;
+          updateDateLabel();
+          populateFromExisting();
+          renderWeekStrip();
+        }
+      });
+    });
+  }
 
   function setType(type) {
     activeType = type;
@@ -97,6 +167,22 @@ export function renderBPVQuickLog(container, context) {
     if (!isError) setTimeout(() => { statusEl.textContent = ''; }, 2500);
   }
 
+  function getActivities() {
+    return [
+      el.querySelector('[data-field="activity-0"]')?.value || '',
+      el.querySelector('[data-field="activity-1"]')?.value || '',
+      el.querySelector('[data-field="activity-2"]')?.value || '',
+    ];
+  }
+
+  function setActivities(activities) {
+    const acts = Array.isArray(activities) ? activities : [];
+    for (let i = 0; i < 3; i++) {
+      const input = el.querySelector(`[data-field="activity-${i}"]`);
+      if (input) input.value = acts[i] || '';
+    }
+  }
+
   async function populateFromExisting() {
     const entry = await getHoursEntry(selectedDate);
     if (!entry) {
@@ -105,7 +191,10 @@ export function renderBPVQuickLog(container, context) {
       el.querySelector('[data-field="endTime"]').value = '';
       el.querySelector('[data-field="breakMinutes"]').value = '45';
       el.querySelector('[data-field="note"]').value = '';
+      setActivities([]);
       updateNet();
+      // Update activities label for the selected date
+      updateActivitiesLabel();
       return;
     }
     setType(entry.type || 'work');
@@ -115,8 +204,19 @@ export function renderBPVQuickLog(container, context) {
       el.querySelector('[data-field="breakMinutes"]').value = entry.breakMinutes ?? 45;
     }
     el.querySelector('[data-field="note"]').value = entry.note || '';
+    setActivities(entry.activities);
     updateNet();
+    updateActivitiesLabel();
     setStatus('Bestaande invoer geladen');
+  }
+
+  function updateActivitiesLabel() {
+    const label = el.querySelector('.bpv-ql__activities-label');
+    if (!label) return;
+    const isToday = selectedDate === getToday();
+    label.textContent = isToday
+      ? 'Wat heb je vandaag gedaan?'
+      : `Wat heb je gedaan op ${formatDateShort(selectedDate)}?`;
   }
 
   function updateDateLabel() {
@@ -137,6 +237,7 @@ export function renderBPVQuickLog(container, context) {
     if (dateInput) dateInput.value = selectedDate;
     updateDateLabel();
     populateFromExisting();
+    renderWeekStrip();
   }
 
   // ── Core save logic (shared between manual + auto-save) ──
@@ -145,6 +246,7 @@ export function renderBPVQuickLog(container, context) {
     const endTime = el.querySelector('[data-field="endTime"]').value || null;
     const breakMinutes = Number(el.querySelector('[data-field="breakMinutes"]').value) || 0;
     const note = el.querySelector('[data-field="note"]').value;
+    const activities = getActivities();
 
     if (activeType === 'work') {
       if (!startTime || !endTime) {
@@ -162,9 +264,10 @@ export function renderBPVQuickLog(container, context) {
       }
     }
 
-    await addHoursEntry(selectedDate, { type: activeType, startTime, endTime, breakMinutes, note });
+    await addHoursEntry(selectedDate, { type: activeType, startTime, endTime, breakMinutes, note, activities });
     if (!silent) setStatus('Opgeslagen ✓');
     updateNet();
+    renderWeekStrip();
     eventBus?.emit('bpv:changed', { date: selectedDate });
     return true;
   }
@@ -174,7 +277,6 @@ export function renderBPVQuickLog(container, context) {
     const btn = e.target.closest('.bpv-ql__type-btn');
     if (!btn) return;
     setType(btn.dataset.type);
-    // Auto-save non-work types immediately (no time fields needed)
     if (btn.dataset.type !== 'work') doSave({ silent: true });
   });
 
@@ -187,6 +289,10 @@ export function renderBPVQuickLog(container, context) {
 
   // Auto-save note changes
   el.querySelector('[data-field="note"]')?.addEventListener('input', autoSave);
+
+  // Auto-save activity changes
+  el.querySelectorAll('[data-field="activity-0"], [data-field="activity-1"], [data-field="activity-2"]')
+    .forEach((input) => input.addEventListener('input', autoSave));
 
   // Manual save (fallback)
   saveBtn.addEventListener('click', async () => {
@@ -223,19 +329,34 @@ export function renderBPVQuickLog(container, context) {
   // Date navigation
   el.querySelector('[data-action="prev-day"]')?.addEventListener('click', () => navigateDate(-1));
   el.querySelector('[data-action="next-day"]')?.addEventListener('click', () => navigateDate(1));
+  el.querySelector('[data-action="prev-week"]')?.addEventListener('click', () => navigateDate(-7));
+  el.querySelector('[data-action="next-week"]')?.addEventListener('click', () => navigateDate(7));
+  el.querySelector('[data-action="today"]')?.addEventListener('click', () => {
+    selectedDate = getToday();
+    const dateInput = el.querySelector('[data-action="pick-date"]');
+    if (dateInput) dateInput.value = selectedDate;
+    updateDateLabel();
+    populateFromExisting();
+    renderWeekStrip();
+  });
   el.querySelector('[data-action="pick-date"]')?.addEventListener('change', (e) => {
     const newDate = e.target.value;
     if (newDate >= BPV_START && newDate <= BPV_END) {
       selectedDate = newDate;
       updateDateLabel();
       populateFromExisting();
+      renderWeekStrip();
     }
   });
 
   setType('work');
   populateFromExisting();
+  renderWeekStrip();
 
-  const unsubBPV = eventBus?.on('bpv:changed', () => populateFromExisting());
+  const unsubBPV = eventBus?.on('bpv:changed', ({ date } = {}) => {
+    // Only reload if the event is for a different source (avoid loops)
+    if (date && date !== selectedDate) renderWeekStrip();
+  });
 
   return {
     unmount() {

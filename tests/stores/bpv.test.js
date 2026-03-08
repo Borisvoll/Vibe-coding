@@ -31,8 +31,51 @@ describe('BPV store — TrackerEntry CRUD', () => {
     // 16:45 - 08:00 = 525min; 525 - 45min break = 480min = 8h
     expect(entry.netMinutes).toBe(480);
     expect(entry.note).toBe('CNC draaiwerk');
+    expect(entry.activities).toEqual(['', '', '']);
     expect(entry.createdAt).toBeDefined();
     expect(entry.updatedAt).toBeDefined();
+  });
+
+  it('addHoursEntry stores activities array', async () => {
+    const entry = await addHoursEntry('2026-02-19', {
+      type: 'work',
+      startTime: '08:00',
+      endTime: '16:45',
+      breakMinutes: 45,
+      activities: ['CNC draaien', 'Tekening lezen', 'Kwaliteitscontrole'],
+    });
+    expect(entry.activities).toEqual(['CNC draaien', 'Tekening lezen', 'Kwaliteitscontrole']);
+  });
+
+  it('addHoursEntry normalizes activities to 3 items', async () => {
+    const entry = await addHoursEntry('2026-02-19', {
+      type: 'work',
+      startTime: '08:00',
+      endTime: '16:45',
+      breakMinutes: 45,
+      activities: ['Alleen dit'],
+    });
+    expect(entry.activities).toHaveLength(3);
+    expect(entry.activities[0]).toBe('Alleen dit');
+    expect(entry.activities[1]).toBe('');
+    expect(entry.activities[2]).toBe('');
+  });
+
+  it('addHoursEntry preserves existing activities on upsert without new activities', async () => {
+    await addHoursEntry('2026-02-19', {
+      type: 'work',
+      startTime: '08:00',
+      endTime: '16:45',
+      breakMinutes: 45,
+      activities: ['CNC draaien', 'Meten', 'Opruimen'],
+    });
+    const updated = await addHoursEntry('2026-02-19', {
+      type: 'work',
+      startTime: '08:00',
+      endTime: '17:00',
+      breakMinutes: 45,
+    });
+    expect(updated.activities).toEqual(['CNC draaien', 'Meten', 'Opruimen']);
   });
 
   it('addHoursEntry calculates netMinutes correctly', async () => {
@@ -181,6 +224,21 @@ describe('BPV store — getWeeklyOverview', () => {
     const ov = await getWeeklyOverview('2026-W12');
     ov.days.forEach((d) => expect(d.logged).toBe(false));
   });
+
+  it('days include activities and hasActivities flag', async () => {
+    await addHoursEntry('2026-02-16', {
+      type: 'work', startTime: '08:00', endTime: '16:00', breakMinutes: 30,
+      activities: ['Frezen', 'Meten', ''],
+    });
+    const ov = await getWeeklyOverview('2026-W08');
+    const mon = ov.days.find(d => d.date === '2026-02-16');
+    expect(mon.hasActivities).toBe(true);
+    expect(mon.activities).toEqual(['Frezen', 'Meten', '']);
+    // Day without entry should have empty activities
+    const tue = ov.days.find(d => d.date === '2026-02-17');
+    expect(tue.hasActivities).toBe(false);
+    expect(tue.activities).toEqual([]);
+  });
 });
 
 // ─── Export ───────────────────────────────────────────────────────────────────
@@ -193,7 +251,7 @@ describe('BPV store — exportEntries', () => {
     const csv = await exportEntries('csv');
     const lines = csv.split('\n').filter(Boolean);
 
-    expect(lines[0]).toBe('datum,week,type,start,einde,pauze_min,netto_min,netto_uren,notitie,omschrijving,tags');
+    expect(lines[0]).toBe('datum,week,type,start,einde,pauze_min,netto_min,netto_uren,notitie,activiteit_1,activiteit_2,activiteit_3,omschrijving,tags');
     // At least 2 data rows (may have more from other tests)
     expect(lines.length).toBeGreaterThanOrEqual(3);
 
@@ -218,6 +276,7 @@ describe('BPV store — exportEntries', () => {
     expect(row.netMinutes).toBe(450); // 8h - 30m = 450min
     expect(row.netHours).toBe(7.5);
     expect(Array.isArray(row.tags)).toBe(true);
+    expect(Array.isArray(row.activities)).toBe(true);
   });
 
   it('JSON export entries are sorted by date', async () => {

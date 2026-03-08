@@ -94,7 +94,7 @@ export const REPORT_SECTIONS = [
     title: 'OP1 — Stap 5: Motivatie per leerdoel',
     description: 'Leg uit waarom je elk doel kiest, hoe het aansluit bij jouw toekomst en hoe je het binnen het bedrijf kunt realiseren.',
     fields: [
-      { key: 'motivatie1', label: 'Motivatie leerdoel 1', type: 'textarea', hint: 'Waarom dit doel? Hoe past het bij je toekomst? Hoe ga je het bereiken bij Boers en Co.?' },
+      { key: 'motivatie1', label: 'Motivatie leerdoel 1', type: 'textarea', hint: 'Waarom dit doel? Hoe past het bij je toekomst? Hoe ga je het bereiken bij je stagebedrijf?' },
       { key: 'motivatie2', label: 'Motivatie leerdoel 2', type: 'textarea', hint: '' },
       { key: 'motivatie3', label: 'Motivatie leerdoel 3 (optioneel)', type: 'textarea', hint: '' },
       { key: 'motivatie4', label: 'Motivatie leerdoel 4 (optioneel)', type: 'textarea', hint: '' },

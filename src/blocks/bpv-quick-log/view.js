@@ -7,7 +7,7 @@ const DAY_TEMPLATES = [
   { id: 'kantoor', label: 'Kantoordag', startTime: '08:30', endTime: '17:00', breakMinutes: 60, activities: ['Tekeningen uitwerken', 'Overleg team', 'Administratie'] },
   { id: 'meet', label: 'Meetdag', startTime: '08:00', endTime: '16:30', breakMinutes: 45, activities: ['Meetinstrumenten kalibreren', 'Producten inmeten', 'Meetrapporten opstellen'] },
 ];
-import { expandBPVNote } from '../../ai/client.js';
+
 
 const WEEKDAY_SHORT = ['ma', 'di', 'wo', 'do', 'vr'];
 
@@ -80,7 +80,6 @@ export function renderBPVQuickLog(container, context) {
       <div class="bpv-ql__field bpv-ql__field--full">
         <div style="display:flex;align-items:center;gap:var(--space-2);margin-bottom:var(--space-1)">
           <span>Notitie</span>
-          <button type="button" class="btn btn-ghost btn-sm" data-action="ai-note" title="Schrijf professionele notitie met AI">✨</button>
         </div>
         <input type="text" class="form-input bpv-ql__input"
           data-field="note" placeholder="Korte notitie over de dag…" maxlength="200">
@@ -322,26 +321,6 @@ export function renderBPVQuickLog(container, context) {
       setStatus(`Fout: ${err.message}`, true);
     } finally {
       saveBtn.disabled = false;
-    }
-  });
-
-  // ── AI Note Expansion ──
-  const aiNoteBtn = el.querySelector('[data-action="ai-note"]');
-  aiNoteBtn?.addEventListener('click', async () => {
-    const noteInput = el.querySelector('[data-field="note"]');
-    const shortNote = noteInput.value.trim();
-    if (!shortNote) { setStatus('Typ eerst een korte notitie.', true); return; }
-    aiNoteBtn.disabled = true;
-    aiNoteBtn.textContent = '…';
-    try {
-      const expanded = await expandBPVNote(shortNote);
-      noteInput.value = expanded.trim().slice(0, 200);
-      setStatus('Notitie uitgebreid ✓');
-    } catch (err) {
-      setStatus(err.message, true);
-    } finally {
-      aiNoteBtn.disabled = false;
-      aiNoteBtn.textContent = '✨';
     }
   });
 

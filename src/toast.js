@@ -12,10 +12,15 @@ export function showToast(message, { type = 'info', duration = 3000, action = nu
 
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
-  el.innerHTML = `
-    <span>${message}</span>
-    ${action ? `<button class="toast-action">${action.label}</button>` : ''}
-  `;
+  const span = document.createElement('span');
+  span.textContent = message;
+  el.appendChild(span);
+  if (action) {
+    const btn = document.createElement('button');
+    btn.className = 'toast-action';
+    btn.textContent = action.label;
+    el.appendChild(btn);
+  }
 
   if (action) {
     el.querySelector('.toast-action').addEventListener('click', () => {

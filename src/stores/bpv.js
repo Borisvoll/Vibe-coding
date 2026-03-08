@@ -8,7 +8,7 @@
 import {
   getAll, getByKey, put, remove,
   getHoursByDate, getHoursByWeek, getLogbookByWeek,
-  getAllHoursSorted,
+  getAllHoursSorted, getPhotosByLogbookId,
 } from '../db.js';
 import {
   getISOWeek, getWeekDates, calcNetMinutes, formatMinutes,
@@ -167,6 +167,58 @@ export async function getWeeklyOverview(weekStr) {
     days,
     highlights,
   };
+}
+
+// ─── Photos ──────────────────────────────────────────────────────────────────
+
+const PHOTOS_STORE = 'photos';
+
+/**
+ * Add a photo linked to a date's hours entry.
+ * Uses the hours entry ID as the logbookId reference in the photos store.
+ * @param {string} date - YYYY-MM-DD
+ * @param {string} dataUrl - base64 data URL of the photo
+ * @returns {Promise<Object>} the saved photo record
+ */
+export async function addPhoto(date, dataUrl) {
+  if (!date || !dataUrl) throw new Error('date and dataUrl required');
+  const hoursEntry = await getHoursByDate(date);
+  const parentId = hoursEntry?.id || `photo-${date}`;
+  const photo = {
+    id: crypto.randomUUID(),
+    logbookId: parentId,
+    date,
+    data: dataUrl,
+    createdAt: new Date().toISOString(),
+  };
+  await put(PHOTOS_STORE, photo);
+  return photo;
+}
+
+/**
+ * Get all photos for a given date.
+ * @param {string} date - YYYY-MM-DD
+ * @returns {Promise<Array>}
+ */
+export async function getPhotosForDate(date) {
+  const hoursEntry = await getHoursByDate(date);
+  if (!hoursEntry) {
+    // Fallback: search by photo-{date} pattern
+    const allPhotos = await getAll(PHOTOS_STORE);
+    return allPhotos.filter(p => p.date === date);
+  }
+  const photos = await getPhotosByLogbookId(hoursEntry.id);
+  // Also include any photos saved before an hours entry existed
+  const fallback = await getAll(PHOTOS_STORE);
+  const extraPhotos = fallback.filter(p => p.date === date && p.logbookId !== hoursEntry.id);
+  return [...photos, ...extraPhotos];
+}
+
+/**
+ * Delete a photo by ID.
+ */
+export async function deletePhoto(id) {
+  return remove(PHOTOS_STORE, id);
 }
 
 // ─── Export ───────────────────────────────────────────────────────────────────

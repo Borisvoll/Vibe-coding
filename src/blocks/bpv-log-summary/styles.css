@@ -42,3 +42,14 @@
   color: var(--color-text-tertiary);
   font-style: italic;
 }
+
+.bpv-log__type-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-light);
+  color: var(--color-accent);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  margin-right: var(--space-1);
+}

@@ -9,6 +9,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .bpv-ql__title {
@@ -51,6 +52,74 @@
   border-radius: var(--radius-md);
   padding: var(--space-1) var(--space-2);
   cursor: pointer;
+}
+
+/* ── Week strip ── */
+.bpv-ql__week-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-1);
+}
+
+.bpv-ql__ws-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-1) var(--space-0);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: all 150ms var(--ease);
+  position: relative;
+}
+
+.bpv-ql__ws-day:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-bg));
+}
+
+.bpv-ql__ws-day:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.bpv-ql__ws-day--active {
+  border-color: var(--color-accent);
+  background: var(--color-accent-light);
+  font-weight: 600;
+}
+
+.bpv-ql__ws-day--today .bpv-ql__ws-num {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.bpv-ql__ws-day--filled .bpv-ql__ws-dot {
+  display: block;
+}
+
+.bpv-ql__ws-name {
+  font-size: var(--font-xs);
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+
+.bpv-ql__ws-num {
+  font-size: var(--font-base);
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.bpv-ql__ws-dot {
+  display: none;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
 }
 
 .bpv-ql__date-label {
@@ -132,6 +201,53 @@
   /* narrower for break minutes */
 }
 
+/* ── Activities section ── */
+.bpv-ql__activities {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent) 4%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-accent) 15%, var(--color-border));
+}
+
+.bpv-ql__activities-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.bpv-ql__activities-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bpv-ql__activity-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bpv-ql__activity-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.bpv-ql__activity-row .form-input {
+  flex: 1;
+}
+
 /* Footer */
 .bpv-ql__footer {
   display: flex;
@@ -139,6 +255,12 @@
   justify-content: space-between;
   gap: var(--space-2);
   margin-top: var(--space-1);
+}
+
+.bpv-ql__footer-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
 }
 
 .bpv-ql__status {

@@ -33,6 +33,9 @@ export function renderBPVMiniCard(container, context) {
     const hoursLabel = hours?.startTime && hours?.endTime
       ? `${escapeHTML(hours.startTime)} – ${escapeHTML(hours.endTime)}`
       : 'Nog niet gelogd';
+    const activitiesCount = Array.isArray(hours?.activities)
+      ? hours.activities.filter(a => a && a.trim()).length
+      : 0;
 
     const tip = MOTIVATIONS[new Date().getDate() % MOTIVATIONS.length];
 
@@ -50,9 +53,9 @@ export function renderBPVMiniCard(container, context) {
           <span class="mini-card__stat-value">${stats.streak}d</span>
           <span class="mini-card__stat-label">Streak</span>
         </div>
-        <div class="mini-card__stat">
-          <span class="mini-card__stat-value">${stats.done}</span>
-          <span class="mini-card__stat-label">Gedaan</span>
+        <div class="mini-card__stat" title="${activitiesCount > 0 ? 'Activiteiten vandaag ingevuld' : 'Nog geen activiteiten ingevuld'}">
+          <span class="mini-card__stat-value">${activitiesCount}/3</span>
+          <span class="mini-card__stat-label">Activiteiten</span>
         </div>
         <div class="mini-card__stat mini-card__stat--link" data-action="open-report" style="cursor:pointer" title="Open stageverslag">
           <span class="mini-card__stat-value">${reportProgress.percent}%</span>

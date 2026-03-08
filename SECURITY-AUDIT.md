@@ -10,10 +10,17 @@
 | Ernst | Aantal | Status |
 |-------|--------|--------|
 | HOOG | 2 | Actie vereist |
-| MEDIUM | 5 | Aanbevolen |
+| MEDIUM | 4 | Aanbevolen |
 | LAAG | 3 | Informatief |
 
-Totaal: **10 bevindingen**. De codebase heeft een sterke security-baseline — consequent `escapeHTML()` gebruik, sterke crypto (AES-256-GCM + PBKDF2), geen `eval()`, en goede deep link validatie. Hieronder de gevonden aandachtspunten.
+Totaal: **9 bevindingen**. De codebase heeft een sterke security-baseline — consequent `escapeHTML()` gebruik, sterke crypto (AES-256-GCM + PBKDF2), geen `eval()`, en goede deep link validatie. Hieronder de gevonden aandachtspunten.
+
+---
+
+## Opgelost
+
+- ~~**API key persistent opgeslagen in IndexedDB**~~ — Volledige AI/Anthropic feature verwijderd (`src/ai/client.js` deleted, imports uit settings-panel, inbox-screen en bpv-quick-log verwijderd).
+- **`showToast()` zonder escaping** — `src/toast.js` gebruikt nu `textContent` i.p.v. `innerHTML` voor defense-in-depth.
 
 ---
 
@@ -49,20 +56,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
 
 ## MEDIUM
 
-### 3. API key persistent opgeslagen in IndexedDB
-
-**Bestand:** `src/ai/client.js`
-**Ernst:** MEDIUM
-**Beschrijving:** Anthropic API keys worden permanent opgeslagen in IndexedDB (via `setSetting()`). Als een gebruiker's browser gecompromitteerd wordt (via een andere kwetsbaarheid of fysieke toegang), kan de API key uitgelezen worden via DevTools of JavaScript console.
-
-**Impact:** Een aanvaller met toegang tot de browser kan de API key stelen en op kosten van de gebruiker API calls maken.
-
-**Aanbeveling:**
-- Sla API keys op in `sessionStorage` (verdwijnt bij sluiten tab) i.p.v. IndexedDB
-- Of gebruik een server-side proxy zodat de key nooit client-side staat
-- Toon een waarschuwing aan gebruikers bij het invoeren van een API key
-
-### 4. Geen Content Security Policy (CSP)
+### 3. Geen Content Security Policy (CSP)
 
 **Bestand:** `index.html`
 **Ernst:** MEDIUM
@@ -76,7 +70,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
   content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'">
 ```
 
-### 5. Import/backup data validatie — geen record-level sanitatie
+### 4. Import/backup data validatie — geen record-level sanitatie
 
 **Bestanden:** `src/db.js:579-598`, `src/stores/backup.js:135-156`
 **Ernst:** MEDIUM
@@ -88,7 +82,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
 
 **Aanbeveling:** Overweeg record-level sanitatie bij import (strip HTML tags uit tekstvelden).
 
-### 6. GitHub Actions: unpinned action versions
+### 5. GitHub Actions: unpinned action versions
 
 **Bestand:** `.github/workflows/deploy.yml:20-21, 34, 45`
 **Ernst:** MEDIUM
@@ -107,7 +101,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
 - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11  # v4.1.1
 ```
 
-### 7. Web Worker: geen origin validatie op message events
+### 6. Web Worker: geen origin validatie op message events
 
 **Bestanden:** `src/workers/search.worker.js`, `src/ui/command-palette.js:61,150,414`
 **Ernst:** LAAG-MEDIUM
@@ -119,7 +113,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
 
 ## LAAG
 
-### 8. Geen Subresource Integrity (SRI) of import maps
+### 7. Geen Subresource Integrity (SRI) of import maps
 
 **Bestand:** `index.html:359`
 **Ernst:** LAAG
@@ -127,7 +121,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
 
 **Impact:** Minimaal — de app heeft nul runtime dependencies en laadt alles van dezelfde origin.
 
-### 9. localStorage data niet versleuteld
+### 8. localStorage data niet versleuteld
 
 **Bestanden:** Meerdere (`boris_mode`, tutorial state, collapsible section states)
 **Ernst:** LAAG
@@ -135,7 +129,7 @@ npm audit fix --force  # Upgrade naar vite 7.x (breaking change)
 
 **Impact:** Minimaal — er worden geen wachtwoorden, tokens of persoonlijke data in localStorage opgeslagen. IndexedDB data (de eigenlijke gebruikersdata) is lokaal en beschermd door de browser same-origin policy.
 
-### 10. Service worker: cache-first strategie zonder versie-controle
+### 9. Service worker: cache-first strategie zonder versie-controle
 
 **Bestand:** Service worker (geregistreerd in `src/main.js`)
 **Ernst:** LAAG
@@ -157,6 +151,7 @@ De codebase scoort sterk op de volgende security-aspecten:
 6. **Geen hardcoded secrets**: Geen API keys, tokens of credentials gevonden in de codebase.
 7. **Input validatie**: `src/stores/validate.js` biedt gestructureerde validatie met `ValidationError`.
 8. **Write guard**: `acquireWriteGuard()` / `releaseWriteGuard()` voorkomt concurrent write conflicts bij imports.
+9. **Geen API keys meer**: AI/Anthropic feature volledig verwijderd — geen externe API keys meer in de app.
 
 ---
 
@@ -165,8 +160,7 @@ De codebase scoort sterk op de volgende security-aspecten:
 | # | Actie | Ernst | Moeite |
 |---|-------|-------|--------|
 | 1 | `npm audit fix` — fix Rollup kwetsbaarheid | HOOG | 1 min |
-| 2 | API key opslag verplaatsen naar sessionStorage | MEDIUM | 30 min |
-| 3 | CSP meta tag toevoegen aan `index.html` | MEDIUM | 15 min |
-| 4 | GitHub Actions pinnen op SHA | MEDIUM | 10 min |
-| 5 | Record-level sanitatie bij backup import | MEDIUM | 30 min |
-| 6 | Vite upgraden (breaking change evalueren) | MEDIUM | 1-2 uur |
+| 2 | CSP meta tag toevoegen aan `index.html` | MEDIUM | 15 min |
+| 3 | GitHub Actions pinnen op SHA | MEDIUM | 10 min |
+| 4 | Record-level sanitatie bij backup import | MEDIUM | 30 min |
+| 5 | Vite upgraden (breaking change evalueren) | MEDIUM | 1-2 uur |

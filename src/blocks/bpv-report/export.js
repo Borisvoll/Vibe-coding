@@ -1,6 +1,6 @@
 /**
  * BPV Report Export — generates a printable HTML document
- * styled with the  corporate identity.
+ * styled with a professional corporate identity.
  *
  * Brand specs (from WSC-O house style):
  *   Lettertype koppen:  Fritz Quadrata Medium
@@ -18,7 +18,7 @@ import {
 import { exportEntries } from '../../stores/bpv.js';
 import { DAY_TYPE_LABELS } from '../../constants.js';
 
-// ──  brand colors (CMYK → RGB approximations) ──
+// ── Brand colors (CMYK → RGB approximations) ──
 const BRAND = {
   red:   '#DA1A32', // CMYK 13 97 83 3
   black: '#000000', // CMYK 30 30 30 100
@@ -360,7 +360,7 @@ function buildHTML(dataMap, title, hoursRows = []) {
 <body>
 
 <div class="print-bar no-print">
-  <span>Stageverslag — ${escapeHTML(STUDENT_DEFAULTS.naam)} — </span>
+  <span>Stageverslag — ${escapeHTML(STUDENT_DEFAULTS.naam || 'Student')} — ${escapeHTML(STUDENT_DEFAULTS.bedrijf || 'Stagebedrijf')}</span>
   <button onclick="window.print()">Afdrukken / PDF opslaan</button>
 </div>
 
@@ -369,7 +369,7 @@ function buildHTML(dataMap, title, hoursRows = []) {
   <div class="cover__top-bar"></div>
   <div class="cover__accent-bar"></div>
   <h1 class="cover__title">BPV Stageverslag</h1>
-  <p class="cover__subtitle"></p>
+  <p class="cover__subtitle">${escapeHTML(coverData.bedrijf || STUDENT_DEFAULTS.bedrijf || 'Stagebedrijf')}</p>
   <div class="cover__meta">
     <div class="cover__meta-row"><span class="cover__meta-label">Naam</span> ${escapeHTML(coverData.naam || STUDENT_DEFAULTS.naam)}</div>
     <div class="cover__meta-row"><span class="cover__meta-label">Studentnummer</span> ${escapeHTML(coverData.studentnummer || STUDENT_DEFAULTS.studentnummer)}</div>

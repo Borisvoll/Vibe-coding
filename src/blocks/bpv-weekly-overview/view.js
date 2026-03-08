@@ -1,11 +1,18 @@
 import { getWeeklyOverview, exportEntries } from '../../stores/bpv.js';
-import { getCurrentWeek, getPrevWeek, getNextWeek, escapeHTML } from '../../utils.js';
+import { getCurrentWeek, getPrevWeek, getNextWeek, getWeekDates, formatDateShort, escapeHTML } from '../../utils.js';
 
 const DAY_TYPE_ICON = {
   work: '✓',
   sick: '🤒',
   absent: '–',
   holiday: '☀',
+};
+
+const DAY_TYPE_TITLE = {
+  work: 'Gewerkt',
+  sick: 'Ziek gemeld',
+  absent: 'Afwezig',
+  holiday: 'Vrij / Feestdag',
 };
 
 export function renderBPVWeeklyOverview(container, context) {
@@ -23,8 +30,8 @@ export function renderBPVWeeklyOverview(container, context) {
             aria-label="Volgende week">›</button>
         </div>
         <div class="bpv-wo__export-btns">
-          <button type="button" class="btn btn-ghost btn-sm" data-export="csv">CSV</button>
-          <button type="button" class="btn btn-ghost btn-sm" data-export="json">JSON</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-export="csv" title="Download uren als CSV">CSV</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-export="json" title="Download uren als JSON">JSON</button>
         </div>
       </div>
       <div class="bpv-wo__body" data-body>
@@ -45,8 +52,16 @@ export function renderBPVWeeklyOverview(container, context) {
     return 'var(--color-error)';
   }
 
+  function getWeekDateRange(weekStr) {
+    const dates = getWeekDates(weekStr);
+    if (dates.length < 5) return weekStr;
+    return `${formatDateShort(dates[0])} – ${formatDateShort(dates[4])}`;
+  }
+
   async function render() {
-    weekLabel.textContent = currentWeek;
+    const dateRange = getWeekDateRange(currentWeek);
+    weekLabel.textContent = dateRange;
+    weekLabel.title = currentWeek;
     body.innerHTML = '<div class="bpv-wo__loading">Laden…</div>';
 
     const ov = await getWeeklyOverview(currentWeek);
@@ -54,15 +69,19 @@ export function renderBPVWeeklyOverview(container, context) {
     const daysHTML = ov.days.map((d) => {
       const icon = d.logged ? (DAY_TYPE_ICON[d.type] || '?') : '·';
       const cls = d.logged ? `bpv-wo__day--${d.type}` : 'bpv-wo__day--empty';
+      const typeTitle = d.logged ? (DAY_TYPE_TITLE[d.type] || d.type) : 'Niet ingevuld';
       const lbDot = d.hasLogbook
         ? '<span class="bpv-wo__lb-dot" title="Logboek ingevuld">📝</span>'
         : '';
+      const actDot = d.hasActivities
+        ? '<span class="bpv-wo__act-dot" title="Activiteiten ingevuld">●</span>'
+        : '';
       return `
-        <div class="bpv-wo__day ${cls}">
+        <div class="bpv-wo__day ${cls}" title="${escapeHTML(typeTitle)}${d.formattedTime ? ' — ' + escapeHTML(d.formattedTime) : ''}">
           <span class="bpv-wo__day-name">${d.day}</span>
           <span class="bpv-wo__day-icon">${icon}</span>
           <span class="bpv-wo__day-time">${d.formattedTime || '—'}</span>
-          ${lbDot}
+          <div class="bpv-wo__day-indicators">${actDot}${lbDot}</div>
         </div>
       `;
     }).join('');
@@ -72,6 +91,20 @@ export function renderBPVWeeklyOverview(container, context) {
           <p class="bpv-wo__highlights-label">Highlights</p>
           <ul class="bpv-wo__highlights-list">
             ${ov.highlights.map((h) => `<li>${escapeHTML(h.text)}</li>`).join('')}
+          </ul>
+        </div>`
+      : '';
+
+    // Activities summary for the week
+    const weekActivities = ov.days
+      .filter(d => d.hasActivities)
+      .flatMap(d => d.activities.filter(a => a && a.trim()));
+    const activitiesHTML = weekActivities.length > 0
+      ? `<div class="bpv-wo__highlights">
+          <p class="bpv-wo__highlights-label">Activiteiten deze week</p>
+          <ul class="bpv-wo__highlights-list">
+            ${weekActivities.slice(0, 10).map(a => `<li>${escapeHTML(a)}</li>`).join('')}
+            ${weekActivities.length > 10 ? `<li class="bpv-wo__more">+${weekActivities.length - 10} meer</li>` : ''}
           </ul>
         </div>`
       : '';
@@ -89,6 +122,7 @@ export function renderBPVWeeklyOverview(container, context) {
         </span>
       </div>
       <div class="bpv-wo__days">${daysHTML}</div>
+      ${activitiesHTML}
       ${highlightsHTML}
     `;
   }

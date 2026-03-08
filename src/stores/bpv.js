@@ -31,6 +31,7 @@ export async function addHoursEntry(date, {
   endTime = null,
   breakMinutes = 0,
   note = '',
+  activities = [],
 } = {}) {
   if (!date) throw new Error('date: required');
   const week = getISOWeek(date);
@@ -41,6 +42,8 @@ export async function addHoursEntry(date, {
 
   const existing = await getHoursByDate(date);
   const now = new Date().toISOString();
+  // Sanitize activities: always an array of 3 strings
+  const cleanActivities = normalizeActivities(activities, existing?.activities);
   const entry = {
     id: existing?.id || crypto.randomUUID(),
     date,
@@ -51,12 +54,28 @@ export async function addHoursEntry(date, {
     breakMinutes: isWork ? Number(breakMinutes) : 0,
     netMinutes,
     note: String(note || '').trim(),
+    activities: cleanActivities,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };
 
   await put(HOURS_STORE, entry);
   return entry;
+}
+
+/**
+ * Normalize activities to always be an array of 3 trimmed strings.
+ * Merges with existing activities when the new array is empty.
+ */
+function normalizeActivities(incoming, existing) {
+  const src = Array.isArray(incoming) && incoming.some(a => a && String(a).trim())
+    ? incoming
+    : (Array.isArray(existing) ? existing : []);
+  const result = [];
+  for (let i = 0; i < 3; i++) {
+    result.push(String(src[i] || '').trim().slice(0, 200));
+  }
+  return result;
 }
 
 export async function getHoursEntry(date) {
@@ -77,6 +96,9 @@ export async function updateHoursEntry(id, changes) {
     updated.netMinutes = 0;
     updated.startTime = null;
     updated.endTime = null;
+  }
+  if (changes.activities) {
+    updated.activities = normalizeActivities(changes.activities, entry.activities);
   }
   await put(HOURS_STORE, updated);
   return updated;
@@ -107,6 +129,7 @@ export async function getWeeklyOverview(weekStr) {
   const days = weekDates.map((date, i) => {
     const h = hoursRecords.find((r) => r.date === date) || null;
     const lb = logbookRecords.find((r) => r.date === date) || null;
+    const acts = Array.isArray(h?.activities) ? h.activities : [];
     return {
       date,
       day: DAY_LABELS_NL[i],
@@ -115,6 +138,8 @@ export async function getWeeklyOverview(weekStr) {
       formattedTime: h ? formatMinutes(h.netMinutes || 0) : null,
       logged: h !== null,
       hasLogbook: lb !== null,
+      activities: acts,
+      hasActivities: acts.some(a => a && a.trim()),
     };
   });
 
@@ -159,6 +184,7 @@ export async function exportEntries(format = 'csv') {
 
   const rows = allHours.map((h) => {
     const lb = allLogbook.find((l) => l.date === h.date);
+    const acts = Array.isArray(h.activities) ? h.activities : [];
     return {
       date: h.date,
       week: h.week,
@@ -169,6 +195,7 @@ export async function exportEntries(format = 'csv') {
       netMinutes: h.netMinutes ?? 0,
       netHours: +((h.netMinutes || 0) / 60).toFixed(2),
       note: h.note || '',
+      activities: acts,
       description: lb?.description || '',
       tags: lb?.tags || [],
     };
@@ -179,7 +206,7 @@ export async function exportEntries(format = 'csv') {
   }
 
   // CSV
-  const header = 'datum,week,type,start,einde,pauze_min,netto_min,netto_uren,notitie,omschrijving,tags';
+  const header = 'datum,week,type,start,einde,pauze_min,netto_min,netto_uren,notitie,activiteit_1,activiteit_2,activiteit_3,omschrijving,tags';
   const csvRows = rows.map((r) => [
     r.date,
     r.week,
@@ -190,6 +217,9 @@ export async function exportEntries(format = 'csv') {
     r.netMinutes,
     r.netHours,
     `"${r.note.replace(/"/g, '""')}"`,
+    `"${(r.activities[0] || '').replace(/"/g, '""')}"`,
+    `"${(r.activities[1] || '').replace(/"/g, '""')}"`,
+    `"${(r.activities[2] || '').replace(/"/g, '""')}"`,
     `"${r.description.replace(/"/g, '""')}"`,
     `"${r.tags.join(', ')}"`,
   ].join(','));

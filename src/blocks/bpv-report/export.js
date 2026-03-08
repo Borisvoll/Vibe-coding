@@ -515,6 +515,8 @@ function renderHoursTable(rows) {
       const brk = r.type === 'work' ? `${r.breakMinutes}m` : '—';
       const net = r.type === 'work' ? formatMinutes(r.netMinutes) : '—';
       weekMinutes += r.netMinutes || 0;
+      const acts = Array.isArray(r.activities) ? r.activities.filter(a => a && a.trim()) : [];
+      const activitiesText = acts.join('; ');
       const note = r.note || r.description || '';
       const isMissed = r.type !== 'work' && r.type !== 'holiday';
 
@@ -525,6 +527,7 @@ function renderHoursTable(rows) {
         <td>${escapeHTML(time)}</td>
         <td>${escapeHTML(brk)}</td>
         <td>${escapeHTML(net)}</td>
+        <td>${escapeHTML(activitiesText.length > 80 ? activitiesText.slice(0, 77) + '…' : activitiesText)}</td>
         <td>${escapeHTML(note.length > 60 ? note.slice(0, 57) + '…' : note)}</td>
       </tr>`;
     }).join('');
@@ -535,7 +538,7 @@ function renderHoursTable(rows) {
       <tr class="hours-table__week-row">
         <td colspan="5">${escapeHTML(group.week)}</td>
         <td>${escapeHTML(formatMinutes(weekMinutes))}</td>
-        <td></td>
+        <td colspan="2"></td>
       </tr>
       ${dayRows}
     `;
@@ -554,6 +557,7 @@ function renderHoursTable(rows) {
             <th>Tijd</th>
             <th>Pauze</th>
             <th>Netto</th>
+            <th>Activiteiten</th>
             <th>Notitie</th>
           </tr>
         </thead>
@@ -562,7 +566,7 @@ function renderHoursTable(rows) {
           <tr class="hours-table__total">
             <td colspan="5">Totaal</td>
             <td>${escapeHTML(formatMinutes(totalMinutesAll))}</td>
-            <td>${sorted.length} dagen</td>
+            <td colspan="2">${sorted.length} dagen</td>
           </tr>
         </tbody>
       </table>

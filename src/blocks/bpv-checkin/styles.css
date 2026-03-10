@@ -1,7 +1,7 @@
 .bpv-checkin {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .bpv-checkin__header {
@@ -12,6 +12,10 @@
 
 .bpv-checkin__icon {
   font-size: 1.2rem;
+}
+
+.bpv-checkin__icon--done {
+  color: var(--color-success);
 }
 
 .bpv-checkin__title {
@@ -27,39 +31,150 @@
   font-weight: 500;
 }
 
-.bpv-checkin__quick-times {
-  display: flex;
-  gap: var(--space-1);
-  flex-wrap: wrap;
+/* One-tap "Log vandaag" button */
+.bpv-checkin__quick-action {
+  width: 100%;
 }
 
-.bpv-checkin__time-btn {
+.bpv-checkin__log-today-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4) var(--space-4);
+  border: 2px solid var(--color-success);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--color-success) 6%, var(--color-surface));
+  cursor: pointer;
+  transition: all 200ms var(--ease);
+  text-align: left;
+}
+
+.bpv-checkin__log-today-btn:hover {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-surface));
+  border-color: var(--color-success);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.bpv-checkin__log-today-btn:active {
+  transform: translateY(0);
+}
+
+.bpv-checkin__log-today-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bpv-checkin__log-today-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+  color: #fff;
+  font-size: var(--font-xl);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.bpv-checkin__log-today-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bpv-checkin__log-today-label {
+  font-size: var(--font-lg);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.bpv-checkin__log-today-detail {
+  font-size: var(--font-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Streak */
+.bpv-checkin__streak {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
-  font-size: var(--font-base);
-  font-weight: 500;
-  min-width: 60px;
-  text-align: center;
+  background: color-mix(in srgb, var(--color-warning) 8%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-warning) 20%, transparent);
 }
 
-.bpv-checkin__time-btn--now {
-  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg));
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+.bpv-checkin__streak-icon {
+  font-size: var(--font-lg);
+}
+
+.bpv-checkin__streak-text {
+  font-size: var(--font-sm);
   font-weight: 600;
+  color: var(--color-text);
 }
 
-.bpv-checkin__activities {
+/* Week fill */
+.bpv-checkin__weekfill {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  margin-top: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-error) 4%, var(--color-bg));
+  border: 1px solid color-mix(in srgb, var(--color-error) 15%, var(--color-border));
 }
 
-.bpv-checkin__input {
-  font-size: var(--font-base);
+.bpv-checkin__weekfill-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
 }
 
+.bpv-checkin__weekfill-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.bpv-checkin__weekfill-days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bpv-checkin__weekfill-day {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.bpv-checkin__weekfill-day-label {
+  font-size: var(--font-sm);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.bpv-checkin__weekfill-day-times {
+  font-size: var(--font-xs);
+  color: var(--color-text-secondary);
+  flex: 1;
+}
+
+.bpv-checkin__weekfill-day-btn {
+  flex-shrink: 0;
+}
+
+/* Summary */
 .bpv-checkin__summary {
   display: flex;
   align-items: center;

@@ -119,6 +119,10 @@ export function createCollapsibleSection({ id, title, hostName, defaultOpen = tr
       applyState();
     },
 
+    setTitle(newTitle) {
+      titleEl.textContent = newTitle;
+    },
+
     setBadge(text) {
       if (text) {
         badgeEl.textContent = text;

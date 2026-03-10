@@ -1491,6 +1491,57 @@
 
 .os-friday-prompt__close:hover { opacity: 1; }
 
+/* ── BPV uren reminder ── */
+.os-bpv-reminder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-surface));
+  border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  animation: fridaySlideIn 400ms var(--ease-spring) both;
+}
+
+.os-bpv-reminder__icon {
+  font-size: var(--font-lg);
+}
+
+.os-bpv-reminder__text {
+  flex: 1;
+  font-size: var(--font-base);
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.os-bpv-reminder__btn {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-warning);
+  color: #fff;
+  font-size: var(--font-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 150ms var(--ease);
+}
+
+.os-bpv-reminder__btn:hover { opacity: 0.9; }
+
+.os-bpv-reminder__close {
+  border: none;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-xl);
+  cursor: pointer;
+  padding: 0 2px;
+  opacity: 0.6;
+  transition: opacity 150ms var(--ease);
+}
+
+.os-bpv-reminder__close:hover { opacity: 1; }
+
 /* ═══════════════════════════════════════════════════════════════
    Tutorial — onboarding tooltips
    ═══════════════════════════════════════════════════════════════ */

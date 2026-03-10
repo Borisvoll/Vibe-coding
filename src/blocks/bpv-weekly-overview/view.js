@@ -1,4 +1,4 @@
-import { getWeeklyOverview, exportEntries } from '../../stores/bpv.js';
+import { getWeeklyOverview, exportEntries, generatePDFReport } from '../../stores/bpv.js';
 import { getCurrentWeek, getPrevWeek, getNextWeek, getWeekDates, formatDateShort, escapeHTML } from '../../utils.js';
 
 const DAY_TYPE_ICON = {
@@ -30,6 +30,7 @@ export function renderBPVWeeklyOverview(container, context) {
             aria-label="Volgende week">›</button>
         </div>
         <div class="bpv-wo__export-btns">
+          <button type="button" class="btn btn-primary btn-sm" data-export="pdf" title="Download BPV-verslag als PDF">PDF</button>
           <button type="button" class="btn btn-ghost btn-sm" data-export="csv" title="Download uren als CSV">CSV</button>
           <button type="button" class="btn btn-ghost btn-sm" data-export="json" title="Download uren als JSON">JSON</button>
         </div>
@@ -138,6 +139,15 @@ export function renderBPVWeeklyOverview(container, context) {
   });
 
   // Export
+  el.querySelector('[data-export="pdf"]').addEventListener('click', async () => {
+    const html = await generatePDFReport();
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+      setTimeout(() => win.print(), 500);
+    }
+  });
   el.querySelector('[data-export="csv"]').addEventListener('click', async () => {
     const csv = await exportEntries('csv');
     downloadFile(csv, 'bpv-uren.csv', 'text/csv;charset=utf-8;');

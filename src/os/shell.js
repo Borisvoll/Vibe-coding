@@ -17,6 +17,7 @@ import { showPrompt } from '../ui/modal.js';
 import { addTask } from '../stores/tasks.js';
 import { addProject } from '../stores/projects.js';
 import { globalSearch } from '../stores/search.js';
+import { isTodayLogged } from '../stores/bpv.js';
 // ambient-canvas.js still available but empty states now use contextual hints
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'verslag', 'settings', 'curiosity'];
@@ -1093,6 +1094,34 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // Tutorial
   const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
   setTimeout(() => startTutorial(), tutorialDelay);
+
+  // ── BPV uren reminder bij app openen ────────────────────
+  if (modeManager.getMode() === 'BPV') {
+    (async () => {
+      try {
+        const logged = await isTodayLogged();
+        if (logged) return;
+        const dow = new Date().getDay();
+        if (dow === 0 || dow === 6) return; // skip weekends
+        setTimeout(() => {
+          const banner = document.createElement('div');
+          banner.className = 'os-bpv-reminder';
+          banner.innerHTML = `
+            <span class="os-bpv-reminder__icon">&#9200;</span>
+            <span class="os-bpv-reminder__text">Je hebt vandaag nog geen uren gelogd</span>
+            <button type="button" class="os-bpv-reminder__btn" data-action="goto-log">Nu loggen</button>
+            <button type="button" class="os-bpv-reminder__close" aria-label="Sluiten">&times;</button>
+          `;
+          banner.querySelector('[data-action="goto-log"]')?.addEventListener('click', () => {
+            setActiveTab('today', { focus: 'mode' });
+            banner.remove();
+          });
+          banner.querySelector('.os-bpv-reminder__close')?.addEventListener('click', () => banner.remove());
+          routeContainer?.prepend(banner);
+        }, 1500);
+      } catch { /* non-critical */ }
+    })();
+  }
 
   // ── Friday prompt (with snooze / disable) ────────────────
   (async () => {

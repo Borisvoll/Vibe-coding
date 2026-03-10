@@ -51,7 +51,7 @@ const PHASE_COLLAPSE_DEFAULTS = {
   evening: {
     School:   { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: true,  history: false },
     Personal: { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: true,  history: false },
-    BPV:      { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: false, history: false },
+    BPV:      { tasks: false, projects: false, capture: false, reflection: true,  mode: true,  weekly: false, history: false },
   },
 };
 
@@ -341,7 +341,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const VANDAAG_SECTIONS = [
     { zone: 'tasks',      id: 'vandaag-tasks',      title: 'Taken',                hostName: 'vandaag-tasks' },
     { zone: 'projects',   id: 'vandaag-projects',   title: 'Projecten & Lijsten',  hostName: 'vandaag-projects' },
-    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode' },
+    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode', titleByMode: { BPV: 'BPV Uren & Logboek' } },
     { zone: 'capture',    id: 'vandaag-capture',     title: 'Inbox',                hostName: 'vandaag-capture' },
     { zone: 'reflection', id: 'vandaag-reflection',  title: 'Reflectie',            hostName: 'vandaag-reflection' },
     { zone: 'weekly',     id: 'vandaag-weekly',      title: 'Weekoverzicht',        hostName: 'vandaag-weekly' },
@@ -363,9 +363,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     VANDAAG_SECTIONS.forEach((cfg) => {
       const zoneEl = routeContainer.querySelector(`[data-vandaag-zone="${cfg.zone}"]`);
       if (!zoneEl) return;
+      const sectionTitle = cfg.titleByMode?.[mode] || cfg.title;
       const section = createCollapsibleSection({
         id: cfg.id,
-        title: cfg.title,
+        title: sectionTitle,
         hostName: cfg.hostName,
         defaultOpen: defaults[cfg.zone] ?? true,
         mode,
@@ -377,8 +378,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
 
   function updateVandaagCollapse(mode) {
     const defaults = getCollapseDefaults(mode);
-    Object.entries(vandaagSections).forEach(([zone, section]) => {
-      section?.setMode(mode, defaults[zone] ?? true);
+    VANDAAG_SECTIONS.forEach((cfg) => {
+      const section = vandaagSections[cfg.zone];
+      if (!section) return;
+      section.setMode(mode, defaults[cfg.zone] ?? true);
+      const newTitle = cfg.titleByMode?.[mode] || cfg.title;
+      section.setTitle(newTitle);
     });
   }
 
@@ -1002,6 +1007,18 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
       if (!title?.trim()) return;
       await addProject(title.trim(), '', modeManager.getMode());
       eventBus.emit('projects:changed');
+    },
+  });
+
+  // BPV quick-log command
+  commandRegistry.register('nav:bpv-log', {
+    label: 'Log BPV uren',
+    icon: '⏱',
+    group: 'navigate',
+    keywords: ['uren', 'bpv', 'loggen', 'log', 'stage', 'hours', 'registreren'],
+    handler: () => {
+      if (modeManager.getMode() !== 'BPV') modeManager.setMode('BPV');
+      setActiveTab('today', { focus: 'mode' });
     },
   });
 

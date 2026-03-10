@@ -4,6 +4,7 @@ import './styles/base.css';
 import './styles/components.css';
 import './styles/pages.css';
 import './styles/print.css';
+import './styles/boris.css';
 
 import { initDB } from './db.js';
 import { createRouter } from './router.js';
@@ -13,11 +14,17 @@ import { getSetting } from './db.js';
 import { ACCENT_COLORS, applyAccentColor } from './constants.js';
 import { initAutoSync } from './auto-sync.js';
 import { checkLock } from './lock-screen.js';
+import { initFeatureFlags } from './core/featureFlags.js';
+import { loadAllBlocks } from './core/blockLoader.js';
+import { setFeatureFlags } from './core/blockRegistry.js';
+import { initMode } from './core/modeManager.js';
+import * as featureFlags from './core/featureFlags.js';
 
-export const APP_VERSION = '2.1.0';
-export const SCHEMA_VERSION = 4;
+export const APP_VERSION = '3.0.0';
+export const SCHEMA_VERSION = 5;
 
-// Module registry
+// Legacy module registry — kept for backward compatibility with existing pages.
+// The block registry (core/blockRegistry.js) is the new source of truth.
 export const modules = [
   { id: 'today',            label: 'Vandaag',           icon: 'clipboard-check',  route: '',                 page: () => import('./pages/today.js') },
   { id: 'dashboard',        label: 'Dashboard',         icon: 'dashboard',        route: 'dashboard',        page: () => import('./pages/dashboard.js') },
@@ -49,6 +56,12 @@ async function init() {
 
   await initDB();
 
+  // Initialize BORIS OS core systems
+  initFeatureFlags();
+  setFeatureFlags(featureFlags);
+  loadAllBlocks();
+  await initMode();
+
   // Apply saved theme
   const theme = await getSetting('theme');
   if (theme && theme !== 'system') {
@@ -76,6 +89,10 @@ async function init() {
     await ss('device_id', deviceId);
   }
 
+  // Apply mode to document for CSS styling
+  const { getCurrentMode } = await import('./core/modeManager.js');
+  document.documentElement.setAttribute('data-mode', getCurrentMode());
+
   const app = document.getElementById('app');
   createShell(app);
   createRouter();
@@ -83,9 +100,6 @@ async function init() {
 
   // Start auto-sync (if configured)
   initAutoSync().catch(() => {});
-
-  // Service worker deliberately disabled: older cached app-shell versions could
-  // keep users stuck on outdated boot screens.
 }
 
 async function disableLegacyBootCache() {

@@ -1,7 +1,7 @@
 {
-  "name": "BPV Voortgang Tracker",
-  "short_name": "BPV Tracker",
-  "description": "Privacyvriendelijke stage-urenregistratie en voortgang tracker",
+  "name": "BORIS OS — Personal Operating System",
+  "short_name": "BORIS OS",
+  "description": "Offline-first personal operating system voor Research Instrumentmaker studenten",
   "start_url": "/Vibe-coding/",
   "scope": "/Vibe-coding/",
   "display": "standalone",

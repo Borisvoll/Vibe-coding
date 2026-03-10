@@ -1,10 +1,13 @@
 import { modules } from './main.js';
 import { emit } from './state.js';
+import { getBlocksForMode, getAllExtraRoutes } from './core/blockRegistry.js';
+import { getCurrentMode } from './core/modeManager.js';
 
 let currentPage = null;
 let mainEl = null;
 
-const extraRoutes = {
+// Legacy extra routes — still needed for BPV mode sub-pages
+const legacyExtraRoutes = {
   'hours/:date': () => import('./pages/hours-entry.js'),
   'logbook/new': () => import('./pages/logbook-entry.js'),
   'logbook/:id': () => import('./pages/logbook-entry.js'),
@@ -34,21 +37,40 @@ function handleRoute() {
   }
   currentPage = null;
 
-  // Try extra routes first
-  for (const [pattern, loader] of Object.entries(extraRoutes)) {
+  const mode = getCurrentMode();
+
+  // Merge legacy extra routes with block extra routes
+  const blockExtraRoutes = getAllExtraRoutes();
+  const allExtraRoutes = { ...legacyExtraRoutes, ...blockExtraRoutes };
+
+  // Try extra routes first (sub-pages like hours/:date)
+  for (const [pattern, loader] of Object.entries(allExtraRoutes)) {
     const params = matchRoute(pattern, parts);
     if (params !== null) {
       loadPage(loader, params);
       emit('navigate', { path, params });
       updateActiveNav(parts[0] || '');
-      // Set header title based on parent module
-      const parentMod = modules.find(m => m.route === (parts[0] || ''));
+      // Find label from blocks or legacy modules
+      const blocks = getBlocksForMode(mode);
+      const block = blocks.find(b => b.route === (parts[0] || ''));
+      const parentMod = block || modules.find(m => m.route === (parts[0] || ''));
       if (parentMod) updateHeaderTitle(parentMod.label);
       return;
     }
   }
 
-  // Try module routes
+  // Try block routes for current mode
+  const blocks = getBlocksForMode(mode);
+  const block = blocks.find(b => b.route === (parts[0] || ''));
+  if (block) {
+    loadPage(block.page, {});
+    emit('navigate', { path, params: {} });
+    updateActiveNav(block.route);
+    updateHeaderTitle(block.label);
+    return;
+  }
+
+  // Fallback: try legacy module routes (for backward compatibility)
   const mod = modules.find(m => m.route === (parts[0] || ''));
   if (mod) {
     loadPage(mod.page, {});
@@ -58,6 +80,7 @@ function handleRoute() {
     return;
   }
 
+  // Default: go to home
   navigate('');
 }
 

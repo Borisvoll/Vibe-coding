@@ -1,5 +1,5 @@
 const DB_NAME = 'bpv-tracker';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 let dbInstance = null;
 
@@ -105,6 +105,49 @@ export function initDB() {
         // BPV Bedrijf — single company description record
         const bpvBedrijf = db.createObjectStore('bpvBedrijf', { keyPath: 'id' });
         bpvBedrijf.createIndex('updatedAt', 'updatedAt', { unique: false });
+      }
+      if (oldVersion < 5) {
+        // BORIS OS v3.0 — School mode stores
+        const schoolTasks = db.createObjectStore('schoolTasks', { keyPath: 'id' });
+        schoolTasks.createIndex('date', 'date', { unique: false });
+        schoolTasks.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const schoolNotes = db.createObjectStore('schoolNotes', { keyPath: 'id' });
+        schoolNotes.createIndex('date', 'date', { unique: false });
+
+        const schoolProjects = db.createObjectStore('schoolProjects', { keyPath: 'id' });
+        schoolProjects.createIndex('status', 'status', { unique: false });
+        schoolProjects.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const schoolMilestones = db.createObjectStore('schoolMilestones', { keyPath: 'id' });
+        schoolMilestones.createIndex('projectId', 'projectId', { unique: false });
+        schoolMilestones.createIndex('deadline', 'deadline', { unique: false });
+        schoolMilestones.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const schoolConcepts = db.createObjectStore('schoolConcepts', { keyPath: 'id' });
+        schoolConcepts.createIndex('category', 'category', { unique: false });
+        schoolConcepts.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const schoolSkills = db.createObjectStore('schoolSkills', { keyPath: 'id' });
+        schoolSkills.createIndex('category', 'category', { unique: false });
+        schoolSkills.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const schoolReflections = db.createObjectStore('schoolReflections', { keyPath: 'id' });
+        schoolReflections.createIndex('week', 'week', { unique: true });
+        schoolReflections.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        // BORIS OS v3.0 — Personal mode stores
+        const personalTasks = db.createObjectStore('personalTasks', { keyPath: 'id' });
+        personalTasks.createIndex('date', 'date', { unique: false });
+        personalTasks.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const personalGoals = db.createObjectStore('personalGoals', { keyPath: 'id' });
+        personalGoals.createIndex('status', 'status', { unique: false });
+        personalGoals.createIndex('updatedAt', 'updatedAt', { unique: false });
+
+        const personalReflections = db.createObjectStore('personalReflections', { keyPath: 'id' });
+        personalReflections.createIndex('week', 'week', { unique: true });
+        personalReflections.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
     };
 
@@ -294,7 +337,7 @@ export async function getAllLogbookSorted() {
 
 export async function clearAllData() {
   const db = getDB();
-  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'checklists', 'checklistLogs', 'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf'];
+  const storeNames = ['hours', 'logbook', 'photos', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'deleted', 'learningMoments', 'reference', 'vault', 'vaultFiles', 'energy', 'checklists', 'checklistLogs', 'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf', 'schoolTasks', 'schoolNotes', 'schoolProjects', 'schoolMilestones', 'schoolConcepts', 'schoolSkills', 'schoolReflections', 'personalTasks', 'personalGoals', 'personalReflections'];
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeNames, 'readwrite');
     storeNames.forEach(name => tx.objectStore(name).clear());
@@ -325,7 +368,7 @@ export async function importAll(data) {
 
 export async function exportAllData() {
   const data = {};
-  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'checklists', 'checklistLogs', 'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf'];
+  const storeNames = ['hours', 'logbook', 'photos', 'settings', 'competencies', 'assignments', 'goals', 'quality', 'dailyPlans', 'weekReviews', 'learningMoments', 'reference', 'energy', 'deleted', 'checklists', 'checklistLogs', 'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf', 'schoolTasks', 'schoolNotes', 'schoolProjects', 'schoolMilestones', 'schoolConcepts', 'schoolSkills', 'schoolReflections', 'personalTasks', 'personalGoals', 'personalReflections'];
   for (const name of storeNames) {
     data[name] = await getAll(name);
   }

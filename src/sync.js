@@ -11,7 +11,11 @@ import { APP_VERSION, SCHEMA_VERSION } from './main.js';
 const SYNC_STORES = [
   'hours', 'logbook', 'photos', 'competencies', 'assignments',
   'goals', 'quality', 'dailyPlans', 'weekReviews',
-  'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs', 'deleted'
+  'learningMoments', 'reference', 'energy', 'checklists', 'checklistLogs', 'deleted',
+  'bpvLeerdoelen', 'bpvProducten', 'bpvReflecties', 'bpvBedrijf',
+  'schoolTasks', 'schoolNotes', 'schoolProjects', 'schoolMilestones',
+  'schoolConcepts', 'schoolSkills', 'schoolReflections',
+  'personalTasks', 'personalGoals', 'personalReflections'
 ];
 
 // Stores that contain sensitive data (Vault) — opt-in

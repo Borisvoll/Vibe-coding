@@ -2,43 +2,110 @@ import { modules } from '../main.js';
 import { icon } from '../icons.js';
 import { getSetting, setSetting } from '../db.js';
 import { ACCENT_COLORS, applyAccentColor } from '../constants.js';
-
-const bottomNavIds = ['today', 'hours', 'logbook', 'planning', 'bpv-opdrachten'];
-const sidebarMainIds = ['today', 'dashboard', 'planning', 'hours', 'logbook', 'notebook', 'checklists', 'bpv-opdrachten', 'goals', 'competencies', 'quality', 'learning-moments', 'process-map', 'reference', 'assignments', 'report'];
-const sidebarSecondaryIds = ['sync', 'vault', 'export', 'settings'];
+import { getNavBlocks, getBottomNavBlocks } from '../core/blockRegistry.js';
+import { getCurrentMode, setMode, getModes, getModeLabel } from '../core/modeManager.js';
+import { on } from '../core/eventBus.js';
+import { navigate } from '../router.js';
 
 export function createShell(container) {
-  const bottomNavItems = modules.filter(m => bottomNavIds.includes(m.id));
-  const sidebarMainItems = modules.filter(m => sidebarMainIds.includes(m.id));
-  const sidebarSecondaryItems = modules.filter(m => sidebarSecondaryIds.includes(m.id));
+  const mode = getCurrentMode();
+
+  function renderNav() {
+    const currentMode = getCurrentMode();
+    const mainBlocks = getNavBlocks(currentMode, 'main');
+    const secondaryBlocks = getNavBlocks(currentMode, 'secondary');
+    const bottomBlocks = getBottomNavBlocks(currentMode);
+
+    // Update sidebar nav
+    const mainNav = container.querySelector('.app-nav-main');
+    const secondaryNav = container.querySelector('.app-nav-secondary');
+    const bottomNav = container.querySelector('.bottom-nav');
+
+    if (mainNav) {
+      mainNav.innerHTML = mainBlocks.map(b => `
+        <a href="#${b.route}" class="nav-link" data-route="${b.route}">
+          <span class="nav-icon">${icon(b.icon)}</span>
+          ${b.label}
+        </a>
+      `).join('');
+
+      // Re-bind click handlers for mobile close
+      mainNav.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 768) {
+            container.querySelector('.app-nav')?.classList.remove('mobile-open');
+            container.querySelector('.sidebar-overlay')?.classList.remove('active');
+          }
+        });
+      });
+    }
+
+    if (secondaryNav) {
+      secondaryNav.innerHTML = secondaryBlocks.map(b => `
+        <a href="#${b.route}" class="nav-link" data-route="${b.route}">
+          <span class="nav-icon">${icon(b.icon)}</span>
+          ${b.label}
+        </a>
+      `).join('');
+
+      secondaryNav.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          if (window.innerWidth < 768) {
+            container.querySelector('.app-nav')?.classList.remove('mobile-open');
+            container.querySelector('.sidebar-overlay')?.classList.remove('active');
+          }
+        });
+      });
+    }
+
+    if (bottomNav) {
+      bottomNav.innerHTML = bottomBlocks.map(b => `
+        <a href="#${b.route}" class="nav-link" data-route="${b.route}">
+          <span class="nav-icon">${icon(b.icon)}</span>
+          <span>${b.label}</span>
+        </a>
+      `).join('');
+    }
+
+    // Update mode switcher active state
+    container.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === currentMode);
+    });
+
+    // Update brand text
+    const brandText = container.querySelector('.app-nav-brand-text');
+    if (brandText) {
+      const modeLabels = { bpv: 'BPV', school: 'School', personal: 'Persoonlijk' };
+      brandText.textContent = `BORIS OS`;
+    }
+  }
+
+  // Build initial shell HTML
+  const modes = getModes();
 
   container.innerHTML = `
     <div class="sidebar-overlay"></div>
     <nav class="app-nav" aria-label="Hoofdnavigatie">
       <div class="app-nav-brand">
         <div class="app-nav-brand-icon">B</div>
-        BPV Tracker
+        <span class="app-nav-brand-text">BORIS OS</span>
+      </div>
+      <div class="mode-switcher">
+        ${modes.map(m => `
+          <button class="mode-btn ${m === mode ? 'active' : ''}" data-mode="${m}">
+            ${getModeLabel(m)}
+          </button>
+        `).join('')}
       </div>
       <div class="app-nav-section-label">Modules</div>
-      <div class="app-nav-main">
-        ${sidebarMainItems.map(m => `
-          <a href="#${m.route}" class="nav-link" data-route="${m.route}">
-            <span class="nav-icon">${icon(m.icon)}</span>
-            ${m.label}
-          </a>
-        `).join('')}
-      </div>
+      <div class="app-nav-main"></div>
       <div class="app-nav-divider"></div>
       <div class="app-nav-section-label">Systeem</div>
-      <div class="app-nav-secondary">
-        ${sidebarSecondaryItems.map(m => `
-          <a href="#${m.route}" class="nav-link" data-route="${m.route}">
-            <span class="nav-icon">${icon(m.icon)}</span>
-            ${m.label}
-          </a>
-        `).join('')}
-      </div>
+      <div class="app-nav-secondary"></div>
       <div style="flex:1"></div>
+      <div class="app-nav-footer">
+        <span class="app-version">v3.0.0</span>
+      </div>
     </nav>
     <div class="app-shell">
       <header class="app-header">
@@ -46,7 +113,16 @@ export function createShell(container) {
           <button class="sidebar-toggle" title="Menu" aria-label="Menu">
             ${icon('menu')}
           </button>
-          <span id="header-title">Dashboard</span>
+          <span id="header-title">Vandaag</span>
+        </div>
+        <div class="app-header-center">
+          <div class="mode-switcher-header">
+            ${modes.map(m => `
+              <button class="mode-btn-header ${m === mode ? 'active' : ''}" data-mode="${m}">
+                ${getModeLabel(m)}
+              </button>
+            `).join('')}
+          </div>
         </div>
         <div class="app-header-actions">
           <button class="sidebar-toggle hamburger-btn" title="Opties" aria-label="Opties">
@@ -82,16 +158,12 @@ export function createShell(container) {
         </div>
       </header>
       <main class="app-main" id="main-content"></main>
-      <nav class="bottom-nav" aria-label="Navigatie">
-        ${bottomNavItems.map(m => `
-          <a href="#${m.route}" class="nav-link" data-route="${m.route}">
-            <span class="nav-icon">${icon(m.icon)}</span>
-            <span>${m.label}</span>
-          </a>
-        `).join('')}
-      </nav>
+      <nav class="bottom-nav" aria-label="Navigatie"></nav>
     </div>
   `;
+
+  // Render nav for current mode
+  renderNav();
 
   const nav = container.querySelector('.app-nav');
   const shell = container.querySelector('.app-shell');
@@ -117,13 +189,29 @@ export function createShell(container) {
     overlay.classList.remove('active');
   });
 
-  nav.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => {
-      if (isMobile()) {
-        nav.classList.remove('mobile-open');
-        overlay.classList.remove('active');
-      }
+  // Mode switcher (sidebar + header)
+  function handleModeSwitch(e) {
+    const newMode = e.target.dataset.mode;
+    if (!newMode) return;
+    setMode(newMode);
+  }
+
+  container.querySelectorAll('.mode-btn, .mode-btn-header').forEach(btn => {
+    btn.addEventListener('click', handleModeSwitch);
+  });
+
+  // Listen for mode changes
+  on('mode:changed', ({ mode: newMode }) => {
+    document.documentElement.setAttribute('data-mode', newMode);
+    renderNav();
+
+    // Update header mode buttons
+    container.querySelectorAll('.mode-btn-header').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mode === newMode);
     });
+
+    // Navigate to home for the new mode
+    navigate('');
   });
 
   // Hamburger menu toggle

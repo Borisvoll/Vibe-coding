@@ -1,0 +1,441 @@
+/* =============================================
+   BORIS OS — Additional styles
+   Mode switcher, mode colors, hub layouts
+   ============================================= */
+
+/* Mode Switcher (Sidebar) */
+.mode-switcher {
+  display: flex;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  margin: 0 var(--space-2) var(--space-3);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  border: none;
+  background: none;
+  letter-spacing: 0.02em;
+}
+
+.mode-btn:hover {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.mode-btn.active {
+  background: var(--color-surface);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Mode Switcher (Header — center) */
+.app-header-center {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .app-header-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+.mode-switcher-header {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+}
+
+.mode-btn-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  border: none;
+  background: none;
+  letter-spacing: 0.02em;
+}
+
+.mode-btn-header:hover {
+  color: var(--color-text);
+}
+
+.mode-btn-header.active {
+  background: var(--color-surface);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Header needs relative for centering mode switcher */
+.app-header {
+  position: sticky;
+  position: relative;
+}
+
+/* App version label */
+.app-nav-footer {
+  padding: var(--space-2) var(--space-4);
+}
+
+.app-version {
+  font-size: 0.6875rem;
+  color: var(--color-text-tertiary);
+}
+
+/* Mode-specific accent overrides */
+[data-mode="bpv"] {
+  --mode-accent: var(--color-blue, #4f6ef7);
+}
+
+[data-mode="school"] {
+  --mode-accent: var(--color-purple, #8b5cf6);
+}
+
+[data-mode="personal"] {
+  --mode-accent: var(--color-teal, #14b8a6);
+}
+
+/* =============================================
+   Hub / Today page shared styles
+   ============================================= */
+
+.hub-header {
+  margin-bottom: var(--space-6);
+}
+
+.hub-header h2 {
+  margin-bottom: var(--space-1);
+}
+
+.hub-header p {
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+.hub-section {
+  margin-bottom: var(--space-6);
+}
+
+.hub-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.hub-section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hub-section-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
+}
+
+/* =============================================
+   Task list styles (shared by all modes)
+   ============================================= */
+
+.hub-tasks {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.hub-task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.hub-task:last-child {
+  border-bottom: none;
+}
+
+.hub-task:hover {
+  background: var(--color-surface-hover);
+}
+
+.hub-task-done {
+  opacity: 0.6;
+}
+
+.hub-task-check {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hub-check-empty {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-full);
+  transition: border-color var(--duration-fast) var(--ease);
+}
+
+.hub-task:hover .hub-check-empty {
+  border-color: var(--task-color, var(--color-accent));
+}
+
+.hub-check-filled {
+  color: var(--task-color, var(--color-accent));
+}
+
+.hub-task-label {
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.hub-task-struck {
+  text-decoration: line-through;
+  color: var(--color-text-tertiary);
+}
+
+/* =============================================
+   Quick modules grid
+   ============================================= */
+
+.hub-modules {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-3);
+}
+
+.hub-module {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+  text-align: center;
+}
+
+.hub-module:hover {
+  background: var(--color-surface-hover);
+}
+
+.hub-module-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-hover);
+}
+
+.hub-module span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* =============================================
+   Inline add form
+   ============================================= */
+
+.inline-add-form {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.inline-add-form .form-input {
+  flex: 1;
+}
+
+/* =============================================
+   Energy / Mood selectors (Personal mode)
+   ============================================= */
+
+.energy-selector {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.energy-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  background: none;
+  padding: 0;
+}
+
+.energy-dot:hover {
+  border-color: var(--color-teal);
+  color: var(--color-teal);
+  transform: scale(1.1);
+}
+
+.energy-dot.active {
+  background: var(--color-teal);
+  border-color: var(--color-teal);
+  color: white;
+}
+
+/* =============================================
+   Dashboard grid enhancements
+   ============================================= */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+/* =============================================
+   Badge color variants
+   ============================================= */
+
+.badge-purple {
+  background: color-mix(in srgb, #8b5cf6 15%, transparent);
+  color: #8b5cf6;
+}
+
+.badge-teal {
+  background: color-mix(in srgb, #14b8a6 15%, transparent);
+  color: #14b8a6;
+}
+
+.badge-emerald {
+  background: color-mix(in srgb, #10b981 15%, transparent);
+  color: #10b981;
+}
+
+/* =============================================
+   Concept clarity dots
+   ============================================= */
+
+.clarity-dots {
+  display: flex;
+  gap: 3px;
+}
+
+.clarity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.clarity-dot.filled {
+  background: var(--color-purple, #8b5cf6);
+}
+
+/* =============================================
+   Toggle / Switch component
+   ============================================= */
+
+.toggle {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--color-border);
+  position: relative;
+  transition: background var(--duration-fast) var(--ease);
+  flex-shrink: 0;
+}
+
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: white;
+  transition: transform var(--duration-fast) var(--ease);
+}
+
+.toggle.active {
+  background: var(--color-accent);
+}
+
+.toggle.active::after {
+  transform: translateX(16px);
+}
+
+/* =============================================
+   Meaningful action star (Personal mode)
+   ============================================= */
+
+.meaningful-star {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease);
+}
+
+.meaningful-star.active {
+  color: var(--color-amber);
+}
+
+.meaningful-star:hover {
+  color: var(--color-amber);
+}

@@ -1,19 +1,6 @@
-const listeners = new Map();
-
-export function emit(event, data) {
-  const fns = listeners.get(event);
-  if (fns) fns.forEach(fn => fn(data));
-}
-
-export function on(event, fn) {
-  if (!listeners.has(event)) listeners.set(event, []);
-  listeners.get(event).push(fn);
-  return () => off(event, fn);
-}
-
-export function off(event, fn) {
-  const fns = listeners.get(event);
-  if (!fns) return;
-  const idx = fns.indexOf(fn);
-  if (idx >= 0) fns.splice(idx, 1);
-}
+/**
+ * Legacy state module — re-exports from core/eventBus.js for backward compatibility.
+ * Existing pages import { emit, on, off } from './state.js'.
+ * New blocks should import from './core/eventBus.js' directly.
+ */
+export { emit, on, off } from './core/eventBus.js';

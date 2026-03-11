@@ -96,11 +96,26 @@ export function validateDailyEntry(data) {
   }
 }
 
+const TIME_RE = /^\d{2}:\d{2}$/;
+
 export function validateHoursEntry(data) {
   requireDate(data.date, 'date');
   requireWeek(data.week, 'week');
   requireOneOf(data.type, VALID_DAY_TYPES, 'type');
-  requireNumber(data.value, 'value', { min: 0, max: 24 });
+  if (data.type === 'work') {
+    if (data.startTime != null && (typeof data.startTime !== 'string' || !TIME_RE.test(data.startTime))) {
+      throw new ValidationError('startTime', 'must be HH:MM format');
+    }
+    if (data.endTime != null && (typeof data.endTime !== 'string' || !TIME_RE.test(data.endTime))) {
+      throw new ValidationError('endTime', 'must be HH:MM format');
+    }
+    if (data.startTime && data.endTime && data.startTime >= data.endTime) {
+      throw new ValidationError('endTime', 'must be after startTime');
+    }
+  }
+  if (data.breakMinutes != null) {
+    requireNumber(data.breakMinutes, 'breakMinutes', { min: 0, max: 480 });
+  }
 }
 
 export function validateLogbookEntry(data) {

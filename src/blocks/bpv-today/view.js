@@ -25,8 +25,8 @@ export function renderBPVToday(container, context) {
     if (timer.running && timer.startedAt) {
       const elapsed = Date.now() - new Date(timer.startedAt).getTime() - (timer.totalPausedMs || 0);
       if (timer.paused && timer.pausedAt) {
-        const pauseElapsed = Date.now() - new Date(timer.pausedAt).getTime();
-        elapsedLabel = formatMinutes(Math.max(0, Math.round((elapsed + pauseElapsed - (Date.now() - new Date(timer.pausedAt).getTime())) / 60000)));
+        const currentPauseMs = Date.now() - new Date(timer.pausedAt).getTime();
+        elapsedLabel = formatMinutes(Math.max(0, Math.round((elapsed - currentPauseMs) / 60000)));
       } else {
         elapsedLabel = formatMinutes(Math.max(0, Math.round(elapsed / 60000)));
       }

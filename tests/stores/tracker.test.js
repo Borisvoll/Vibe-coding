@@ -14,28 +14,31 @@ describe('Tracker store — Hours', () => {
     const entry = await saveHoursEntry({
       date: '2026-02-19',
       type: 'work',
-      value: 8,
+      startTime: '08:00',
+      endTime: '16:30',
+      breakMinutes: 45,
     });
     expect(entry.id).toBeDefined();
     expect(entry.date).toBe('2026-02-19');
     expect(entry.week).toMatch(/^\d{4}-W\d{2}$/);
     expect(entry.type).toBe('work');
-    expect(entry.value).toBe(8);
+    expect(entry.startTime).toBe('08:00');
+    expect(entry.endTime).toBe('16:30');
     expect(entry.updatedAt).toBeDefined();
   });
 
   it('saveHoursEntry updates existing entry for same date', async () => {
-    const first = await saveHoursEntry({ date: '2026-02-19', type: 'work', value: 4 });
-    const second = await saveHoursEntry({ date: '2026-02-19', type: 'work', value: 8 });
+    const first = await saveHoursEntry({ date: '2026-02-19', type: 'work', startTime: '08:00', endTime: '12:00' });
+    const second = await saveHoursEntry({ date: '2026-02-19', type: 'work', startTime: '08:00', endTime: '16:30' });
     expect(second.id).toBe(first.id);
-    expect(second.value).toBe(8);
+    expect(second.endTime).toBe('16:30');
   });
 
   it('getHoursForDate returns entry', async () => {
-    await saveHoursEntry({ date: '2026-02-19', type: 'work', value: 8 });
+    await saveHoursEntry({ date: '2026-02-19', type: 'work', startTime: '08:00', endTime: '16:30' });
     const entry = await getHoursForDate('2026-02-19');
     expect(entry).not.toBeNull();
-    expect(entry.value).toBe(8);
+    expect(entry.startTime).toBe('08:00');
   });
 
   it('getHoursForDate returns null for missing date', async () => {
@@ -44,41 +47,40 @@ describe('Tracker store — Hours', () => {
   });
 
   it('getHoursForWeek returns entries in a week', async () => {
-    await saveHoursEntry({ date: '2026-02-16', type: 'work', value: 8 });
-    await saveHoursEntry({ date: '2026-02-17', type: 'work', value: 7 });
+    await saveHoursEntry({ date: '2026-02-16', type: 'work', startTime: '08:00', endTime: '16:00' });
+    await saveHoursEntry({ date: '2026-02-17', type: 'work', startTime: '08:00', endTime: '15:00' });
     const week = await getHoursForWeek('2026-W08');
     expect(week.length).toBeGreaterThanOrEqual(2);
   });
 
   it('getAllHours returns sorted asc', async () => {
-    await saveHoursEntry({ date: '2026-02-19', type: 'work', value: 8 });
-    await saveHoursEntry({ date: '2026-02-17', type: 'work', value: 6 });
+    await saveHoursEntry({ date: '2026-02-19', type: 'work', startTime: '08:00', endTime: '16:00' });
+    await saveHoursEntry({ date: '2026-02-17', type: 'work', startTime: '08:00', endTime: '14:00' });
     const all = await getAllHours();
     expect(all[0].date).toBe('2026-02-17');
   });
 
   it('saveHoursEntry rejects invalid type', async () => {
     await expect(saveHoursEntry({
-      date: '2026-02-19', type: 'vacation', value: 8,
+      date: '2026-02-19', type: 'vacation', startTime: '08:00', endTime: '16:00',
     })).rejects.toThrow('type');
   });
 
-  it('saveHoursEntry rejects negative hours', async () => {
+  it('saveHoursEntry rejects endTime before startTime', async () => {
     await expect(saveHoursEntry({
-      date: '2026-02-19', type: 'work', value: -1,
-    })).rejects.toThrow('value');
+      date: '2026-02-19', type: 'work', startTime: '16:00', endTime: '08:00',
+    })).rejects.toThrow('endTime');
   });
 
-  it('saveHoursEntry rejects hours > 24', async () => {
+  it('saveHoursEntry rejects invalid time format', async () => {
     await expect(saveHoursEntry({
-      date: '2026-02-19', type: 'work', value: 25,
-    })).rejects.toThrow('value');
+      date: '2026-02-19', type: 'work', startTime: 'abc', endTime: '16:00',
+    })).rejects.toThrow('startTime');
   });
 
-  it('saveHoursEntry accepts zero hours for sick day', async () => {
-    const entry = await saveHoursEntry({ date: '2026-02-19', type: 'sick', value: 0 });
+  it('saveHoursEntry accepts sick day without times', async () => {
+    const entry = await saveHoursEntry({ date: '2026-02-19', type: 'sick' });
     expect(entry.type).toBe('sick');
-    expect(entry.value).toBe(0);
   });
 });
 

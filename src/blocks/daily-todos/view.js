@@ -109,8 +109,8 @@ export function renderDailyTodos(container, context) {
   }
 
   addBtn.addEventListener('click', handleAdd);
-  inputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); handleAdd(); }
+  inputEl.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); await handleAdd(); }
   });
 
   const unsubMode = eventBus.on('mode:changed', () => render());

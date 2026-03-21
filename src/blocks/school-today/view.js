@@ -131,5 +131,13 @@ export function renderSchoolToday(container) {
     `<article class="os-mini-card school-block school-block--wide" data-block-id="${mountId}"></article>`
   );
   render();
-  return { unmount() { container.querySelector(`[data-block-id="${mountId}"]`)?.remove(); } };
+
+  const unsubRender = eventBus?.on('daily:changed', () => render());
+
+  return {
+    unmount() {
+      unsubRender?.();
+      container.querySelector(`[data-block-id="${mountId}"]`)?.remove();
+    }
+  };
 }

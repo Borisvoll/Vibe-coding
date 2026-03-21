@@ -1,6 +1,7 @@
 import { addHoursEntry, getHoursEntry, getUnloggedDays, getLogStreak } from '../../stores/bpv.js';
 import { getToday, getISOWeek, formatMinutes, calcNetMinutes, formatDateShort, escapeHTML, getCurrentWeek } from '../../utils.js';
 import { DEFAULT_START_TIME, DEFAULT_END_TIME, DEFAULT_BREAK_MINUTES } from '../../constants.js';
+import { showToast } from '../../toast.js';
 
 const STANDARD_NET = calcNetMinutes(DEFAULT_START_TIME, DEFAULT_END_TIME, DEFAULT_BREAK_MINUTES);
 
@@ -115,13 +116,17 @@ export function renderBPVCheckin(container, context) {
     el.querySelector('[data-action="log-standard"]')?.addEventListener('click', async () => {
       const btn = el.querySelector('[data-action="log-standard"]');
       btn.disabled = true;
-      await addHoursEntry(today, {
-        type: 'work',
-        startTime: DEFAULT_START_TIME,
-        endTime: DEFAULT_END_TIME,
-        breakMinutes: DEFAULT_BREAK_MINUTES,
-      });
-      eventBus?.emit('bpv:changed', { date: today });
+      try {
+        await addHoursEntry(today, {
+          type: 'work',
+          startTime: DEFAULT_START_TIME,
+          endTime: DEFAULT_END_TIME,
+          breakMinutes: DEFAULT_BREAK_MINUTES,
+        });
+        eventBus?.emit('bpv:changed', { date: today });
+      } catch (err) {
+        showToast(`Fout bij opslaan: ${err.message}`);
+      }
       render();
     });
 
@@ -130,13 +135,17 @@ export function renderBPVCheckin(container, context) {
         const date = btn.dataset.date;
         btn.disabled = true;
         btn.textContent = '...';
-        await addHoursEntry(date, {
-          type: 'work',
-          startTime: DEFAULT_START_TIME,
-          endTime: DEFAULT_END_TIME,
-          breakMinutes: DEFAULT_BREAK_MINUTES,
-        });
-        eventBus?.emit('bpv:changed', { date });
+        try {
+          await addHoursEntry(date, {
+            type: 'work',
+            startTime: DEFAULT_START_TIME,
+            endTime: DEFAULT_END_TIME,
+            breakMinutes: DEFAULT_BREAK_MINUTES,
+          });
+          eventBus?.emit('bpv:changed', { date });
+        } catch (err) {
+          showToast(`Fout bij opslaan: ${err.message}`);
+        }
         render();
       });
     });
@@ -145,14 +154,18 @@ export function renderBPVCheckin(container, context) {
       const btn = el.querySelector('[data-action="fill-all-week"]');
       btn.disabled = true;
       btn.textContent = 'Bezig...';
-      for (const date of unloggedDays) {
-        await addHoursEntry(date, {
-          type: 'work',
-          startTime: DEFAULT_START_TIME,
-          endTime: DEFAULT_END_TIME,
-          breakMinutes: DEFAULT_BREAK_MINUTES,
-        });
-        eventBus?.emit('bpv:changed', { date });
+      try {
+        for (const date of unloggedDays) {
+          await addHoursEntry(date, {
+            type: 'work',
+            startTime: DEFAULT_START_TIME,
+            endTime: DEFAULT_END_TIME,
+            breakMinutes: DEFAULT_BREAK_MINUTES,
+          });
+          eventBus?.emit('bpv:changed', { date });
+        }
+      } catch (err) {
+        showToast(`Fout bij opslaan: ${err.message}`);
       }
       render();
     });

@@ -122,11 +122,11 @@ describe('validateHoursEntry', () => {
     })).toThrow(ValidationError);
   });
 
-  it('rejects endTime before startTime', () => {
+  it('accepts overnight shift (endTime before startTime)', () => {
     expect(() => validateHoursEntry({
       date: '2026-02-19', week: '2026-W08', type: 'work',
-      startTime: '16:00', endTime: '08:00',
-    })).toThrow(ValidationError);
+      startTime: '23:00', endTime: '07:00',
+    })).not.toThrow();
   });
 
   it('rejects negative breakMinutes', () => {

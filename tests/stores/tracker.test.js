@@ -66,10 +66,12 @@ describe('Tracker store — Hours', () => {
     })).rejects.toThrow('type');
   });
 
-  it('saveHoursEntry rejects endTime before startTime', async () => {
-    await expect(saveHoursEntry({
-      date: '2026-02-19', type: 'work', startTime: '16:00', endTime: '08:00',
-    })).rejects.toThrow('endTime');
+  it('saveHoursEntry accepts overnight shift', async () => {
+    const entry = await saveHoursEntry({
+      date: '2026-02-19', type: 'work', startTime: '23:00', endTime: '07:00',
+    });
+    expect(entry.startTime).toBe('23:00');
+    expect(entry.endTime).toBe('07:00');
   });
 
   it('saveHoursEntry rejects invalid time format', async () => {

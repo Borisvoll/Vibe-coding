@@ -109,9 +109,6 @@ export function validateHoursEntry(data) {
     if (data.endTime != null && (typeof data.endTime !== 'string' || !TIME_RE.test(data.endTime))) {
       throw new ValidationError('endTime', 'must be HH:MM format');
     }
-    if (data.startTime && data.endTime && data.startTime >= data.endTime) {
-      throw new ValidationError('endTime', 'must be after startTime');
-    }
   }
   if (data.breakMinutes != null) {
     requireNumber(data.breakMinutes, 'breakMinutes', { min: 0, max: 480 });

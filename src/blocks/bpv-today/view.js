@@ -118,13 +118,17 @@ export function renderBPVToday(container, context) {
           pausedMs += now.getTime() - new Date(timer.pausedAt).getTime();
         }
         const breakMinutes = Math.round(pausedMs / 60000);
-        await addHoursEntry(getToday(), {
-          type: 'work',
-          startTime: toHHMM(start),
-          endTime: toHHMM(now),
-          breakMinutes,
-        });
-        showToast('Uren opgeslagen via timer');
+        try {
+          await addHoursEntry(getToday(), {
+            type: 'work',
+            startTime: toHHMM(start),
+            endTime: toHHMM(now),
+            breakMinutes,
+          });
+          showToast('Uren opgeslagen via timer');
+        } catch (err) {
+          showToast(`Fout bij opslaan: ${err.message}`);
+        }
       }
       eventBus?.emit('bpv:changed');
       render();

@@ -24,13 +24,23 @@ export function renderWorryDump(container, context) {
       const form = wrapper.querySelector('.worry-dump__form');
       const textarea = wrapper.querySelector('.worry-dump__textarea');
 
+      let submitting = false;
       form.addEventListener('submit', (e) => {
         e.preventDefault();
+        if (submitting) return;
         const text = textarea.value.trim();
         if (!text) return;
+        submitting = true;
         currentWorry = text;
         step = 'triage';
         render();
+      });
+
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          textarea.value = '';
+          textarea.blur();
+        }
       });
     } else if (step === 'triage') {
       wrapper.innerHTML = `
@@ -45,7 +55,17 @@ export function renderWorryDump(container, context) {
             Nee → parkeren
           </button>
         </div>
+        <button type="button" class="btn btn-ghost btn-sm" data-choice="back" style="margin-top:var(--space-2)">← Terug (Esc)</button>
       `;
+
+      wrapper.querySelector('[data-choice="back"]').addEventListener('click', () => {
+        step = 'input';
+        render();
+      });
+
+      wrapper.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') { step = 'input'; render(); }
+      });
 
       wrapper.querySelector('[data-choice="yes"]').addEventListener('click', async () => {
         // Create a microstep task

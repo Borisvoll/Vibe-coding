@@ -41,26 +41,31 @@ export function renderDoneList(container, context) {
     const form = wrapper.querySelector('.done-list__form');
     const input = wrapper.querySelector('.done-list__input');
 
+    let submitting = false;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const text = input.value.trim();
-      if (!text) return;
+      if (!text || submitting) return;
+      submitting = true;
+      input.value = '';
 
       const now = new Date().toISOString();
-      await put('os_tasks', {
-        id: generateId(),
-        text,
-        mode,
-        status: 'done',
-        priority: 3,
-        date: today,
-        doneAt: now,
-        createdAt: now,
-        updated_at: now,
-      });
-
-      input.value = '';
-      eventBus?.emit('tasks:changed');
+      try {
+        await put('os_tasks', {
+          id: generateId(),
+          text,
+          mode,
+          status: 'done',
+          priority: 3,
+          date: today,
+          doneAt: now,
+          createdAt: now,
+          updated_at: now,
+        });
+        eventBus?.emit('tasks:changed');
+      } finally {
+        submitting = false;
+      }
       render();
     });
   }

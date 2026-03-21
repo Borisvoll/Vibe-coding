@@ -224,7 +224,7 @@ export function renderProjects(container, context) {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const projectId = btn.dataset.openProject;
-        window.location.hash = `planning/${projectId}`;
+        eventBus.emit('projects:open', { projectId });
       });
     });
 

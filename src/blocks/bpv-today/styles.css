@@ -1,0 +1,85 @@
+.bpv-today__timer-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bpv-today__timer-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.bpv-today__title {
+  margin: 0;
+  font-size: var(--font-md);
+  font-weight: 600;
+}
+
+.bpv-today__elapsed {
+  font-size: var(--font-stat, var(--font-xl));
+  font-weight: 800;
+  color: var(--color-accent);
+}
+
+.bpv-today__timer-status {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.bpv-today__timer-status--active {
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  color: var(--color-success);
+}
+
+.bpv-today__timer-status--paused {
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
+}
+
+.bpv-today__timer-status--stopped {
+  background: var(--color-border-light);
+  color: var(--color-text-secondary);
+}
+
+.bpv-today__timer-controls {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.bpv-today__learning {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) 0;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.bpv-today__learning-label,
+.bpv-today__reflection-label {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bpv-today__learning-value {
+  font-size: var(--font-sm);
+  color: var(--color-text);
+}
+
+.bpv-today__reflection {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bpv-today__save {
+  align-self: flex-end;
+  margin-top: var(--space-1);
+}

@@ -7,7 +7,7 @@ export function registerBPVHeatmapBlock(registry) {
     hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
-    order: 12,
+    order: 30,
     mount(container, context) {
       return renderBPVHeatmap(container, context);
     },

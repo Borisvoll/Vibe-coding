@@ -13,6 +13,9 @@ export const PRESETS = {
       'daily-outcomes', 'daily-todos', 'daily-reflection',
       'inbox', 'inbox-screen', 'dashboard', 'daily-cockpit',
       'bpv-report',
+      // BPV blocks (visible only in BPV mode via modes filter)
+      'bpv-today', 'bpv-checkin', 'bpv-quick-log', 'bpv-weekly-overview',
+      'bpv-log-summary', 'bpv-mini-card',
     ],
   },
   school: {
@@ -27,6 +30,10 @@ export const PRESETS = {
       'school-milestones', 'school-skill-tracker',
       'weekly-review', 'lijsten', 'lijsten-screen',
       'bpv-report',
+      // BPV blocks (visible only in BPV mode via modes filter)
+      'bpv-today', 'bpv-checkin', 'bpv-quick-log', 'bpv-weekly-overview',
+      'bpv-log-summary', 'bpv-progress', 'bpv-countdown', 'bpv-heatmap',
+      'bpv-leerdoelen', 'bpv-data-manager', 'bpv-mini-card',
     ],
   },
   bpv: {
@@ -36,9 +43,9 @@ export const PRESETS = {
     blocks: [
       'daily-outcomes', 'daily-todos', 'daily-reflection', 'daily-cockpit',
       'inbox', 'inbox-screen', 'projects', 'dashboard',
-      'bpv-today', 'bpv-quick-log', 'bpv-weekly-overview',
-      'bpv-log-summary', 'bpv-checkin', 'bpv-progress',
-      'bpv-countdown', 'bpv-heatmap', 'bpv-leerdoelen', 'bpv-data-manager',
+      'bpv-today', 'bpv-checkin', 'bpv-quick-log', 'bpv-weekly-overview',
+      'bpv-log-summary', 'bpv-progress', 'bpv-countdown', 'bpv-heatmap',
+      'bpv-leerdoelen', 'bpv-data-manager',
       'weekly-review', 'tasks', 'bpv-mini-card',
       'lijsten', 'lijsten-screen', 'bpv-report',
     ],
@@ -56,6 +63,10 @@ export const PRESETS = {
       // Personality-driven blocks
       'brain-state', 'worry-dump', 'conversation-debrief', 'boundaries',
       'bpv-report',
+      // BPV blocks (visible only in BPV mode via modes filter)
+      'bpv-today', 'bpv-checkin', 'bpv-quick-log', 'bpv-weekly-overview',
+      'bpv-log-summary', 'bpv-progress', 'bpv-countdown', 'bpv-heatmap',
+      'bpv-leerdoelen', 'bpv-data-manager', 'bpv-mini-card',
     ],
   },
   alles: {

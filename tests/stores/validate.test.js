@@ -97,33 +97,53 @@ describe('validateDailyEntry', () => {
 });
 
 describe('validateHoursEntry', () => {
-  it('accepts valid hours entry', () => {
+  it('accepts valid work entry with times', () => {
     expect(() => validateHoursEntry({
-      date: '2026-02-19', week: '2026-W08', type: 'work', value: 8,
+      date: '2026-02-19', week: '2026-W08', type: 'work',
+      startTime: '08:00', endTime: '16:30', breakMinutes: 45,
     })).not.toThrow();
   });
 
-  it('rejects negative hours', () => {
+  it('accepts work entry without times (null)', () => {
     expect(() => validateHoursEntry({
-      date: '2026-02-19', week: '2026-W08', type: 'work', value: -1,
+      date: '2026-02-19', week: '2026-W08', type: 'work',
+    })).not.toThrow();
+  });
+
+  it('accepts non-work type without times', () => {
+    expect(() => validateHoursEntry({
+      date: '2026-02-19', week: '2026-W08', type: 'sick',
+    })).not.toThrow();
+  });
+
+  it('rejects invalid startTime format', () => {
+    expect(() => validateHoursEntry({
+      date: '2026-02-19', week: '2026-W08', type: 'work', startTime: 'abc',
     })).toThrow(ValidationError);
   });
 
-  it('rejects hours > 24', () => {
+  it('accepts overnight shift (endTime before startTime)', () => {
     expect(() => validateHoursEntry({
-      date: '2026-02-19', week: '2026-W08', type: 'work', value: 25,
+      date: '2026-02-19', week: '2026-W08', type: 'work',
+      startTime: '23:00', endTime: '07:00',
+    })).not.toThrow();
+  });
+
+  it('rejects negative breakMinutes', () => {
+    expect(() => validateHoursEntry({
+      date: '2026-02-19', week: '2026-W08', type: 'work', breakMinutes: -10,
     })).toThrow(ValidationError);
   });
 
   it('rejects invalid day type', () => {
     expect(() => validateHoursEntry({
-      date: '2026-02-19', week: '2026-W08', type: 'vacation', value: 0,
+      date: '2026-02-19', week: '2026-W08', type: 'vacation',
     })).toThrow(ValidationError);
   });
 
   it('rejects invalid week format', () => {
     expect(() => validateHoursEntry({
-      date: '2026-02-19', week: 'week8', type: 'work', value: 8,
+      date: '2026-02-19', week: 'week8', type: 'work',
     })).toThrow(ValidationError);
   });
 });

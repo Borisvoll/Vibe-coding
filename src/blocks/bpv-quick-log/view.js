@@ -295,11 +295,11 @@ export function renderBPVQuickLog(container, context) {
     const btn = e.target.closest('.bpv-ql__type-btn');
     if (!btn) return;
     setType(btn.dataset.type);
-    if (btn.dataset.type !== 'work') doSave({ silent: true });
+    if (btn.dataset.type !== 'work') doSave({ silent: true }).catch(() => {});
   });
 
   // Auto-save on field change (debounced)
-  const autoSave = debounce(() => doSave({ silent: true }), 800);
+  const autoSave = debounce(() => doSave({ silent: true }).catch(() => {}), 800);
 
   // Live net calculation + auto-save
   el.querySelectorAll('[data-field="startTime"], [data-field="endTime"], [data-field="breakMinutes"]')

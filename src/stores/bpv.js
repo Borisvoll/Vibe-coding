@@ -13,6 +13,7 @@ import {
 import {
   getISOWeek, getWeekDates, calcNetMinutes, formatMinutes, formatDateISO, getToday,
 } from '../utils.js';
+import { validateHoursEntry } from './validate.js';
 import { WEEKLY_GOAL_HOURS, BPV_TOTAL_GOAL_HOURS, BPV_START, BPV_END } from '../constants.js';
 
 const HOURS_STORE = 'hours';
@@ -35,6 +36,7 @@ export async function addHoursEntry(date, {
 } = {}) {
   if (!date) throw new Error('date: required');
   const week = getISOWeek(date);
+  validateHoursEntry({ date, week, type, startTime, endTime, breakMinutes: Number(breakMinutes) });
   const isWork = type === 'work';
   const netMinutes = (isWork && startTime && endTime)
     ? calcNetMinutes(startTime, endTime, Number(breakMinutes))

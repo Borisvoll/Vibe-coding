@@ -25,8 +25,8 @@ export function renderBPVToday(container, context) {
     if (timer.running && timer.startedAt) {
       const elapsed = Date.now() - new Date(timer.startedAt).getTime() - (timer.totalPausedMs || 0);
       if (timer.paused && timer.pausedAt) {
-        const pauseElapsed = Date.now() - new Date(timer.pausedAt).getTime();
-        elapsedLabel = formatMinutes(Math.max(0, Math.round((elapsed + pauseElapsed - (Date.now() - new Date(timer.pausedAt).getTime())) / 60000)));
+        const currentPauseMs = Date.now() - new Date(timer.pausedAt).getTime();
+        elapsedLabel = formatMinutes(Math.max(0, Math.round((elapsed - currentPauseMs) / 60000)));
       } else {
         elapsedLabel = formatMinutes(Math.max(0, Math.round(elapsed / 60000)));
       }
@@ -118,13 +118,17 @@ export function renderBPVToday(container, context) {
           pausedMs += now.getTime() - new Date(timer.pausedAt).getTime();
         }
         const breakMinutes = Math.round(pausedMs / 60000);
-        await addHoursEntry(getToday(), {
-          type: 'work',
-          startTime: toHHMM(start),
-          endTime: toHHMM(now),
-          breakMinutes,
-        });
-        showToast('Uren opgeslagen via timer');
+        try {
+          await addHoursEntry(getToday(), {
+            type: 'work',
+            startTime: toHHMM(start),
+            endTime: toHHMM(now),
+            breakMinutes,
+          });
+          showToast('Uren opgeslagen via timer');
+        } catch (err) {
+          showToast(`Fout bij opslaan: ${err.message}`);
+        }
       }
       eventBus?.emit('bpv:changed');
       render();

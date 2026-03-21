@@ -93,7 +93,8 @@ export function calcNetMinutes(startTime, endTime, breakMinutes = 0) {
   if (!startTime || !endTime) return 0;
   const [sh, sm] = startTime.split(':').map(Number);
   const [eh, em] = endTime.split(':').map(Number);
-  const totalMin = (eh * 60 + em) - (sh * 60 + sm);
+  let totalMin = (eh * 60 + em) - (sh * 60 + sm);
+  if (totalMin < 0) totalMin += 24 * 60; // overnight shift
   return Math.max(0, totalMin - breakMinutes);
 }
 

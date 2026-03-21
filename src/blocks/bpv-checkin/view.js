@@ -126,8 +126,9 @@ export function renderBPVCheckin(container, context) {
         eventBus?.emit('bpv:changed', { date: today });
       } catch (err) {
         showToast(`Fout bij opslaan: ${err.message}`);
+      } finally {
+        render();
       }
-      render();
     });
 
     el.querySelectorAll('[data-action="fill-day"]').forEach(btn => {
@@ -145,8 +146,9 @@ export function renderBPVCheckin(container, context) {
           eventBus?.emit('bpv:changed', { date });
         } catch (err) {
           showToast(`Fout bij opslaan: ${err.message}`);
+        } finally {
+          render();
         }
-        render();
       });
     });
 
@@ -166,8 +168,9 @@ export function renderBPVCheckin(container, context) {
         }
       } catch (err) {
         showToast(`Fout bij opslaan: ${err.message}`);
+      } finally {
+        render();
       }
-      render();
     });
   }
 

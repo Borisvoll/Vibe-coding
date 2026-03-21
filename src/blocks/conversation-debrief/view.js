@@ -2,9 +2,9 @@ import { escapeHTML, getToday } from '../../utils.js';
 import { getAll, put } from '../../db.js';
 
 const RATINGS = [
-  { value: 'good',    label: 'Ging goed',    emoji: '😊', color: '#10b981', colorLight: '#d1fae5' },
-  { value: 'neutral', label: 'Neutraal',     emoji: '😐', color: '#6b7280', colorLight: '#f3f4f6' },
-  { value: 'draining', label: 'Kostte veel', emoji: '😮‍💨', color: '#ef4444', colorLight: '#fee2e2' },
+  { value: 'good',    label: 'Ging goed',    emoji: '😊', color: 'var(--color-success)', colorLight: 'var(--color-success-light)' },
+  { value: 'neutral', label: 'Neutraal',     emoji: '😐', color: 'var(--color-text-secondary)', colorLight: 'var(--color-surface-hover)' },
+  { value: 'draining', label: 'Kostte veel', emoji: '😮‍💨', color: 'var(--color-error)', colorLight: 'var(--color-error-light)' },
 ];
 
 const MAX_LOG_ENTRIES = 100;

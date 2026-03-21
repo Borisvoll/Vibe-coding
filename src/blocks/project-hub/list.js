@@ -200,15 +200,28 @@ export function renderProjectList(container, context, onOpen) {
 
     gridEl.innerHTML = cardData.map((d) => d.html).join('');
 
-    // Apply cover images via JS (avoids embedding large base64 in HTML attributes)
+    // Apply cover images via JS — uses Image() to validate before applying
     gridEl.querySelectorAll('.hub-card').forEach((card, idx) => {
       const cover = sanitizeDataURL(cardData[idx]?.cover);
       if (cover) {
         const coverEl = card.querySelector('[data-cover-target]');
         if (coverEl) {
-          coverEl.style.backgroundImage = `url('${cover.replace(/'/g, "\\'")}')`;
-          coverEl.style.backgroundSize = 'cover';
-          coverEl.style.backgroundPosition = 'center';
+          // Validate by loading as an image, then apply via blob URL to avoid CSS injection
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            canvas.toBlob((blob) => {
+              if (!blob) return;
+              const objectUrl = URL.createObjectURL(blob);
+              coverEl.style.backgroundImage = `url(${objectUrl})`;
+              coverEl.style.backgroundSize = 'cover';
+              coverEl.style.backgroundPosition = 'center';
+            });
+          };
+          img.src = cover;
         }
       }
     });

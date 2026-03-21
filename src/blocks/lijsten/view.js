@@ -64,7 +64,7 @@ export function renderLijsten(container, context) {
     creatingNew = false;
     newForm.hidden = true;
     addListBtn.hidden = false;
-    await render();
+    eventBus.emit('lists:changed');
   }
 
   newSaveBtn.addEventListener('click', handleNewList);
@@ -175,7 +175,7 @@ export function renderLijsten(container, context) {
       }
     });
     // Auto-focus the input when expanding
-    setTimeout(() => input.focus(), 50);
+    requestAnimationFrame(() => input.focus());
 
     // Toggle items
     bodyEl.querySelectorAll('.lijsten-block__check').forEach((btn) => {

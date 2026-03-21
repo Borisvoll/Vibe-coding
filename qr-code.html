@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code — Boris Jan Vollebregt</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f5f7;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      color: #1d1d1f;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 48px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+      max-width: 420px;
+      width: 100%;
+    }
+
+    .qr-frame {
+      display: inline-block;
+      padding: 24px;
+      background: #fff;
+      border-radius: 16px;
+      border: 2px solid #e8e8ed;
+    }
+
+    .qr-frame canvas {
+      display: block;
+      border-radius: 8px;
+    }
+
+    .name {
+      margin-top: 28px;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .role {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #6e6e73;
+      font-weight: 500;
+    }
+
+    .url {
+      margin-top: 16px;
+      font-size: 13px;
+      color: #5856D6;
+      font-weight: 600;
+      text-decoration: none;
+      letter-spacing: 0.2px;
+    }
+
+    .url:hover { text-decoration: underline; }
+
+    .divider {
+      height: 1px;
+      background: #e8e8ed;
+      margin: 24px 0;
+    }
+
+    .save-btn {
+      display: inline-block;
+      padding: 12px 32px;
+      background: #5856D6;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .save-btn:hover { background: #4a48c4; }
+
+    .hint {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #aeaeb2;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="qr-frame">
+      <canvas id="qr-canvas"></canvas>
+    </div>
+    <div class="name">Boris Jan Vollebregt</div>
+    <div class="role">Student Research Instrumentmaker</div>
+    <a class="url" href="https://borisvoll.github.io/portfolio/" target="_blank">borisvoll.github.io/portfolio</a>
+    <div class="divider"></div>
+    <button class="save-btn" onclick="saveQR()">Opslaan als PNG</button>
+    <div class="hint">Rechts-klik op de QR-code om apart op te slaan</div>
+  </div>
+
+  <script>
+    const URL = 'https://borisvoll.github.io/portfolio/';
+    const SIZE = 280;
+    const ACCENT = '#5856D6';
+
+    const qr = qrcode(0, 'M');
+    qr.addData(URL);
+    qr.make();
+
+    const canvas = document.getElementById('qr-canvas');
+    const ctx = canvas.getContext('2d');
+    const moduleCount = qr.getModuleCount();
+    const quietZone = 2;
+    const totalModules = moduleCount + quietZone * 2;
+    const cellSize = SIZE / totalModules;
+
+    canvas.width = SIZE;
+    canvas.height = SIZE;
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // Draw QR modules in accent color
+    const radius = cellSize * 0.38;
+    for (let row = 0; row < moduleCount; row++) {
+      for (let col = 0; col < moduleCount; col++) {
+        if (qr.isDark(row, col)) {
+          const x = (col + quietZone) * cellSize;
+          const y = (row + quietZone) * cellSize;
+          ctx.fillStyle = ACCENT;
+          ctx.beginPath();
+          ctx.roundRect(x, y, cellSize, cellSize, radius);
+          ctx.fill();
+        }
+      }
+    }
+
+    // Draw finder patterns with rounded outer ring
+    function drawFinder(cx, cy) {
+      const s = cellSize;
+      // Clear the 7x7 area first
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect((cx + quietZone) * s, (cy + quietZone) * s, 7 * s, 7 * s);
+
+      // Outer ring
+      ctx.fillStyle = ACCENT;
+      ctx.beginPath();
+      ctx.roundRect((cx + quietZone) * s, (cy + quietZone) * s, 7 * s, 7 * s, s * 1.2);
+      ctx.fill();
+
+      // White middle
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect((cx + quietZone + 1) * s, (cy + quietZone + 1) * s, 5 * s, 5 * s, s * 0.8);
+      ctx.fill();
+
+      // Inner dot
+      ctx.fillStyle = ACCENT;
+      ctx.beginPath();
+      ctx.roundRect((cx + quietZone + 2) * s, (cy + quietZone + 2) * s, 3 * s, 3 * s, s * 0.6);
+      ctx.fill();
+    }
+
+    drawFinder(0, 0);
+    drawFinder(moduleCount - 7, 0);
+    drawFinder(0, moduleCount - 7);
+
+    function saveQR() {
+      // Create a high-res export canvas
+      const scale = 4;
+      const exportSize = SIZE * scale;
+      const padding = 80 * scale;
+      const textSpace = 100 * scale;
+      const totalW = exportSize + padding * 2;
+      const totalH = exportSize + padding * 2 + textSpace;
+
+      const exp = document.createElement('canvas');
+      exp.width = totalW;
+      exp.height = totalH;
+      const ectx = exp.getContext('2d');
+
+      // Background
+      ectx.fillStyle = '#ffffff';
+      ectx.fillRect(0, 0, totalW, totalH);
+
+      // QR code
+      ectx.drawImage(canvas, padding, padding, exportSize, exportSize);
+
+      // Name
+      ectx.fillStyle = '#1d1d1f';
+      ectx.font = `bold ${18 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ectx.textAlign = 'center';
+      ectx.fillText('Boris Jan Vollebregt', totalW / 2, exportSize + padding + 44 * scale);
+
+      // URL
+      ectx.fillStyle = ACCENT;
+      ectx.font = `600 ${12 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
+      ectx.fillText('borisvoll.github.io/portfolio', totalW / 2, exportSize + padding + 70 * scale);
+
+      const link = document.createElement('a');
+      link.download = 'QR_Boris_Vollebregt.png';
+      link.href = exp.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>

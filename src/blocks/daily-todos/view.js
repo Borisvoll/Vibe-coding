@@ -1,5 +1,6 @@
 import { getDailyEntry, addTodo, toggleTodo, deleteTodo } from '../../stores/daily.js';
 import { getToday, escapeHTML } from '../../utils.js';
+import { showUndoToast } from '../../toast.js';
 import './styles.css';
 
 const MODE_META = {
@@ -51,12 +52,12 @@ export function renderDailyTodos(container, context) {
 
     if (todos.length === 0) {
       countEl.textContent = '';
+      countEl.className = 'daily-todos__count';
     } else {
       countEl.textContent = `${done}/${todos.length}`;
-      countEl.style.background = done === todos.length
-        ? `color-mix(in srgb, ${meta.color} 15%, transparent)`
-        : 'var(--color-border-light)';
-      countEl.style.color = done === todos.length ? meta.color : 'var(--color-text-secondary)';
+      countEl.className = done === todos.length
+        ? 'daily-todos__count count-badge count-badge--done'
+        : 'daily-todos__count count-badge';
     }
 
     if (todos.length === 0) {
@@ -91,8 +92,16 @@ export function renderDailyTodos(container, context) {
         const id = btn.closest('.daily-todos__item')?.dataset?.id;
         if (!id) return;
         const currentMode = modeManager.getMode();
+        // Save todo text for undo
+        const todo = todos.find((t) => t.id === id);
         await deleteTodo(currentMode, today, id);
         eventBus.emit('daily:changed', { mode: currentMode, date: today });
+        if (todo) {
+          showUndoToast('Taak verwijderd', async () => {
+            await addTodo(currentMode, today, todo.text);
+            eventBus.emit('daily:changed', { mode: currentMode, date: today });
+          });
+        }
       });
     });
 

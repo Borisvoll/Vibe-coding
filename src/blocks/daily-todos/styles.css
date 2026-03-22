@@ -22,12 +22,8 @@
 }
 
 .daily-todos__count {
-  font-size: var(--font-sm);
+  /* Uses .count-badge from components.css — only overrides needed here */
   font-weight: 700;
-  padding: 2px 10px;
-  border-radius: 99px;
-  background: var(--color-border-light);
-  transition: background 200ms var(--ease), color 200ms var(--ease);
 }
 
 /* Add row */
@@ -42,7 +38,7 @@
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  outline: none !important;
+  outline: none;
   padding: var(--space-3) var(--space-4) !important;
   font-size: var(--font-base) !important;
   color: var(--color-text);

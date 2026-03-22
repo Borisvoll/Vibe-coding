@@ -201,6 +201,20 @@
   color: var(--color-amber);
 }
 
+/* Clickable stats */
+.daily-cockpit__stat--link {
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-1);
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.daily-cockpit__stat--link:hover {
+  background: var(--color-surface-hover);
+}
+
 .daily-cockpit__show-toggle {
   display: block;
   margin: var(--space-1) 0;

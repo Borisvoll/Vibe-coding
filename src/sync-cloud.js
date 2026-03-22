@@ -1,32 +1,24 @@
 /**
  * Cloud Sync Engine for BORIS
  *
- * Encrypted cross-device sync via Cloudflare Workers relay.
+ * Encrypted cross-device sync via Cloudflare Pages Functions.
  * All data is AES-256-GCM encrypted client-side before upload.
- *
- * Usage:
- *   import { cloudSync } from './sync-cloud.js';
- *   await cloudSync.init(eventBus);
- *   await cloudSync.createRoom(password);   // Device A
- *   await cloudSync.joinRoom(roomId, secret, password); // Device B
+ * Uses same-origin API calls — no server URL configuration needed.
  */
 
 import { getSetting, setSetting } from './db.js';
-import { createSnapshot } from './sync.js';
-import { applyMerge } from './sync.js';
+import { createSnapshot, applyMerge } from './sync.js';
 import { encryptBinary, decryptBinary } from './crypto.js';
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const RETRY_DELAYS = [2000, 4000, 8000, 16000];
 
-// ─── State ──────────────────────────────────────────────────
-
-let syncConfig = null;   // { serverUrl, roomId, secret, password, deviceId, deviceName }
+let syncConfig = null;   // { roomId, secret, password, deviceId, deviceName }
 let eventBus = null;
 let syncTimer = null;
 let isSyncing = false;
 let lastSyncAt = null;
-let syncStatus = 'disconnected'; // disconnected | connected | syncing | error
+let syncStatus = 'disconnected';
 
 function emit(event, data) {
   eventBus?.emit(event, data);
@@ -37,13 +29,10 @@ function updateStatus(status, detail) {
   emit('sync:status', { status, detail, lastSyncAt });
 }
 
-// ─── Network helpers ────────────────────────────────────────
-
 async function fetchWithRetry(url, options, retries = RETRY_DELAYS) {
   for (let attempt = 0; attempt <= retries.length; attempt++) {
     try {
-      const response = await fetch(url, options);
-      return response;
+      return await fetch(url, options);
     } catch (err) {
       if (attempt < retries.length) {
         await new Promise((r) => setTimeout(r, retries[attempt]));
@@ -62,20 +51,14 @@ function apiHeaders() {
   };
 }
 
-// ─── Core sync operations ───────────────────────────────────
-
 async function push() {
   if (!syncConfig) return;
-
   const snapshot = await createSnapshot(false);
   const encrypted = await encryptBinary(JSON.stringify(snapshot), syncConfig.password);
 
-  const response = await fetchWithRetry(`${syncConfig.serverUrl}/api/sync/push`, {
+  const response = await fetchWithRetry('/api/sync/push', {
     method: 'POST',
-    headers: {
-      ...apiHeaders(),
-      'Content-Type': 'application/octet-stream',
-    },
+    headers: { ...apiHeaders(), 'Content-Type': 'application/octet-stream' },
     body: encrypted,
   });
 
@@ -83,14 +66,13 @@ async function push() {
     const err = await response.json().catch(() => ({ error: 'Push failed' }));
     throw new Error(err.error);
   }
-
   return response.json();
 }
 
 async function pull() {
   if (!syncConfig) return null;
 
-  const response = await fetchWithRetry(`${syncConfig.serverUrl}/api/sync/pull`, {
+  const response = await fetchWithRetry('/api/sync/pull', {
     method: 'GET',
     headers: apiHeaders(),
   });
@@ -101,13 +83,8 @@ async function pull() {
   }
 
   const contentType = response.headers.get('Content-Type');
+  if (contentType?.includes('application/json')) return null;
 
-  // JSON response = no snapshot or own snapshot
-  if (contentType?.includes('application/json')) {
-    return null;
-  }
-
-  // Binary response = encrypted snapshot from another device
   const buffer = await response.arrayBuffer();
   const json = await decryptBinary(buffer, syncConfig.password);
   return JSON.parse(json);
@@ -119,14 +96,12 @@ async function syncOnce() {
   updateStatus('syncing');
 
   try {
-    // Pull first, merge, then push
     const remoteSnapshot = await pull();
 
     if (remoteSnapshot?.data) {
       const result = await applyMerge(remoteSnapshot.data);
       if (result.merged > 0) {
         emit('sync:merged', { merged: result.merged, conflicts: result.conflicts });
-        // Notify all blocks to refresh
         emit('tasks:changed');
         emit('projects:changed');
         emit('lists:changed');
@@ -137,7 +112,6 @@ async function syncOnce() {
       }
     }
 
-    // Push our current state
     await push();
 
     lastSyncAt = new Date().toISOString();
@@ -151,8 +125,6 @@ async function syncOnce() {
   }
 }
 
-// ─── Timer ──────────────────────────────────────────────────
-
 function startTimer() {
   stopTimer();
   syncTimer = setInterval(() => syncOnce(), SYNC_INTERVAL_MS);
@@ -165,12 +137,7 @@ function stopTimer() {
   }
 }
 
-// ─── Public API ─────────────────────────────────────────────
-
 export const cloudSync = {
-  /**
-   * Initialize the sync engine. Resumes if config exists in IDB.
-   */
   async init(bus) {
     eventBus = bus;
 
@@ -181,7 +148,6 @@ export const cloudSync = {
       updateStatus('connected');
       startTimer();
 
-      // Subscribe to data changes for push-on-change
       const debounceSync = debounce(() => syncOnce(), 10000);
       eventBus.on('tasks:changed', debounceSync);
       eventBus.on('projects:changed', debounceSync);
@@ -191,85 +157,65 @@ export const cloudSync = {
       eventBus.on('habits:changed', debounceSync);
       eventBus.on('bpv:changed', debounceSync);
 
-      // Initial sync on load
       setTimeout(() => syncOnce(), 3000);
     }
   },
 
-  /**
-   * Create a new sync room. Returns { roomId, secret } to share with other device.
-   */
-  async createRoom(serverUrl, password) {
-    const response = await fetch(`${serverUrl}/api/sync/create-room`, { method: 'POST' });
-    if (!response.ok) throw new Error('Failed to create room');
+  async createRoom(password) {
+    const response = await fetch('/api/sync/create-room', { method: 'POST' });
+    if (!response.ok) throw new Error('Kan kamer niet aanmaken');
 
     const { roomId, secret } = await response.json();
     const deviceId = await getSetting('device_id') || crypto.randomUUID();
     const deviceName = getDeviceName();
 
-    // Join the room we just created
-    const joinResponse = await fetch(`${serverUrl}/api/sync/join`, {
+    const joinResponse = await fetch('/api/sync/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roomId, secret, deviceId, deviceName }),
     });
+    if (!joinResponse.ok) throw new Error('Kan niet joinen');
 
-    if (!joinResponse.ok) throw new Error('Failed to join room');
-
-    syncConfig = { serverUrl, roomId, secret, password, deviceId, deviceName };
+    syncConfig = { roomId, secret, password, deviceId, deviceName };
     await setSetting('sync_config', syncConfig);
 
     updateStatus('connected');
     startTimer();
-
-    // Push initial snapshot
     await syncOnce();
 
     return { roomId, secret };
   },
 
-  /**
-   * Join an existing sync room.
-   */
-  async joinRoom(serverUrl, roomId, secret, password) {
+  async joinRoom(roomId, secret, password) {
     const deviceId = await getSetting('device_id') || crypto.randomUUID();
     const deviceName = getDeviceName();
 
-    const response = await fetch(`${serverUrl}/api/sync/join`, {
+    const response = await fetch('/api/sync/join', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ roomId, secret, deviceId, deviceName }),
     });
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({ error: 'Failed to join' }));
+      const err = await response.json().catch(() => ({ error: 'Koppelen mislukt' }));
       throw new Error(err.error);
     }
 
-    syncConfig = { serverUrl, roomId, secret, password, deviceId, deviceName };
+    syncConfig = { roomId, secret, password, deviceId, deviceName };
     await setSetting('sync_config', syncConfig);
 
     updateStatus('connected');
     startTimer();
-
-    // Pull and merge on join
     await syncOnce();
 
     return response.json();
   },
 
-  /**
-   * Disconnect from sync.
-   */
   async disconnect() {
     if (!syncConfig) return;
-
     try {
-      await fetchWithRetry(`${syncConfig.serverUrl}/api/sync/leave`, {
-        method: 'DELETE',
-        headers: apiHeaders(),
-      });
-    } catch { /* ignore network errors on leave */ }
+      await fetchWithRetry('/api/sync/leave', { method: 'DELETE', headers: apiHeaders() });
+    } catch { /* ignore */ }
 
     stopTimer();
     syncConfig = null;
@@ -278,16 +224,10 @@ export const cloudSync = {
     updateStatus('disconnected');
   },
 
-  /**
-   * Force a sync now.
-   */
   async syncNow() {
     return syncOnce();
   },
 
-  /**
-   * Get current sync status.
-   */
   getStatus() {
     return {
       status: syncStatus,
@@ -298,23 +238,13 @@ export const cloudSync = {
     };
   },
 
-  /**
-   * Get room status (devices, last sync).
-   */
   async getRoomStatus() {
     if (!syncConfig) return null;
-
-    const response = await fetchWithRetry(`${syncConfig.serverUrl}/api/sync/status`, {
-      method: 'GET',
-      headers: apiHeaders(),
-    });
-
+    const response = await fetchWithRetry('/api/sync/status', { method: 'GET', headers: apiHeaders() });
     if (!response.ok) return null;
     return response.json();
   },
 };
-
-// ─── Helpers ────────────────────────────────────────────────
 
 function getDeviceName() {
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';

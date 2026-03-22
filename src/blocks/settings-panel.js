@@ -489,14 +489,13 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
       // Disconnected state — show setup options
       syncUi.innerHTML = `
         <div class="sync-panel">
-          <p class="sync-panel__intro">Synchroniseer je data veilig tussen apparaten. Alle data wordt versleuteld met AES-256 voordat het de server bereikt.</p>
+          <p class="sync-panel__intro">Synchroniseer je data veilig tussen apparaten. Alle data wordt versleuteld voordat het verstuurd wordt.</p>
           <div class="sync-panel__setup">
             <div class="sync-panel__setup-option" data-sync-setup="create">
               <h4>Nieuw koppelpunt</h4>
               <p>Start hier op je eerste apparaat</p>
               <div class="sync-panel__fields" hidden>
-                <input type="url" class="form-input" data-sync-field="server-url" placeholder="Server URL (bijv. https://boris-sync.jouw-naam.workers.dev)" autocomplete="off" />
-                <input type="password" class="form-input" data-sync-field="password" placeholder="Versleutelingswachtwoord" autocomplete="off" />
+                <input type="password" class="form-input" data-sync-field="password" placeholder="Kies een wachtwoord voor versleuteling" autocomplete="off" />
                 <button type="button" class="btn btn-primary btn-sm" data-sync-action="create">Koppelpunt aanmaken</button>
               </div>
               <button type="button" class="btn btn-ghost btn-sm" data-sync-action="show-create">Instellen</button>
@@ -505,7 +504,6 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
               <h4>Koppelen met bestaand punt</h4>
               <p>Voer de code in van je andere apparaat</p>
               <div class="sync-panel__fields" hidden>
-                <input type="url" class="form-input" data-sync-field="join-server-url" placeholder="Server URL" autocomplete="off" />
                 <input type="text" class="form-input" data-sync-field="room-id" placeholder="Kamer ID" autocomplete="off" />
                 <input type="text" class="form-input" data-sync-field="room-secret" placeholder="Kamer geheim" autocomplete="off" />
                 <input type="password" class="form-input" data-sync-field="join-password" placeholder="Versleutelingswachtwoord" autocomplete="off" />
@@ -538,14 +536,13 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         }
 
         if (action === 'create') {
-          const serverUrl = syncUi.querySelector('[data-sync-field="server-url"]')?.value?.trim();
           const password = syncUi.querySelector('[data-sync-field="password"]')?.value;
-          if (!serverUrl || !password) { alert('Vul server URL en wachtwoord in'); return; }
+          if (!password) { alert('Kies een wachtwoord'); return; }
 
           btn.disabled = true;
           btn.textContent = 'Aanmaken...';
           try {
-            const { roomId, secret } = await cloudSync.createRoom(serverUrl, password);
+            const { roomId, secret } = await cloudSync.createRoom(password);
             alert(`Koppelpunt aangemaakt!\n\nKamer ID: ${roomId}\nGeheim: ${secret}\n\nBewaar deze gegevens — je hebt ze nodig op je andere apparaat.`);
             await renderSyncUi();
           } catch (err) {
@@ -557,16 +554,15 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
         }
 
         if (action === 'join') {
-          const serverUrl = syncUi.querySelector('[data-sync-field="join-server-url"]')?.value?.trim();
           const roomId = syncUi.querySelector('[data-sync-field="room-id"]')?.value?.trim();
           const secret = syncUi.querySelector('[data-sync-field="room-secret"]')?.value?.trim();
           const password = syncUi.querySelector('[data-sync-field="join-password"]')?.value;
-          if (!serverUrl || !roomId || !secret || !password) { alert('Vul alle velden in'); return; }
+          if (!roomId || !secret || !password) { alert('Vul alle velden in'); return; }
 
           btn.disabled = true;
           btn.textContent = 'Koppelen...';
           try {
-            await cloudSync.joinRoom(serverUrl, roomId, secret, password);
+            await cloudSync.joinRoom(roomId, secret, password);
             await renderSyncUi();
           } catch (err) {
             alert(`Fout: ${err.message}`);

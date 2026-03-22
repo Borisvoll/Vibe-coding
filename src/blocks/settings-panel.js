@@ -5,6 +5,8 @@ import { getSetting, setSetting } from '../db.js';
 import { isTutorialEnabled, setTutorialEnabled, resetTutorial, getTipsList, startTutorial } from '../core/tutorial.js';
 import { createThemeStudio } from '../ui/theme-studio.js';
 import { getModeConfig, renameMode, archiveMode, unarchiveMode } from '../core/modeConfig.js';
+import { cloudSync } from '../sync-cloud.js';
+import { escapeHTML } from '../utils.js';
 
 
 const ACCENT_PRESETS = ['blue', 'indigo', 'teal', 'green', 'purple'];
@@ -223,6 +225,19 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
       </div>
       <div data-theme-studio-mount></div>
     </section>
+    <section class="settings-block card" style="margin-top:var(--space-5)" data-sync-section>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Cloud Sync</div>
+          <div class="settings-desc">Synchroniseer tussen apparaten</div>
+        </div>
+        <div class="sync-status-indicator" data-sync-indicator>
+          <span class="sync-status-dot" data-sync-dot></span>
+          <span data-sync-label>Niet verbonden</span>
+        </div>
+      </div>
+      <div data-sync-ui></div>
+    </section>
   `;
 
   // ── Mode switcher ──────────────────────────────────────────
@@ -397,5 +412,192 @@ export async function renderSettingsBlock(container, { modeManager, eventBus, on
     const studio = createThemeStudio();
     themeStudioMount.appendChild(studio.el);
   }
+
+  // ── Cloud Sync UI ─────────────────────────────────────────
+  const syncUi = container.querySelector('[data-sync-ui]');
+  const syncDot = container.querySelector('[data-sync-dot]');
+  const syncLabel = container.querySelector('[data-sync-label]');
+
+  function updateSyncIndicator(status) {
+    if (!syncDot || !syncLabel) return;
+    syncDot.className = 'sync-status-dot';
+    switch (status) {
+      case 'connected':
+        syncDot.classList.add('sync-status-dot--connected');
+        syncLabel.textContent = 'Verbonden';
+        break;
+      case 'syncing':
+        syncDot.classList.add('sync-status-dot--syncing');
+        syncLabel.textContent = 'Synchroniseren...';
+        break;
+      case 'error':
+        syncDot.classList.add('sync-status-dot--error');
+        syncLabel.textContent = 'Fout';
+        break;
+      default:
+        syncLabel.textContent = 'Niet verbonden';
+    }
+  }
+
+  async function renderSyncUi() {
+    if (!syncUi) return;
+    const status = cloudSync.getStatus();
+
+    if (status.isConfigured) {
+      // Connected state — show room info + actions
+      let roomInfo = null;
+      try { roomInfo = await cloudSync.getRoomStatus(); } catch { /* ignore */ }
+
+      const devices = roomInfo?.devices || [];
+      const lastSync = status.lastSyncAt
+        ? new Date(status.lastSyncAt).toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+        : 'Nog niet gesynchroniseerd';
+
+      syncUi.innerHTML = `
+        <div class="sync-panel">
+          <div class="sync-panel__info">
+            <div class="sync-panel__row">
+              <span class="sync-panel__label">Kamer</span>
+              <code class="sync-panel__value">${escapeHTML(status.roomId)}</code>
+            </div>
+            <div class="sync-panel__row">
+              <span class="sync-panel__label">Laatste sync</span>
+              <span class="sync-panel__value">${escapeHTML(lastSync)}</span>
+            </div>
+            <div class="sync-panel__row">
+              <span class="sync-panel__label">Apparaten</span>
+              <span class="sync-panel__value">${devices.length}</span>
+            </div>
+            ${devices.map((d) => `
+              <div class="sync-panel__device">
+                <span class="sync-panel__device-icon">${d.id === status.deviceName ? '📱' : '💻'}</span>
+                <span>${escapeHTML(d.name)}</span>
+                <span class="sync-panel__device-seen">${d.lastSeenAt ? new Date(d.lastSeenAt).toLocaleString('nl-NL', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div class="sync-panel__actions">
+            <button type="button" class="btn btn-primary btn-sm" data-sync-action="sync-now">Nu synchroniseren</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-sync-action="disconnect">Ontkoppelen</button>
+          </div>
+        </div>
+      `;
+
+      updateSyncIndicator(status.status);
+
+    } else {
+      // Disconnected state — show setup options
+      syncUi.innerHTML = `
+        <div class="sync-panel">
+          <p class="sync-panel__intro">Synchroniseer je data veilig tussen apparaten. Alle data wordt versleuteld met AES-256 voordat het de server bereikt.</p>
+          <div class="sync-panel__setup">
+            <div class="sync-panel__setup-option" data-sync-setup="create">
+              <h4>Nieuw koppelpunt</h4>
+              <p>Start hier op je eerste apparaat</p>
+              <div class="sync-panel__fields" hidden>
+                <input type="url" class="form-input" data-sync-field="server-url" placeholder="Server URL (bijv. https://boris-sync.jouw-naam.workers.dev)" autocomplete="off" />
+                <input type="password" class="form-input" data-sync-field="password" placeholder="Versleutelingswachtwoord" autocomplete="off" />
+                <button type="button" class="btn btn-primary btn-sm" data-sync-action="create">Koppelpunt aanmaken</button>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" data-sync-action="show-create">Instellen</button>
+            </div>
+            <div class="sync-panel__setup-option" data-sync-setup="join">
+              <h4>Koppelen met bestaand punt</h4>
+              <p>Voer de code in van je andere apparaat</p>
+              <div class="sync-panel__fields" hidden>
+                <input type="url" class="form-input" data-sync-field="join-server-url" placeholder="Server URL" autocomplete="off" />
+                <input type="text" class="form-input" data-sync-field="room-id" placeholder="Kamer ID" autocomplete="off" />
+                <input type="text" class="form-input" data-sync-field="room-secret" placeholder="Kamer geheim" autocomplete="off" />
+                <input type="password" class="form-input" data-sync-field="join-password" placeholder="Versleutelingswachtwoord" autocomplete="off" />
+                <button type="button" class="btn btn-primary btn-sm" data-sync-action="join">Koppelen</button>
+              </div>
+              <button type="button" class="btn btn-ghost btn-sm" data-sync-action="show-join">Koppelen</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      updateSyncIndicator('disconnected');
+    }
+
+    // Bind sync actions
+    syncUi.querySelectorAll('[data-sync-action]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const action = btn.dataset.syncAction;
+
+        if (action === 'show-create') {
+          const fields = syncUi.querySelector('[data-sync-setup="create"] .sync-panel__fields');
+          if (fields) { fields.hidden = false; btn.hidden = true; }
+          return;
+        }
+
+        if (action === 'show-join') {
+          const fields = syncUi.querySelector('[data-sync-setup="join"] .sync-panel__fields');
+          if (fields) { fields.hidden = false; btn.hidden = true; }
+          return;
+        }
+
+        if (action === 'create') {
+          const serverUrl = syncUi.querySelector('[data-sync-field="server-url"]')?.value?.trim();
+          const password = syncUi.querySelector('[data-sync-field="password"]')?.value;
+          if (!serverUrl || !password) { alert('Vul server URL en wachtwoord in'); return; }
+
+          btn.disabled = true;
+          btn.textContent = 'Aanmaken...';
+          try {
+            const { roomId, secret } = await cloudSync.createRoom(serverUrl, password);
+            alert(`Koppelpunt aangemaakt!\n\nKamer ID: ${roomId}\nGeheim: ${secret}\n\nBewaar deze gegevens — je hebt ze nodig op je andere apparaat.`);
+            await renderSyncUi();
+          } catch (err) {
+            alert(`Fout: ${err.message}`);
+            btn.disabled = false;
+            btn.textContent = 'Koppelpunt aanmaken';
+          }
+          return;
+        }
+
+        if (action === 'join') {
+          const serverUrl = syncUi.querySelector('[data-sync-field="join-server-url"]')?.value?.trim();
+          const roomId = syncUi.querySelector('[data-sync-field="room-id"]')?.value?.trim();
+          const secret = syncUi.querySelector('[data-sync-field="room-secret"]')?.value?.trim();
+          const password = syncUi.querySelector('[data-sync-field="join-password"]')?.value;
+          if (!serverUrl || !roomId || !secret || !password) { alert('Vul alle velden in'); return; }
+
+          btn.disabled = true;
+          btn.textContent = 'Koppelen...';
+          try {
+            await cloudSync.joinRoom(serverUrl, roomId, secret, password);
+            await renderSyncUi();
+          } catch (err) {
+            alert(`Fout: ${err.message}`);
+            btn.disabled = false;
+            btn.textContent = 'Koppelen';
+          }
+          return;
+        }
+
+        if (action === 'sync-now') {
+          btn.disabled = true;
+          btn.textContent = 'Synchroniseren...';
+          try {
+            await cloudSync.syncNow();
+          } catch { /* status will show error */ }
+          await renderSyncUi();
+          return;
+        }
+
+        if (action === 'disconnect') {
+          if (!confirm('Weet je zeker dat je wilt ontkoppelen?')) return;
+          await cloudSync.disconnect();
+          await renderSyncUi();
+        }
+      });
+    });
+  }
+
+  // Listen for sync status changes
+  eventBus?.on('sync:status', ({ status }) => updateSyncIndicator(status));
+
+  renderSyncUi();
 
 }

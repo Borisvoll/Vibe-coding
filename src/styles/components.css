@@ -453,3 +453,109 @@
   animation: list-item-in 200ms var(--ease-out) both;
 }
 
+/* ===== Cloud Sync ===== */
+.sync-status-indicator {
+  display: flex; align-items: center; gap: var(--space-2);
+  font-size: var(--font-base); color: var(--color-text-secondary);
+}
+
+.sync-status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+.sync-status-dot--connected {
+  background: var(--color-success);
+  box-shadow: 0 0 6px var(--color-success);
+}
+
+.sync-status-dot--syncing {
+  background: var(--color-accent);
+  animation: sync-pulse 1.2s ease-in-out infinite;
+}
+
+.sync-status-dot--error {
+  background: var(--color-error);
+}
+
+@keyframes sync-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.sync-panel {
+  padding: var(--space-3) 0;
+}
+
+.sync-panel__intro {
+  color: var(--color-text-secondary);
+  font-size: var(--font-base);
+  margin-bottom: var(--space-4);
+  line-height: 1.5;
+}
+
+.sync-panel__setup {
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+
+.sync-panel__setup-option {
+  background: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.sync-panel__setup-option h4 {
+  font-size: var(--font-lg); font-weight: 600;
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+}
+
+.sync-panel__setup-option p {
+  font-size: var(--font-base);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-3);
+}
+
+.sync-panel__fields {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.sync-panel__info {
+  display: flex; flex-direction: column; gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.sync-panel__row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-1) 0;
+}
+
+.sync-panel__label {
+  font-size: var(--font-base); color: var(--color-text-secondary);
+}
+
+.sync-panel__value {
+  font-size: var(--font-base); color: var(--color-text);
+  font-weight: 500;
+}
+
+.sync-panel__device {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: var(--space-2); border-radius: var(--radius-sm);
+  background: var(--color-surface-hover);
+  font-size: var(--font-base);
+}
+
+.sync-panel__device-seen {
+  margin-left: auto;
+  font-size: var(--font-sm);
+  color: var(--color-text-tertiary);
+}
+
+.sync-panel__actions {
+  display: flex; gap: var(--space-2);
+}
+

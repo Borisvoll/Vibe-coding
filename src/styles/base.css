@@ -409,11 +409,21 @@ h4 { font-size: var(--font-lg); font-weight: 500; }
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Global focus-visible ring — keyboard accessibility */
+/* Global focus-visible ring — keyboard accessibility (WCAG 2.4.7) */
 :focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-accent) !important;
+  outline-offset: 2px !important;
   border-radius: var(--radius-sm);
+}
+
+/* Form inputs get a softer focus ring with box-shadow instead */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline: none !important;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
 }
 
 /* Route transitions — fade in when switching tabs */

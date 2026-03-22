@@ -78,25 +78,33 @@ export function renderDailyCockpit(container, context) {
     const doneCount = items.filter((i) => i.done).length;
     const openCount = items.length - doneCount;
 
-    // Update stats row
+    // Update stats row — each stat is clickable and navigates to its section
     statsEl.innerHTML = `
-      <div class="daily-cockpit__stat">
+      <button type="button" class="daily-cockpit__stat daily-cockpit__stat--link" data-stat-link="todos">
         <span class="daily-cockpit__stat-val">${stats.tasksCompleted}</span>
         <span class="daily-cockpit__stat-lbl">gedaan</span>
-      </div>
-      <div class="daily-cockpit__stat">
+      </button>
+      <button type="button" class="daily-cockpit__stat daily-cockpit__stat--link" data-stat-link="outcomes">
         <span class="daily-cockpit__stat-val">${stats.streak > 0 ? stats.streak + ' 🔥' : '—'}</span>
         <span class="daily-cockpit__stat-lbl">streak</span>
-      </div>
-      <div class="daily-cockpit__stat">
+      </button>
+      <button type="button" class="daily-cockpit__stat daily-cockpit__stat--link" data-stat-link="projects">
         <span class="daily-cockpit__stat-val">${stats.momentumScore}</span>
         <span class="daily-cockpit__stat-lbl">momentum</span>
-      </div>
-      <div class="daily-cockpit__stat ${stats.inboxBacklog > 0 ? 'daily-cockpit__stat--warn' : ''}">
+      </button>
+      <button type="button" class="daily-cockpit__stat daily-cockpit__stat--link ${stats.inboxBacklog > 0 ? 'daily-cockpit__stat--warn' : ''}" data-stat-link="inbox">
         <span class="daily-cockpit__stat-val">${stats.inboxBacklog}</span>
         <span class="daily-cockpit__stat-lbl">inbox</span>
-      </div>
+      </button>
     `;
+
+    // Attach click handlers to stats
+    statsEl.querySelectorAll('[data-stat-link]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const link = btn.dataset.statLink;
+        if (deepLinks[link]) deepLinks[link]();
+      });
+    });
 
     // Update pill
     if (openCount === 0) {

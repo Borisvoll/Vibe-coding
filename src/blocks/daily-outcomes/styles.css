@@ -85,7 +85,7 @@
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
-  outline: none !important;
+  outline: none;
   font-size: var(--font-base);
   font-weight: 500;
   color: var(--color-text);

@@ -26,6 +26,8 @@ jobs:
 
       - run: npm ci
       - run: npm run build
+        env:
+          GITHUB_PAGES: true
 
       # SPA fix: GitHub Pages serves 404.html when a path isn't found.
       # Copying index.html → 404.html makes direct URLs (e.g. bookmarks) work.

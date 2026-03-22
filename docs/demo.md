@@ -1,555 +1,3 @@
-# Vandaag MVP — Manual Verification Script
-
-> Run this script after implementing the Vandaag MVP.
-> Each step is a **PASS / FAIL** check. Complete all steps in order.
-> Start from a **fresh private/incognito window** (clean localStorage + IDB).
-
----
-
-## Setup
-
-1. `npm run dev` — dev server on port 3000
-2. Open `http://localhost:3000` in a **private/incognito window**
-3. Open DevTools → Application → IndexedDB → `bpv-tracker` and
-   Local Storage → `localhost:3000` so you can inspect persisted state
-
----
-
-## Section A — Default Home Screen
-
-### A1 — App opens on Vandaag
-
-| Step | Expected |
-|------|----------|
-| Load `http://localhost:3000` (no hash) | Vandaag tab is active |
-| Look at the tab bar | "Vandaag" is highlighted |
-| URL | `#today` or stays blank but Vandaag is rendered |
-
-**PASS / FAIL**
-
-### A2 — URL hash routing
-
-| Step | Expected |
-|------|----------|
-| Navigate to `http://localhost:3000/#dashboard` | Dashboard tab opens |
-| Press browser Back | Vandaag tab opens |
-| Navigate to `http://localhost:3000/#today` | Vandaag tab opens |
-
-**PASS / FAIL**
-
----
-
-## Section B — Date Header + Mode Selector
-
-### B1 — Date is correct
-
-| Step | Expected |
-|------|----------|
-| Look at the top of the Vandaag page | Dutch long date shown (e.g. "vrijdag 21 februari 2026") |
-| Date matches your system clock | ✓ |
-
-**PASS / FAIL**
-
-### B2 — Mode pills
-
-| Step | Expected |
-|------|----------|
-| Count the pills in the header | One per active mode (typically 3) |
-| Active mode pill | Accent background, white text |
-| Inactive pills | Surface background, muted text |
-
-**PASS / FAIL**
-
-### B3 — Mode switching persists
-
-| Step | Expected |
-|------|----------|
-| Click "Personal" pill | "Personal" becomes active |
-| Check localStorage | `boris_mode` = `"Personal"` |
-| Hard-reload | "Personal" pill is still active |
-| Click "School" pill | Switches back; content re-renders |
-
-**PASS / FAIL**
-
-### B4 — Keyboard accessible
-
-| Step | Expected |
-|------|----------|
-| Tab to the mode pills | Each pill receives focus ring |
-| Press Enter on "BPV" | BPV mode activates |
-
-**PASS / FAIL**
-
----
-
-## Section C — Top 3 Outcomes
-
-### C1 — Inputs render
-
-| Step | Expected |
-|------|----------|
-| Top of Vandaag (above collapsible sections) | Three labeled text inputs visible |
-| Labels | "Doel 1", "Doel 2", "Doel 3" |
-| On first use | Placeholder text visible |
-
-**PASS / FAIL**
-
-### C2 — Persist across reload
-
-| Step | Expected |
-|------|----------|
-| Type "Hoofdstuk 3 lezen" in Doel 1, click outside | No error toast |
-| Type "Email beantwoorden" in Doel 2, click outside | Saved |
-| Hard-reload | Both values still in inputs |
-| IDB `dailyPlans` entry | `outcomes[0]` = "Hoofdstuk 3 lezen", `outcomes[1]` = "Email beantwoorden" |
-
-**PASS / FAIL**
-
-### C3 — Mode-isolated
-
-| Step | Expected |
-|------|----------|
-| School mode: type "School goal" in Doel 1 | Saved |
-| Switch to Personal | Doel 1 is empty |
-| Type "Personal goal" in Doel 1 | Saved |
-| Switch back to School | "School goal" is back |
-
-**PASS / FAIL**
-
-### C4 — Enter moves focus
-
-| Step | Expected |
-|------|----------|
-| Type in Doel 1, press Enter | Saves; focus moves to Doel 2 |
-| Type in Doel 2, press Enter | Focus moves to Doel 3 |
-
-**PASS / FAIL**
-
----
-
-## Section D — Next Actions (Daily Todos)
-
-### D1 — Section renders
-
-| Step | Expected |
-|------|----------|
-| "Taken" collapsible section | Visible and open by default |
-| Inside | Empty list + add input |
-
-**PASS / FAIL**
-
-### D2 — Add todos
-
-| Step | Expected |
-|------|----------|
-| Type "Wiskunde oefeningen", Enter | Todo appears in list |
-| Type "Aardrijkskunde hoofdstuk", Enter | Second todo appears |
-
-**PASS / FAIL**
-
-### D3 — Persist across reload
-
-| Step | Expected |
-|------|----------|
-| Add at least one todo | Visible |
-| Hard-reload | Todo still in list |
-| IDB `dailyPlans` → `todos[]` | Array contains the todo |
-
-**PASS / FAIL**
-
-### D4 — Check off + reload
-
-| Step | Expected |
-|------|----------|
-| Click checkbox on a todo | Marked done |
-| Hard-reload | Still checked |
-| Click again | Reverts to unchecked |
-
-**PASS / FAIL**
-
-### D5 — Mode cap enforced (School cap = 3)
-
-| Step | Expected |
-|------|----------|
-| Add 3 todos in School mode | All 3 visible; add input disabled or hidden |
-| Label shows "3/3 taken" | ✓ |
-| Mark one done | Add input reappears |
-
-**PASS / FAIL**
-
-### D6 — Delete a todo
-
-| Step | Expected |
-|------|----------|
-| Hover/focus a todo | Delete (×) button appears |
-| Click × | Todo removed |
-| Hard-reload | Not reappeared |
-
-**PASS / FAIL**
-
----
-
-## Section E — Quick Capture → Inbox
-
-### E1 — Section renders
-
-| Step | Expected |
-|------|----------|
-| "Vastleggen" collapsible section | Visible and open |
-| Input placeholder | "Vang een gedachte op..." |
-
-**PASS / FAIL**
-
-### E2 — Capture creates inbox item
-
-| Step | Expected |
-|------|----------|
-| Type "Boek kopen voor project", Enter | Toast: "Vastgelegd in inbox" |
-| Input clears | ✓ |
-| Navigate to `#inbox` | Item is in the list |
-| IDB `os_inbox` | Record with `status: "inbox"`, `mode: "School"` |
-
-**PASS / FAIL**
-
-### E3 — Empty Enter is no-op
-
-| Step | Expected |
-|------|----------|
-| Press Enter with empty input | Nothing happens; no empty item in inbox |
-
-**PASS / FAIL**
-
-### E4 — Respects current mode
-
-| Step | Expected |
-|------|----------|
-| Switch to Personal, type "Idee", Enter | Saved with `mode: "Personal"` |
-| IDB `os_inbox` | New record has `mode: "Personal"` |
-
-**PASS / FAIL**
-
----
-
-## Section F — BPV Quick Log
-
-### F1 — Visible in School mode
-
-| Step | Expected |
-|------|----------|
-| School mode, Vandaag | BPV/Uren collapsible section visible |
-| Expand it | Time inputs, break, note, Netto label, Opslaan button |
-
-**PASS / FAIL**
-
-### F2 — Visible in BPV mode
-
-| Step | Expected |
-|------|----------|
-| Switch to BPV mode | Same section still visible |
-
-**PASS / FAIL**
-
-### F3 — NOT visible in Personal mode
-
-| Step | Expected |
-|------|----------|
-| Switch to Personal | BPV section NOT present in DOM |
-
-**PASS / FAIL**
-
-### F4 — Net hours computed live
-
-| Step | Expected |
-|------|----------|
-| Start: 08:30, End: 17:00, Pauze: 30 | Netto: "8u 00m" |
-| Change Pauze to 45 | Netto: "7u 45m" |
-| Clear End time | Netto: "—" (not negative) |
-
-**PASS / FAIL**
-
-### F5 — Save and persist
-
-| Step | Expected |
-|------|----------|
-| Start: 09:00, End: 17:30, Pauze: 30, Note: "Klantbezoek" | Netto: "8u 00m" |
-| Click "Opslaan" | Button shows "✓ Opgeslagen" briefly |
-| Hard-reload | Fields pre-filled with saved values |
-| IDB `hours` | Record: `date: today`, `startTime: "09:00"` |
-
-**PASS / FAIL**
-
-### F6 — Update keeps one record
-
-| Step | Expected |
-|------|----------|
-| Change Pauze to 45, click "Opslaan" | No duplicate created |
-| IDB `hours` | Still one record for today |
-
-**PASS / FAIL**
-
-### F7 — Opslaan disabled when net ≤ 0
-
-| Step | Expected |
-|------|----------|
-| Set End before Start | Netto: "—"; "Opslaan" disabled |
-| Set valid End | Button re-enables |
-
-**PASS / FAIL**
-
----
-
-## Section G — Cross-Cutting
-
-### G1 — Mode switch re-renders all sections
-
-| Step | Expected |
-|------|----------|
-| School: add todos + set outcome | Visible |
-| Switch to Personal | Todos and outcomes clear |
-| Switch back to School | Data returns |
-
-**PASS / FAIL**
-
-### G2 — Dark mode
-
-| Step | Expected |
-|------|----------|
-| Toggle dark mode in Settings | All 5 Vandaag widgets legible |
-| No invisible text or broken contrast | ✓ |
-
-**PASS / FAIL**
-
-### G3 — No console errors
-
-| Step | Expected |
-|------|----------|
-| After completing all sections | DevTools Console: 0 uncaught errors |
-
-**PASS / FAIL**
-
----
-
-## Results Summary
-
-| Section | Steps | Pass | Fail |
-|---------|-------|------|------|
-| A — Default home | 2 | | |
-| B — Date header + mode | 4 | | |
-| C — Outcomes | 4 | | |
-| D — Next actions | 6 | | |
-| E — Quick capture | 4 | | |
-| F — BPV quick log | 7 | | |
-| G — Cross-cutting | 3 | | |
-| **Total** | **30** | | |
-
-**MVP is shippable when all 30 steps pass.**
-
----
-
----
-
-# Project Momentum — QA Script
-
-Manual QA for the project momentum visualization (Milestone 3).
-
----
-
-## Prerequisites
-1. `npm run dev` running
-2. Open app in browser, BORIS OS active
-3. Have at least 2-3 projects with some tasks (completed and open)
-
-## 1. Dashboard — Momentum Panel
-
-1. Navigate to **Dashboard** tab
-2. Click "Meer details" to expand Layer 3
-3. **Expected:** "Projecten" section shows top 3 projects with sparkline bars
-4. Each project row: sparkline (4 bars) + project title
-5. If any project has no activity for 7+ days: "Stilgevallen" section appears with warning color
-6. **Verify:** Sparklines use `--color-accent` for active bars, `--color-warning` for stalled
-
-## 2. Project Hub — Cards
-
-1. Navigate to **Projects** tab (Project Hub)
-2. **Expected:** Each project card shows a tiny sparkline below the goal text
-3. Below sparkline: "Vandaag actief" or "Xd geleden" text
-4. **Verify:** Stalled projects show warning-colored "last active" text
-5. Complete a task on a project → refresh → sparkline bar for this week should grow
-
-## 3. Project Detail — Header
-
-1. Navigate to **Planning** tab
-2. Select a project
-3. **Expected:** Sparkline + "Laatst actief" text visible in header below title/goal
-4. **Verify:** Stalled projects show warning-colored text
-
-## 4. Cross-Theme Check
-
-1. Switch between light/dark themes (if available)
-2. **Verify:** Sparkline bars use CSS variables — no hardcoded colors visible
-3. All text remains legible in both themes
-
-## 5. Edge Cases
-
-1. Create a new project with no tasks
-2. **Expected:** Sparkline shows 1 bar (this week, from creation) + "Vandaag actief"
-3. Project with all tasks done long ago
-4. **Expected:** Sparkline shows activity in past weeks, current week may be empty
-
----
-
-# Morning Flow — QA Script
-
-Manual QA for the morning planning flow (Milestone 2).
-
----
-
-## Prerequisites
-1. `npm run dev` running
-2. Open app in browser, BORIS OS active
-3. Clear localStorage for clean state: `localStorage.clear()` in console
-
-## 1. Auto-Open
-
-1. Refresh the page (should land on Vandaag tab)
-2. **Expected:** Morning flow overlay opens automatically after ~1 second
-3. Verify: 4 progress dots in header, first dot active
-4. Verify: Step 1 shows "Wat wil je vandaag bereiken?" with 3 input fields
-
-## 2. Step 1 — Top 3 Outcomes
-
-1. Type "Wiskunde afronden" in field 1
-2. Press Enter — cursor moves to field 2
-3. Type "Sporten" in field 2
-4. Leave field 3 empty
-5. Click "Volgende →"
-6. **Expected:** Step advances to "Volgende acties", dot 2 active
-
-## 3. Step 2 — Next Actions
-
-1. **Expected:** Shows active projects with their next action status
-2. If no projects: shows "Geen actieve projecten in deze modus"
-3. Click "Volgende →"
-4. **Expected:** Step 3 — project focus picker
-
-## 4. Step 3 — Project Focus (Optional)
-
-1. **Expected:** Radio list of active projects + "Geen focus vandaag"
-2. Select a project (or leave "Geen focus")
-3. Click "Volgende →"
-4. **Expected:** Step 4 — confirmation summary
-
-## 5. Step 4 — Confirm
-
-1. **Expected:** Summary showing your Top 3 + focus project (if selected)
-2. Click "Start je dag →"
-3. **Expected:** Flow closes, focus card appears on Vandaag page
-
-## 6. Focus Card
-
-1. On Vandaag page, look in the hero area
-2. **Expected:** "Ochtendplan klaar" card with:
-   - Checkmark + green/purple/blue accent (depending on mode)
-   - Your Top 3 outcomes listed
-   - Focus project name (if you selected one)
-3. Navigate away (Dashboard) and back (Vandaag)
-4. **Expected:** Focus card still visible
-
-## 7. Resume After Reload
-
-1. Start the flow (Ctrl+K → "Start ochtendplan")
-2. Advance to step 2
-3. Refresh the page
-4. Open the flow again (Ctrl+K → "Start ochtendplan")
-5. **Expected:** Resumes at step 2 (not step 1)
-
-## 8. Dismiss + No Re-Open
-
-1. Clear localStorage, refresh page
-2. Flow auto-opens
-3. Click × or press Escape
-4. **Expected:** Flow closes, does NOT auto-open again
-5. Refresh page
-6. **Expected:** Flow stays closed (dismissed for today)
-
-## 9. Command Palette Integration
-
-1. Press Ctrl+K
-2. Type "ochtend"
-3. **Expected:** "Start ochtendplan" command appears
-4. Select it, press Enter
-5. **Expected:** Flow opens on Vandaag tab
-
----
-
-# Command Palette — QA Script
-
-Manual QA for the Ctrl+K command palette (Milestone 1).
-
----
-
-## Prerequisites
-1. `npm run dev` running
-2. Open app in browser, BORIS OS active
-
-## 1. Open / Close
-
-1. Press `Ctrl+K` (or `Cmd+K` on Mac)
-2. **Expected:** Palette opens with smooth animation, input focused
-3. Verify two groups visible: **Navigatie** (6 commands) and **Aanmaken** (2 commands)
-4. Press `Escape`
-5. **Expected:** Palette closes
-6. Press `Ctrl+K` again, click the backdrop
-7. **Expected:** Palette closes
-
-## 2. Navigate Commands
-
-1. Open palette (`Ctrl+K`)
-2. Press `↓` to select "Ga naar Dashboard"
-3. Press `Enter`
-4. **Expected:** Palette closes, Dashboard tab is active
-5. Open palette, type "inbox"
-6. **Expected:** "Ga naar Inbox" command appears, filtered from other commands
-7. Press `Enter`
-8. **Expected:** Inbox tab is active
-
-## 3. Create Task
-
-1. Open palette, type "taak"
-2. **Expected:** "Nieuwe taak" command visible
-3. Select it and press `Enter`
-4. **Expected:** Prompt dialog appears asking "Wat moet er gebeuren?"
-5. Type "Test taak via palette" and press Enter
-6. **Expected:** Task created, visible in Vandaag → Taken section
-7. Refresh page — task persists
-
-## 4. Create Project
-
-1. Open palette, type "project"
-2. Select "Nieuw project" and press `Enter`
-3. **Expected:** Prompt dialog with "Projectnaam:"
-4. Type "Palette project" and confirm
-5. **Expected:** Project created in current mode
-6. Navigate to Projecten tab — project is visible
-
-## 5. Mixed Results
-
-1. Create a task with text "Wiskunde huiswerk"
-2. Open palette, type "wiskunde"
-3. **Expected:** Commands matching "wiskunde" (if any) shown first, then search result showing the task below
-4. Arrow-key down to the task result, press `Enter`
-5. **Expected:** Navigates to Vandaag → Taken section
-
-## 6. Keyboard Navigation
-
-1. Open palette (empty state shows all commands)
-2. Press `↓` multiple times — selection wraps around
-3. Press `↑` — moves up, wraps to bottom
-4. Hover mouse over a different item — selection follows mouse
-5. Click an item — executes it
-
----
-
 # Inbox Processing — Demo Script
 
 Manual walkthrough to verify the Inbox screen and processing flow.
@@ -1396,97 +844,151 @@ Manual walkthrough for the cross-mode Dashboard tab with 6 colorful widgets.
 
 ---
 
-## 5-Year Hardening — QA Scripts
+---
 
-### Milestone A: Performance
+# Command Palette — Demo Script
 
-**Search Performance**
-1. Seed 500+ task records across multiple dates
-2. Open Vandaag → search bar → type "test"
-3. Results should appear within 100ms (no visible lag)
-4. Results capped at 30 items max
-5. Console: verify no `getAll` calls on large stores
+Manual walkthrough to verify the enhanced command palette with navigation commands and create actions.
 
-**Weekly Review Performance**
-1. Navigate to Vandaag → scroll to Weekoverzicht → open section
-2. Click "Bekijk" on weekly review
-3. Page should load without visible delay
-4. Console: no `getAll('os_tasks')` full scan — should use bounded query
+## Prerequisites
 
-**Tombstone Purge**
-1. Soft-delete several items (tasks, inbox)
-2. Close and reopen app
-3. Check `deleted` store count in DevTools → tombstones older than 30 days should be purged
-4. Recent deletions (<30 days) should remain
+1. `npm run dev` is running
+2. Open the app in browser
+3. BORIS OS is active (default)
 
-**DB Health Metrics**
-1. Go to Instellingen
-2. Verify record count per store is visible
-3. Estimated export size is shown
+---
 
-### Milestone B: Backup Safety
+## CP1. Open Palette with Ctrl+K
 
-**Export Compact**
-1. Go to Instellingen → Export
-2. Download backup file
-3. Open in text editor — verify NO indentation (compact JSON)
-4. File size shown before download
+1. From any tab, press **Ctrl+K** (or **Cmd+K** on Mac)
+2. A search overlay appears centered near the top of the screen
+3. The input field is focused and ready for typing
+4. **6 default commands** are visible immediately:
+   - Dashboard, Vandaag, Projecten, Instellingen (navigate)
+   - Nieuwe taak, Nieuw project (create)
 
-**Import Validation**
-1. Try importing a file that is not JSON → error message
-2. Try importing JSON with wrong `_meta.app` → rejected
-3. Try importing valid backup → success, all data restored
-4. Verify localStorage does NOT contain `boris_safety_backup`
+**Expected:** Palette opens with smooth animation. Commands listed under "Commando's" group header. First command is highlighted.
 
-**Import Atomicity**
-1. Import a valid backup
-2. Verify all data is present after import
-3. No partial data state
+---
 
-### Milestone C: Modes
+## CP2. Close Palette
 
-**Mode Config Migration**
-1. Fresh install → 3 default modes created in settings
-2. Verify mode picker shows all 3
-3. Data created in each mode is accessible
+1. Press **Esc** — palette closes
+2. Open again with Ctrl+K, click the dark backdrop — palette closes
+3. Open again, press Ctrl+K again — palette closes (toggle)
 
-**Mode Rename**
-1. Go to Instellingen → Modes
-2. Rename "School" → "Studie"
-3. Mode picker shows "Studie"
-4. Existing School data still accessible under new name
+**Expected:** Clean close animation each time. No orphaned overlays.
 
-**BPV Retirement**
-1. Set system date past 2026-04-24
-2. Reopen app
-3. BPV should auto-archive
-4. Mode picker shows only School + Personal
-5. BPV data still searchable, accessible via Settings
+---
 
-### Milestone D: UX Softening
+## CP3. Navigate via Command
 
-**Task Cap Override**
-1. In School mode, add 3 tasks (hitting cap)
-2. Input should NOT be disabled
-3. Warning message appears
-4. "Toch toevoegen" link/button visible
-5. Click override → 4th task added successfully
+1. Open palette (Ctrl+K)
+2. Press **Enter** with "Dashboard" highlighted → navigates to Dashboard tab
+3. Open palette again, press **Arrow Down** twice to highlight "Projecten"
+4. Press **Enter** → navigates to Projects tab
 
-**Friday Banner Snooze**
-1. On a Friday, verify banner appears
-2. Click "Herinner me volgende week"
-3. Reload → banner should NOT appear
-4. Wait 1 week (or adjust date) → banner reappears
+**Expected:** Tab switches immediately. Palette closes on selection.
 
-**Morning Flow**
-1. Settings: set morning flow to "Strict"
-2. Close and reopen app → modal checklist appears
-3. Settings: set to "Manual" → no cockpit auto-display
-4. Settings: set to "Gentle" (default) → normal Vandaag view
+---
 
-**History Browser**
-1. Navigate to History tab/section
-2. See list of past daily entries, newest first
-3. Click entry → view-only display with Top 3, todos, notes
-4. Click "Laad meer" → pagination works
-5. Quick jump: "Laatste 7 dagen" filter works
+## CP4. Filter Commands by Typing
+
+1. Open palette, type `dash`
+2. Only "Dashboard" command should remain visible
+3. Clear and type `instel`
+4. Only "Instellingen" command should remain
+5. Type `maak`
+6. Both "Nieuwe taak" and "Nieuw project" should appear
+
+**Expected:** Commands filter in real-time as you type. Non-matching commands disappear.
+
+---
+
+## CP5. Search + Commands Together
+
+1. Open palette, type `project`
+2. You should see:
+   - **Commando's** section with "Projecten" and "Nieuw project" commands
+   - **Projecten** search results section (if any projects exist)
+3. Arrow keys navigate across both sections seamlessly
+
+**Expected:** Commands appear above search results. Single unified keyboard navigation.
+
+---
+
+## CP6. Create Task via Palette
+
+1. Open palette, type `taak` or arrow to "Nieuwe taak"
+2. Press **Enter**
+3. A prompt dialog appears asking "Nieuwe taak:"
+4. Type `Test taak vanuit palette` and press Enter
+5. Navigate to the **Vandaag** tab
+6. Verify the new task appears in the Taken block
+
+**Expected:** Task created in current mode. Palette closes before prompt opens.
+
+---
+
+## CP7. Create Project via Palette
+
+1. Open palette, select "Nieuw project"
+2. Press **Enter**
+3. A prompt dialog appears asking "Nieuw project:"
+4. Type `Palette project` and press Enter
+5. Navigate to the **Projecten** tab
+6. Verify the new project appears
+
+**Expected:** Project created in current mode with "active" status.
+
+---
+
+## CP8. Cancel Create
+
+1. Open palette, select "Nieuwe taak", press Enter
+2. In the prompt dialog, press **Esc** (or click cancel)
+3. No task should be created
+
+**Expected:** Prompt dismissed cleanly. No data written.
+
+---
+
+## CP9. Keyboard Navigation
+
+1. Open palette (shows 6 commands)
+2. Press **Arrow Down** 6 times → selection wraps to first item
+3. Press **Arrow Up** → selection wraps to last item
+4. Hover mouse over a different command → selection follows mouse
+5. Click a command → it activates
+
+**Expected:** Smooth keyboard and mouse navigation. Visual highlight follows selection.
+
+---
+
+## CP10. Dark Mode
+
+1. Go to Settings, switch theme to Dark
+2. Open palette with Ctrl+K
+3. Verify: dark surface, correct text colors, no white flashes
+4. Commands and search results both render correctly
+
+**Expected:** Full dark mode support using CSS tokens.
+
+---
+
+## Command Palette Verification Checklist
+
+- [ ] Ctrl+K / Cmd+K opens palette
+- [ ] Esc, backdrop click, and Ctrl+K toggle all close palette
+- [ ] 6 default commands shown on empty state
+- [ ] Commands filter by label and keywords
+- [ ] Search results appear alongside matching commands
+- [ ] Arrow keys navigate across commands + results
+- [ ] Enter activates selected command
+- [ ] Navigate commands switch to correct tab
+- [ ] "Nieuwe taak" creates task in current mode via prompt
+- [ ] "Nieuw project" creates project in current mode via prompt
+- [ ] Cancel on prompt creates nothing
+- [ ] Dark mode fully supported
+- [ ] No hardcoded colors in CSS
+- [ ] All 38 command palette tests pass

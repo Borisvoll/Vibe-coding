@@ -1,12 +1,7 @@
-import { addHoursEntry, getHoursEntry, addPhoto, getPhotosForDate, deletePhoto } from '../../stores/bpv.js';
-import { getToday, getISOWeek, getWeekDates, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, sanitizeDataURL, debounce, resizeImage } from '../../utils.js';
-import { DAY_TYPES, DAY_TYPE_LABELS, BPV_START, BPV_END } from '../../constants.js';
-
-const DAY_TEMPLATES = [
-  { id: 'productie', label: 'Productiedag', startTime: '07:30', endTime: '16:00', breakMinutes: 45, activities: ['CNC-productie', 'Kwaliteitscontrole', 'Opruimen werkplek'] },
-  { id: 'kantoor', label: 'Kantoordag', startTime: '08:30', endTime: '17:00', breakMinutes: 60, activities: ['Tekeningen uitwerken', 'Overleg team', 'Administratie'] },
-  { id: 'meet', label: 'Meetdag', startTime: '08:00', endTime: '16:30', breakMinutes: 45, activities: ['Meetinstrumenten kalibreren', 'Producten inmeten', 'Meetrapporten opstellen'] },
-];
+import { addHoursEntry, getHoursEntry, deleteHoursEntry, getUnloggedDays, addPhoto, getPhotosForDate, deletePhoto } from '../../stores/bpv.js';
+import { getToday, getISOWeek, getWeekDates, formatDateShort, formatDateISO, calcNetMinutes, formatMinutes, escapeHTML, sanitizeDataURL, debounce, resizeImage, getCurrentWeek } from '../../utils.js';
+import { DAY_TYPES, DAY_TYPE_LABELS, BPV_START, BPV_END, DEFAULT_START_TIME, DEFAULT_END_TIME, DEFAULT_BREAK_MINUTES } from '../../constants.js';
+import { showToast } from '../../toast.js';
 
 
 const WEEKDAY_SHORT = ['ma', 'di', 'wo', 'do', 'vr'];
@@ -17,8 +12,11 @@ export function renderBPVQuickLog(container, context) {
   const today = getToday();
   let selectedDate = today;
 
+  const STANDARD_NET = calcNetMinutes(DEFAULT_START_TIME, DEFAULT_END_TIME, DEFAULT_BREAK_MINUTES);
+
   container.insertAdjacentHTML('beforeend', `
     <article class="bpv-ql os-mini-card" data-mount-id="${mountId}">
+      <div class="bpv-ql__quick-actions" data-quick-actions></div>
       <div class="bpv-ql__header">
         <h3 class="bpv-ql__title">Uren &amp; activiteiten</h3>
         <div class="bpv-ql__date-nav">
@@ -32,10 +30,6 @@ export function renderBPVQuickLog(container, context) {
       </div>
       <div class="bpv-ql__week-strip" data-week-strip></div>
       <div class="bpv-ql__date-label" data-date-label>${escapeHTML(formatDateShort(today))}${today === getToday() ? ' (vandaag)' : ''}</div>
-      <div class="bpv-ql__templates" data-templates>
-        <button type="button" class="btn btn-ghost btn-sm" data-action="copy-yesterday" title="Kopieer uren en activiteiten van gisteren">Kopieer van gisteren</button>
-        ${DAY_TEMPLATES.map(t => `<button type="button" class="btn btn-ghost btn-sm" data-template="${t.id}" title="${escapeHTML(t.label)}">${escapeHTML(t.label)}</button>`).join('')}
-      </div>
       <div class="bpv-ql__type-row" role="group" aria-label="Dagtype">
         ${DAY_TYPES.map((t) => `
           <button type="button" class="bpv-ql__type-btn" data-type="${t}">${DAY_TYPE_LABELS[t]}</button>
@@ -94,10 +88,13 @@ export function renderBPVQuickLog(container, context) {
         </div>
         <div class="bpv-ql__photos-grid" data-photos-grid></div>
       </div>
+      <div class="bpv-ql__month-calendar" data-month-calendar></div>
       <div class="bpv-ql__footer">
         <span class="bpv-ql__status" data-status></span>
         <div class="bpv-ql__footer-actions">
+          <button type="button" class="btn btn-ghost btn-sm" data-action="toggle-calendar" title="Maandoverzicht">Kalender</button>
           <button type="button" class="btn btn-ghost btn-sm" data-action="today" title="Ga naar vandaag">Vandaag</button>
+          <button type="button" class="btn btn-ghost btn-sm bpv-ql__delete-btn" data-action="delete" hidden title="Verwijder deze dag">Verwijder</button>
           <button type="button" class="btn btn-primary btn-sm bpv-ql__save" data-action="save">
             Opslaan
           </button>
@@ -115,6 +112,110 @@ export function renderBPVQuickLog(container, context) {
   const weekStrip = el.querySelector('[data-week-strip]');
 
   let activeType = 'work';
+
+  // ── Quick actions (one-tap log today + fill unlogged days) ──
+  async function renderQuickActions() {
+    const quickEl = el.querySelector('[data-quick-actions]');
+    if (!quickEl) return;
+
+    const todayEntry = await getHoursEntry(getToday());
+    const currentWeek = getCurrentWeek();
+    const unloggedDays = await getUnloggedDays(currentWeek);
+
+    let html = '';
+
+    // Quick "Log vandaag" button when today isn't logged
+    if (!todayEntry) {
+      html += `
+        <button type="button" class="bpv-ql__quick-btn" data-action="log-today-quick">
+          <span class="bpv-ql__quick-btn-icon">&#10003;</span>
+          <span class="bpv-ql__quick-btn-text">
+            <strong>Log vandaag</strong>
+            <span>${escapeHTML(DEFAULT_START_TIME)} – ${escapeHTML(DEFAULT_END_TIME)} | ${DEFAULT_BREAK_MINUTES}m pauze = ${escapeHTML(formatMinutes(STANDARD_NET))}</span>
+          </span>
+        </button>
+      `;
+    }
+
+    // Fill unlogged days this week
+    const missedDays = unloggedDays.filter(d => d !== getToday());
+    if (missedDays.length > 0) {
+      html += `
+        <div class="bpv-ql__missed">
+          <span class="bpv-ql__missed-label">Nog niet gelogd:</span>
+          ${missedDays.map(d => `<button type="button" class="btn btn-ghost btn-sm" data-action="fill-day" data-date="${d}">${escapeHTML(formatDateShort(d))}</button>`).join('')}
+          ${missedDays.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" data-action="fill-all">Alles loggen</button>` : ''}
+        </div>
+      `;
+    }
+
+    quickEl.innerHTML = html;
+
+    // Quick log today
+    quickEl.querySelector('[data-action="log-today-quick"]')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      try {
+        await addHoursEntry(getToday(), {
+          type: 'work',
+          startTime: DEFAULT_START_TIME,
+          endTime: DEFAULT_END_TIME,
+          breakMinutes: DEFAULT_BREAK_MINUTES,
+        });
+        eventBus?.emit('bpv:changed', { date: getToday() });
+        showToast('Vandaag gelogd');
+        populateFromExisting();
+        renderWeekStrip();
+      } catch (err) {
+        showToast(`Fout: ${err.message}`);
+        btn.disabled = false;
+      }
+    });
+
+    // Fill individual missed day
+    quickEl.querySelectorAll('[data-action="fill-day"]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const date = btn.dataset.date;
+        btn.disabled = true;
+        btn.textContent = '...';
+        try {
+          await addHoursEntry(date, {
+            type: 'work',
+            startTime: DEFAULT_START_TIME,
+            endTime: DEFAULT_END_TIME,
+            breakMinutes: DEFAULT_BREAK_MINUTES,
+          });
+          eventBus?.emit('bpv:changed', { date });
+          renderQuickActions();
+          renderWeekStrip();
+        } catch (err) {
+          showToast(`Fout: ${err.message}`);
+        }
+      });
+    });
+
+    // Fill all missed days
+    quickEl.querySelector('[data-action="fill-all"]')?.addEventListener('click', async (e) => {
+      const btn = e.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Bezig...';
+      try {
+        for (const date of missedDays) {
+          await addHoursEntry(date, {
+            type: 'work',
+            startTime: DEFAULT_START_TIME,
+            endTime: DEFAULT_END_TIME,
+            breakMinutes: DEFAULT_BREAK_MINUTES,
+          });
+          eventBus?.emit('bpv:changed', { date });
+        }
+        renderQuickActions();
+        renderWeekStrip();
+      } catch (err) {
+        showToast(`Fout: ${err.message}`);
+      }
+    });
+  }
 
   // ── Week strip rendering ──
   async function renderWeekStrip() {
@@ -202,13 +303,22 @@ export function renderBPVQuickLog(container, context) {
     }
   }
 
+  let currentEntryId = null;
+
   async function populateFromExisting() {
     const entry = await getHoursEntry(selectedDate);
+    currentEntryId = entry?.id || null;
+    renderQuickActions();
+
+    // Show/hide delete button
+    const deleteBtn = el.querySelector('[data-action="delete"]');
+    if (deleteBtn) deleteBtn.hidden = !entry;
+
     if (!entry) {
       setType('work');
-      el.querySelector('[data-field="startTime"]').value = '08:00';
-      el.querySelector('[data-field="endTime"]').value = '';
-      el.querySelector('[data-field="breakMinutes"]').value = '45';
+      el.querySelector('[data-field="startTime"]').value = DEFAULT_START_TIME;
+      el.querySelector('[data-field="endTime"]').value = DEFAULT_END_TIME;
+      el.querySelector('[data-field="breakMinutes"]').value = String(DEFAULT_BREAK_MINUTES);
       el.querySelector('[data-field="note"]').value = '';
       setActivities([]);
       updateNet();
@@ -284,8 +394,12 @@ export function renderBPVQuickLog(container, context) {
 
     await addHoursEntry(selectedDate, { type: activeType, startTime, endTime, breakMinutes, note, activities });
     if (!silent) setStatus('Opgeslagen ✓');
+    currentEntryId = (await getHoursEntry(selectedDate))?.id || null;
+    const deleteBtn = el.querySelector('[data-action="delete"]');
+    if (deleteBtn) deleteBtn.hidden = !currentEntryId;
     updateNet();
     renderWeekStrip();
+    if (calendarVisible) renderMonthCalendar();
     eventBus?.emit('bpv:changed', { date: selectedDate });
     return true;
   }
@@ -347,38 +461,124 @@ export function renderBPVQuickLog(container, context) {
     }
   });
 
-  // ── Templates ──
-  el.querySelector('[data-action="copy-yesterday"]')?.addEventListener('click', async () => {
-    const d = new Date(selectedDate + 'T00:00:00');
-    d.setDate(d.getDate() - 1);
-    const yesterday = formatDateISO(d);
-    const entry = await getHoursEntry(yesterday);
-    if (!entry) {
-      setStatus('Geen gegevens van gisteren gevonden.', true);
-      return;
+  // ── Delete entry ──
+  el.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
+    if (!currentEntryId) return;
+    if (!confirm(`Uren voor ${formatDateShort(selectedDate)} verwijderen?`)) return;
+    try {
+      await deleteHoursEntry(currentEntryId);
+      currentEntryId = null;
+      eventBus?.emit('bpv:changed', { date: selectedDate });
+      showToast('Uren verwijderd');
+      populateFromExisting();
+      renderWeekStrip();
+      renderMonthCalendar();
+    } catch (err) {
+      showToast(`Fout: ${err.message}`);
     }
-    setType(entry.type || 'work');
-    if (entry.startTime) el.querySelector('[data-field="startTime"]').value = entry.startTime;
-    if (entry.endTime) el.querySelector('[data-field="endTime"]').value = entry.endTime;
-    el.querySelector('[data-field="breakMinutes"]').value = entry.breakMinutes ?? 45;
-    setActivities(entry.activities);
-    updateNet();
-    setStatus('Gekopieerd van gisteren');
   });
 
-  el.querySelectorAll('[data-template]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const tmpl = DAY_TEMPLATES.find(t => t.id === btn.dataset.template);
-      if (!tmpl) return;
-      setType('work');
-      el.querySelector('[data-field="startTime"]').value = tmpl.startTime;
-      el.querySelector('[data-field="endTime"]').value = tmpl.endTime;
-      el.querySelector('[data-field="breakMinutes"]').value = tmpl.breakMinutes;
-      setActivities(tmpl.activities);
-      updateNet();
-      setStatus(`Template "${tmpl.label}" toegepast`);
-    });
+  // ── Month calendar ──
+  const calendarEl = el.querySelector('[data-month-calendar]');
+  let calendarVisible = false;
+  let calendarMonth = new Date(selectedDate + 'T00:00:00');
+
+  el.querySelector('[data-action="toggle-calendar"]')?.addEventListener('click', () => {
+    calendarVisible = !calendarVisible;
+    calendarEl.hidden = !calendarVisible;
+    if (calendarVisible) {
+      calendarMonth = new Date(selectedDate + 'T00:00:00');
+      renderMonthCalendar();
+    }
   });
+  calendarEl.hidden = true;
+
+  async function renderMonthCalendar() {
+    const year = calendarMonth.getFullYear();
+    const month = calendarMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni',
+      'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December'];
+
+    // Get all entries for this month
+    const dates = [];
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      dates.push(dateStr);
+    }
+    const entries = await Promise.all(dates.map(d => getHoursEntry(d).catch(() => null)));
+    const entryMap = {};
+    dates.forEach((d, i) => { if (entries[i]) entryMap[d] = entries[i]; });
+
+    // Calendar grid: start on Monday (1)
+    let startDow = firstDay.getDay(); // 0=Sun
+    startDow = startDow === 0 ? 6 : startDow - 1; // Convert to Mon=0
+
+    let cells = '';
+    // Empty cells before first day
+    for (let i = 0; i < startDow; i++) cells += '<div class="bpv-ql__cal-cell bpv-ql__cal-cell--empty"></div>';
+
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const dateStr = dates[d - 1];
+      const entry = entryMap[dateStr];
+      const isSelected = dateStr === selectedDate;
+      const isToday = dateStr === getToday();
+      const isWeekend = new Date(year, month, d).getDay() === 0 || new Date(year, month, d).getDay() === 6;
+      const inRange = dateStr >= BPV_START && dateStr <= BPV_END;
+      const cls = [
+        'bpv-ql__cal-cell',
+        entry ? 'bpv-ql__cal-cell--filled' : '',
+        isSelected ? 'bpv-ql__cal-cell--active' : '',
+        isToday ? 'bpv-ql__cal-cell--today' : '',
+        isWeekend ? 'bpv-ql__cal-cell--weekend' : '',
+        !inRange ? 'bpv-ql__cal-cell--disabled' : '',
+      ].filter(Boolean).join(' ');
+
+      const netLabel = entry?.netMinutes ? formatMinutes(entry.netMinutes) : '';
+      cells += `<button type="button" class="${cls}" data-cal-date="${dateStr}" ${!inRange ? 'disabled' : ''} title="${escapeHTML(formatDateShort(dateStr))}${netLabel ? ' — ' + netLabel : ''}">
+        <span class="bpv-ql__cal-num">${d}</span>
+        ${netLabel ? `<span class="bpv-ql__cal-hours">${escapeHTML(netLabel)}</span>` : ''}
+      </button>`;
+    }
+
+    calendarEl.innerHTML = `
+      <div class="bpv-ql__cal-header">
+        <button type="button" class="bpv-ql__date-btn" data-action="cal-prev">&larr;</button>
+        <span class="bpv-ql__cal-month">${monthNames[month]} ${year}</span>
+        <button type="button" class="bpv-ql__date-btn" data-action="cal-next">&rarr;</button>
+      </div>
+      <div class="bpv-ql__cal-days">
+        <span>ma</span><span>di</span><span>wo</span><span>do</span><span>vr</span><span>za</span><span>zo</span>
+      </div>
+      <div class="bpv-ql__cal-grid">${cells}</div>
+    `;
+
+    // Calendar navigation
+    calendarEl.querySelector('[data-action="cal-prev"]')?.addEventListener('click', () => {
+      calendarMonth.setMonth(calendarMonth.getMonth() - 1);
+      renderMonthCalendar();
+    });
+    calendarEl.querySelector('[data-action="cal-next"]')?.addEventListener('click', () => {
+      calendarMonth.setMonth(calendarMonth.getMonth() + 1);
+      renderMonthCalendar();
+    });
+
+    // Day click
+    calendarEl.querySelectorAll('[data-cal-date]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const d = btn.dataset.calDate;
+        if (d < BPV_START || d > BPV_END) return;
+        selectedDate = d;
+        const dateInput = el.querySelector('[data-action="pick-date"]');
+        if (dateInput) dateInput.value = selectedDate;
+        updateDateLabel();
+        populateFromExisting();
+        renderWeekStrip();
+        renderMonthCalendar();
+      });
+    });
+  }
 
   // ── Photos ──
   const photosGrid = el.querySelector('[data-photos-grid]');
@@ -422,7 +622,7 @@ export function renderBPVQuickLog(container, context) {
   });
 
   setType('work');
-  populateFromExisting();
+  populateFromExisting(); // also calls renderQuickActions()
   renderPhotos();
   renderWeekStrip();
 

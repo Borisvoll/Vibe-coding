@@ -1,59 +1,16 @@
-import { getSetting, setSetting, getAll } from '../db.js';
+import { getSetting, setSetting } from '../db.js';
 import { renderSettingsBlock } from '../blocks/settings-panel.js';
-import { mountCuriosityPage } from './curiosity.js';
-import { formatDateShort, formatDateLong, formatDateISO, getToday, getISOWeek } from '../utils.js';
+import { formatDateShort, formatDateLong, getToday, getISOWeek } from '../utils.js';
 import { isFriday, isReviewSent } from '../stores/weekly-review.js';
 import { startTutorial } from '../core/tutorial.js';
 import { WEEKDAY_FULL } from '../constants.js';
 import { setTheme } from '../core/themeEngine.js';
 import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
-import { createCommandRegistry } from '../core/commands.js';
-import { createMorningFlow, shouldAutoOpen } from '../ui/morning-flow.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
-import { createPomodoro } from '../ui/pomodoro.js';
-import { showPrompt } from '../ui/modal.js';
-import { addTask } from '../stores/tasks.js';
-import { addProject } from '../stores/projects.js';
-import { globalSearch } from '../stores/search.js';
-import { isTodayLogged } from '../stores/bpv.js';
-// ambient-canvas.js still available but empty states now use contextual hints
 
-const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'verslag', 'settings', 'curiosity'];
-
-// ── Time-of-day phase ─────────────────────────────────────────
-function getTimePhase() {
-  const h = new Date().getHours();
-  if (h < 12) return 'morning';
-  if (h < 17) return 'afternoon';
-  return 'evening';
-}
-
-const PHASE_META = {
-  morning:   { label: 'Ochtend',   emoji: '🌅', desc: 'Plan je dag' },
-  afternoon: { label: 'Middag',    emoji: '☀️',  desc: 'Focus & uitvoering' },
-  evening:   { label: 'Avond',     emoji: '🌙', desc: 'Reflecteer & afronden' },
-};
-
-// Collapse defaults per phase × mode — user manual overrides always win (localStorage)
-const PHASE_COLLAPSE_DEFAULTS = {
-  morning: {
-    School:   { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
-    Personal: { tasks: true,  projects: false, capture: false, reflection: false, mode: false, weekly: false, history: false },
-    BPV:      { tasks: true,  projects: false, capture: false, reflection: false, mode: true,  weekly: false, history: false },
-  },
-  afternoon: {
-    School:   { tasks: true,  projects: true,  capture: true,  reflection: false, mode: true,  weekly: false, history: false },
-    Personal: { tasks: true,  projects: true,  capture: true,  reflection: false, mode: false, weekly: false, history: false },
-    BPV:      { tasks: true,  projects: true,  capture: true,  reflection: false, mode: true,  weekly: false, history: false },
-  },
-  evening: {
-    School:   { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: true,  history: false },
-    Personal: { tasks: false, projects: false, capture: false, reflection: true,  mode: false, weekly: true,  history: false },
-    BPV:      { tasks: false, projects: false, capture: false, reflection: true,  mode: true,  weekly: false, history: false },
-  },
-};
+const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
 const MODE_META = {
   School: {
@@ -118,9 +75,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (tab === 'today') {
       buildVandaagLayout(mode);
       renderVandaagHeader(mode);
-      renderWeekStrip(mode);
       initSearchBar();
-      showMorningNudge(mode);
     }
     if (tab === 'dashboard') {
       updateSectionTitles(mode);
@@ -135,10 +90,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         eventBus,
         onChange: async () => {},
       });
-    }
-    if (tab === 'curiosity') {
-      const mount = routeContainer.querySelector('#curiosity-route-mount');
-      if (mount) mountCuriosityPage(mount);
     }
 
     // Breadcrumb visibility + handler
@@ -194,35 +145,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   // ── Block mounting ────────────────────────────────────────
-  const EMPTY_STATE_HINTS = {
-    'vandaag-hero':     { icon: '☀️', title: 'Stel je Top 3 in', desc: 'Klik op het ochtendplan om je dag te starten.' },
-    'vandaag-cockpit':  { icon: '📊', title: 'Je cockpit laadt...', desc: 'Zodra je taken toevoegt verschijnen hier je stats.' },
-    'vandaag-tasks':    { icon: '✓', title: 'Geen taken voor vandaag', desc: 'Druk op Ctrl+K → Nieuwe taak om te beginnen.' },
-    'vandaag-projects': { icon: '🚀', title: 'Geen actieve projecten', desc: 'Maak een project aan via het Projecten-tabblad.' },
-    'vandaag-capture':  { icon: '📥', title: 'Je inbox is leeg', desc: 'Goed bezig! Nieuwe ideeën verschijnen hier.' },
-    'vandaag-reflection':{ icon: '🪞', title: 'Reflectie', desc: 'Schrijf vanavond je gedachten van de dag op.' },
-    'vandaag-mode':     { icon: '📚', title: 'Context-blokken', desc: 'Modus-specifieke informatie verschijnt hier.' },
-    'vandaag-weekly':   { icon: '📅', title: 'Weekoverzicht', desc: 'Op vrijdag verschijnt hier je wekelijkse review.' },
-    'dashboard-cards':  { icon: '◫', title: 'Welkom bij BORIS', desc: 'Je dashboard vult zich naarmate je de app gebruikt.' },
-    'inbox-screen':     { icon: '📥', title: 'Je inbox is leeg', desc: 'Alles verwerkt! Gebruik Ctrl+I om snel iets vast te leggen.' },
-    'projects-hub':     { icon: '🚀', title: 'Nog geen projecten', desc: 'Begin met je eerste project — elk groot doel verdient er één.' },
-    'planning-main':    { icon: '📋', title: 'Planning', desc: 'Je planning wordt gevuld door projecten en taken.' },
-    'lijsten-screen':   { icon: '📝', title: 'Geen lijsten', desc: 'Maak je eerste lijst aan voor boodschappen, ideeën, of doelen.' },
-    'report-screen':    { icon: '📄', title: 'Stageverslag', desc: 'Bouw hier je BPV-verslag op, sectie voor sectie.' },
-  };
-
   function ensureHostEmptyStates() {
     routeContainer.querySelectorAll('[data-os-host]').forEach((host) => {
       if (host.children.length === 0) {
-        const hostName = host.getAttribute('data-os-host');
-        const hint = EMPTY_STATE_HINTS[hostName] || { icon: '·', title: 'Niets hier', desc: '' };
-        host.innerHTML = `
-          <div class="os-empty-state">
-            <span class="os-empty-state__icon">${hint.icon}</span>
-            <p class="os-empty-state__title">${hint.title}</p>
-            ${hint.desc ? `<p class="os-empty-state__desc">${hint.desc}</p>` : ''}
-          </div>
-        `;
+        host.innerHTML = '<p class="os-host-empty">Nog geen actieve blokken voor deze weergave.</p>';
       }
     });
   }
@@ -236,7 +162,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   function renderHosts() {
     unmountAll();
     const mode = modeManager.getMode();
-    const context = { mode, eventBus, modeManager, routeParams };
+    const context = { mode, eventBus, modeManager };
     const eligibleBlocks = blockRegistry.getEnabled().filter((block) => {
       if (!Array.isArray(block.modes) || block.modes.length === 0) return true;
       return block.modes.includes(mode);
@@ -306,67 +232,34 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (shell) shell.setAttribute('data-mode', mode);
   }
 
-  // ── Per-space sidebar: show only relevant nav items per mode ──
-  function updateSidebarForMode(mode) {
-    app.querySelectorAll('[data-sidebar-modes]').forEach((item) => {
-      const modes = item.getAttribute('data-sidebar-modes').split(',').map(s => s.trim());
-      const visible = modes.includes(mode) || modes.includes('all');
-      item.hidden = !visible;
-      item.style.display = visible ? '' : 'none';
-    });
-    // Update the space label in the sidebar
-    const spaceLabel = app.querySelector('.os-sidebar__space-label');
-    if (spaceLabel) {
-      const meta = MODE_META[mode] || MODE_META.School;
-      spaceLabel.textContent = `${meta.emoji} ${meta.label}`;
-      spaceLabel.style.color = meta.color;
-    }
-    // In BPV mode: promote Verslag to primary bottom nav (replace Dashboard)
-    const bottomDashBtn = app.querySelector('.os-bottomnav__item[data-os-tab="dashboard"]');
-    if (bottomDashBtn) {
-      if (mode === 'BPV') {
-        bottomDashBtn.setAttribute('data-os-tab', 'verslag');
-        bottomDashBtn.querySelector('.os-bottomnav__label').textContent = 'Verslag';
-        bottomDashBtn.querySelector('.os-bottomnav__icon').innerHTML = '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>';
-      } else {
-        bottomDashBtn.setAttribute('data-os-tab', 'dashboard');
-        bottomDashBtn.querySelector('.os-bottomnav__label').textContent = 'Dashboard';
-        bottomDashBtn.querySelector('.os-bottomnav__icon').innerHTML = '<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>';
-      }
-    }
-  }
-
   // ── Vandaag page layout with collapsible zones ────────────
 
   const VANDAAG_SECTIONS = [
     { zone: 'tasks',      id: 'vandaag-tasks',      title: 'Taken',                hostName: 'vandaag-tasks' },
     { zone: 'projects',   id: 'vandaag-projects',   title: 'Projecten & Lijsten',  hostName: 'vandaag-projects' },
-    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode', titleByMode: { BPV: 'BPV Uren & Logboek' } },
     { zone: 'capture',    id: 'vandaag-capture',     title: 'Inbox',                hostName: 'vandaag-capture' },
     { zone: 'reflection', id: 'vandaag-reflection',  title: 'Reflectie',            hostName: 'vandaag-reflection' },
+    { zone: 'mode',       id: 'vandaag-mode',        title: 'Context',              hostName: 'vandaag-mode' },
     { zone: 'weekly',     id: 'vandaag-weekly',      title: 'Weekoverzicht',        hostName: 'vandaag-weekly' },
-    { zone: 'history',    id: 'vandaag-history',     title: 'Geschiedenis',         hostName: 'vandaag-history' },
   ];
 
-  // Progressive disclosure — phase-aware defaults. User overrides persist via date-scoped localStorage.
-  function getCollapseDefaults(mode) {
-    const phase = getTimePhase();
-    return (PHASE_COLLAPSE_DEFAULTS[phase] || PHASE_COLLAPSE_DEFAULTS.morning)[mode]
-      || PHASE_COLLAPSE_DEFAULTS.morning.School;
-  }
+  const COLLAPSE_DEFAULTS = {
+    School:   { tasks: true, projects: true, capture: true, reflection: false, mode: false, weekly: false },
+    Personal: { tasks: true, projects: true, capture: true, reflection: true,  mode: false, weekly: false },
+    BPV:      { tasks: true, projects: true, capture: true, reflection: false, mode: true,  weekly: false },
+  };
 
   const vandaagSections = {};
 
   function buildVandaagLayout(mode) {
-    const defaults = getCollapseDefaults(mode);
+    const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
 
     VANDAAG_SECTIONS.forEach((cfg) => {
       const zoneEl = routeContainer.querySelector(`[data-vandaag-zone="${cfg.zone}"]`);
       if (!zoneEl) return;
-      const sectionTitle = cfg.titleByMode?.[mode] || cfg.title;
       const section = createCollapsibleSection({
         id: cfg.id,
-        title: sectionTitle,
+        title: cfg.title,
         hostName: cfg.hostName,
         defaultOpen: defaults[cfg.zone] ?? true,
         mode,
@@ -377,13 +270,9 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
 
   function updateVandaagCollapse(mode) {
-    const defaults = getCollapseDefaults(mode);
-    VANDAAG_SECTIONS.forEach((cfg) => {
-      const section = vandaagSections[cfg.zone];
-      if (!section) return;
-      section.setMode(mode, defaults[cfg.zone] ?? true);
-      const newTitle = cfg.titleByMode?.[mode] || cfg.title;
-      section.setTitle(newTitle);
+    const defaults = COLLAPSE_DEFAULTS[mode] || COLLAPSE_DEFAULTS.School;
+    Object.entries(vandaagSections).forEach(([zone, section]) => {
+      section?.setMode(mode, defaults[zone] ?? true);
     });
   }
 
@@ -399,73 +288,17 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     const weekStr = getISOWeek(today);
     const weekNum = weekStr.split('-W')[1]?.replace(/^0/, '') || '';
 
-    const phase = getTimePhase();
-    const phaseMeta = PHASE_META[phase];
-    const modeBadge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
-    const phaseBadge = `<span class="vandaag-header__phase-badge vandaag-header__phase-badge--${phase}" title="${phaseMeta.desc}">${phaseMeta.emoji} ${phaseMeta.label}</span>`;
+    const badge = `<span class="os-section__mode-badge" style="--badge-color:${meta.color};--badge-color-light:${meta.colorLight}">${meta.emoji} ${meta.label}</span>`;
     headerEl.innerHTML = `
       <div class="vandaag-header__top">
         <h2 class="vandaag-header__title">Vandaag</h2>
-        <div class="vandaag-header__badges">
-          ${modeBadge}
-          ${phaseBadge}
-        </div>
+        ${badge}
       </div>
-      <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum} · <span class="vandaag-header__phase-desc">${phaseMeta.desc}</span></span>
+      <span class="vandaag-header__date">${dayName} ${dateLong} · week ${weekNum}</span>
     `;
   }
 
-  // ── Compact week strip (ma-vr) ──────────────────────────
-  async function renderWeekStrip(mode) {
-    const stripEl = routeContainer.querySelector('[data-vandaag-weekstrip]');
-    if (!stripEl) return;
-
-    const today = getToday();
-    const d = new Date(today + 'T00:00:00');
-    const dayOfWeek = (d.getDay() + 6) % 7; // 0=ma
-    const monday = new Date(d);
-    monday.setDate(d.getDate() - dayOfWeek);
-
-    const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr'];
-    const days = [];
-    for (let i = 0; i < 5; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      days.push(formatDateISO(date));
-    }
-
-    // Render skeleton first
-    stripEl.innerHTML = `<div class="weekstrip">${days.map((date, i) => {
-      const isToday = date === today;
-      const isFuture = date > today;
-      return `<div class="weekstrip__day ${isToday ? 'weekstrip__day--today' : ''} ${isFuture ? 'weekstrip__day--future' : ''}">
-        <span class="weekstrip__label">${dayNames[i]}</span>
-        <span class="weekstrip__circle"></span>
-      </div>`;
-    }).join('')}</div>`;
-
-    // Load data async
-    try {
-      const allPlans = await getAll('dailyPlans');
-      const planMap = {};
-      for (const plan of allPlans) {
-        if (plan.mode === mode) {
-          planMap[plan.date] = (plan.todos || []).filter(t => t.done).length;
-        }
-      }
-
-      const circleEls = stripEl.querySelectorAll('.weekstrip__circle');
-      days.forEach((date, i) => {
-        const count = planMap[date] || 0;
-        if (count > 0) {
-          circleEls[i].textContent = count;
-          circleEls[i].classList.add('weekstrip__circle--filled');
-        }
-      });
-    } catch { /* non-critical */ }
-  }
-
-  // ── Search bar (with keyboard navigation) ────────────────
+  // ── Search bar ────────────────────────────────────────────
   function initSearchBar() {
     const searchEl = routeContainer.querySelector('[data-vandaag-search]');
     if (!searchEl) return;
@@ -474,122 +307,43 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         <svg class="vandaag-search__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input type="search" class="vandaag-search__input"
-          placeholder="Zoek in taken, projecten, inbox..."
-          autocomplete="off"
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded="false"
-          aria-controls="vandaag-search-listbox" />
+        <input type="search" class="vandaag-search__input" placeholder="Zoek in taken, projecten, inbox..." />
       </div>
-      <div class="vandaag-search__results" id="vandaag-search-listbox" role="listbox" hidden></div>
+      <div class="vandaag-search__results" hidden></div>
     `;
     const input = searchEl.querySelector('.vandaag-search__input');
     const results = searchEl.querySelector('.vandaag-search__results');
     let debounceTimer = null;
-    let activeIdx = -1;
-    let currentHits = [];
-
-    function getHitEls() {
-      return Array.from(results.querySelectorAll('.vandaag-search__hit'));
-    }
-
-    function setActiveHit(idx) {
-      const hits = getHitEls();
-      hits.forEach((el, i) => {
-        el.classList.toggle('vandaag-search__hit--active', i === idx);
-        el.setAttribute('aria-selected', String(i === idx));
-      });
-      activeIdx = idx;
-      if (idx >= 0 && hits[idx]) {
-        hits[idx].scrollIntoView({ block: 'nearest' });
-        input.setAttribute('aria-activedescendant', hits[idx].id || '');
-      } else {
-        input.removeAttribute('aria-activedescendant');
-      }
-    }
-
-    function openResults(hitsData) {
-      if (hitsData.length === 0) {
-        results.innerHTML = '<p class="vandaag-search__empty" role="status">Geen resultaten</p>';
-      } else {
-        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        currentHits = hitsData.slice(0, 8);
-        results.innerHTML = currentHits.map((h, i) => {
-          const title = esc(h.title || '');
-          const type = esc(h.type || '');
-          return `<div class="vandaag-search__hit" role="option" id="search-hit-${i}" data-idx="${i}" tabindex="-1">
-            <span class="vandaag-search__hit-store">${type}</span>
-            <span class="vandaag-search__hit-text">${title}</span>
-          </div>`;
-        }).join('');
-
-        // Click to navigate
-        getHitEls().forEach((el) => {
-          el.addEventListener('mousedown', (e) => {
-            e.preventDefault(); // don't blur input
-            const h = currentHits[parseInt(el.dataset.idx, 10)];
-            if (!h) return;
-            input.value = '';
-            results.hidden = true;
-            input.setAttribute('aria-expanded', 'false');
-            activeIdx = -1;
-            // Navigate to the result
-            if (h.tab) setActiveTab(h.tab, { focus: h.focusTarget });
-          });
-        });
-      }
-      results.hidden = false;
-      input.setAttribute('aria-expanded', 'true');
-      activeIdx = -1;
-    }
-
-    function closeResults() {
-      results.hidden = true;
-      input.setAttribute('aria-expanded', 'false');
-      activeIdx = -1;
-    }
 
     input.addEventListener('input', () => {
       clearTimeout(debounceTimer);
       const q = input.value.trim();
-      if (q.length < 2) { closeResults(); results.innerHTML = ''; currentHits = []; return; }
+      if (q.length < 2) { results.hidden = true; results.innerHTML = ''; return; }
       debounceTimer = setTimeout(async () => {
         try {
+          const { globalSearch } = await import('../stores/search.js');
           const hits = await globalSearch(q);
-          openResults(hits);
-        } catch { closeResults(); }
-      }, 280);
-    });
-
-    input.addEventListener('keydown', (e) => {
-      const hits = getHitEls();
-      if (results.hidden || hits.length === 0) return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveHit(Math.min(activeIdx + 1, hits.length - 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveHit(Math.max(activeIdx - 1, 0));
-      } else if (e.key === 'Enter' && activeIdx >= 0) {
-        e.preventDefault();
-        hits[activeIdx]?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-      } else if (e.key === 'Escape') {
-        closeResults();
-        input.blur();
-      }
+          if (hits.length === 0) {
+            results.innerHTML = '<p class="vandaag-search__empty">Geen resultaten</p>';
+          } else {
+            const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            results.innerHTML = hits.slice(0, 8).map(h => {
+              const title = esc(h.title || '');
+              const type = esc(h.type || '');
+              return `<div class="vandaag-search__hit"><span class="vandaag-search__hit-store">${type}</span><span class="vandaag-search__hit-text">${title}</span></div>`;
+            }).join('');
+          }
+          results.hidden = false;
+        } catch { results.hidden = true; }
+      }, 300);
     });
 
     input.addEventListener('blur', () => {
-      setTimeout(() => closeResults(), 200);
+      setTimeout(() => { results.hidden = true; }, 200);
     });
 
     input.addEventListener('focus', () => {
-      if (input.value.trim().length >= 2 && results.innerHTML && !results.querySelector('.vandaag-search__empty')) {
-        results.hidden = false;
-        input.setAttribute('aria-expanded', 'true');
-      }
+      if (input.value.trim().length >= 2 && results.innerHTML) results.hidden = false;
     });
   }
 
@@ -677,38 +431,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     app.querySelector('#mode-btn')?.focus();
   }
 
-  // ── Morning nudge (soft banner on Today page) ──────────────
-  async function showMorningNudge(mode) {
-    const shouldShow = await shouldAutoOpen(modeManager);
-    if (!shouldShow) return;
-
-    const headerEl = routeContainer.querySelector('[data-vandaag-header]');
-    if (!headerEl) return;
-
-    // Don't show if already there
-    if (headerEl.querySelector('.morning-nudge')) return;
-
-    const nudge = document.createElement('div');
-    nudge.className = 'morning-nudge';
-    nudge.innerHTML = `
-      <span class="morning-nudge__text">☀️ Goedemorgen! Wil je je dag plannen?</span>
-      <button type="button" class="morning-nudge__btn">Start ochtendplan</button>
-      <button type="button" class="morning-nudge__dismiss" aria-label="Sluiten">&times;</button>
-    `;
-
-    nudge.querySelector('.morning-nudge__btn').addEventListener('click', () => {
-      nudge.remove();
-      morningFlow.open();
-    });
-
-    nudge.querySelector('.morning-nudge__dismiss').addEventListener('click', () => {
-      nudge.classList.add('morning-nudge--out');
-      nudge.addEventListener('animationend', () => nudge.remove());
-    });
-
-    headerEl.insertAdjacentElement('afterend', nudge);
-  }
-
   // ── Shell chrome event listeners ──────────────────────────
 
   // Mode picker — card clicks
@@ -735,49 +457,12 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   }
   document.addEventListener('keydown', handleEscapeKey);
 
-  // Tab navigation (sidebar + mobile bottom nav + more menu)
+  // Tab navigation (sidebar + mobile nav)
   app.querySelectorAll('[data-os-tab]').forEach((tabButton) => {
-    // Skip the more button itself (it has no data-os-tab)
     tabButton.addEventListener('click', () => {
-      const tab = tabButton.getAttribute('data-os-tab');
-      if (tab) {
-        setActiveTab(tab);
-        // Close more menu if open
-        const moreMenu = app.querySelector('#mobile-more-menu');
-        if (moreMenu) moreMenu.hidden = true;
-      }
+      setActiveTab(tabButton.getAttribute('data-os-tab'));
     });
   });
-
-  // Mobile bottom nav — more menu toggle
-  const moreBtn = app.querySelector('#mobile-more-btn');
-  const moreMenu = app.querySelector('#mobile-more-menu');
-  moreBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    moreMenu.hidden = !moreMenu.hidden;
-  });
-  document.addEventListener('click', (e) => {
-    if (moreMenu && !moreMenu.hidden && !moreMenu.contains(e.target) && !moreBtn?.contains(e.target)) {
-      moreMenu.hidden = true;
-    }
-  });
-
-  // Search buttons (sidebar + mobile header) → open command palette
-  app.querySelector('#sidebar-search-btn')?.addEventListener('click', () => {
-    cmdPalette.open();
-  });
-  app.querySelector('#mobile-search-btn')?.addEventListener('click', () => {
-    cmdPalette.open();
-  });
-
-  // Curiosity tab visibility from settings
-  (async () => {
-    const curiosityEnabled = await getSetting('curiosity_enabled');
-    const curiosityBtn = app.querySelector('.os-sidebar__item--curiosity');
-    if (curiosityBtn && curiosityEnabled) {
-      curiosityBtn.hidden = false;
-    }
-  })();
 
   // Desktop topbar — sidebar toggle
   app.querySelector('#sidebar-toggle-btn')?.addEventListener('click', () => {
@@ -886,13 +571,11 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     triggerModeWash(mode);
     updateModeBtn();
     updateTopbarModeRadio(mode);
-    updateSidebarForMode(mode);
     focusOverlay.showFor(mode, MODE_META[mode]);
 
     // Route-specific updates
     if (activeTab === 'today') {
       renderVandaagHeader(mode);
-      renderWeekStrip(mode);
       updateVandaagCollapse(mode);
     }
     updateSectionTitles(mode);
@@ -919,138 +602,15 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     setActiveTab('inbox');
   });
 
-  // Remove morning nudge when flow completes
-  eventBus.on('morning:completed', () => {
-    const nudge = routeContainer?.querySelector('.morning-nudge');
-    if (nudge) {
-      nudge.classList.add('morning-nudge--out');
-      nudge.addEventListener('animationend', () => nudge.remove());
-    }
-  });
-
-  // ── Command registry + palette ──────────────────────────────
-  const commandRegistry = createCommandRegistry();
-
-  // Navigation commands
-  commandRegistry.register('nav:dashboard', {
-    label: 'Ga naar Dashboard',
-    icon: '◫',
-    group: 'navigate',
-    keywords: ['dashboard', 'home', 'overzicht'],
-    handler: () => setActiveTab('dashboard'),
-  });
-  commandRegistry.register('nav:today', {
-    label: 'Ga naar Vandaag',
-    icon: '☀',
-    group: 'navigate',
-    keywords: ['vandaag', 'today', 'taken'],
-    handler: () => setActiveTab('today'),
-  });
-  commandRegistry.register('nav:inbox', {
-    label: 'Ga naar Inbox',
-    icon: '📥',
-    group: 'navigate',
-    keywords: ['inbox', 'capture', 'idee'],
-    shortcut: 'Ctrl+I',
-    handler: () => setActiveTab('inbox'),
-  });
-  commandRegistry.register('nav:projects', {
-    label: 'Ga naar Projecten',
-    icon: '🚀',
-    group: 'navigate',
-    keywords: ['projecten', 'projects', 'hub'],
-    shortcut: 'Alt+G',
-    handler: () => setActiveTab('projects'),
-  });
-  commandRegistry.register('nav:planning', {
-    label: 'Ga naar Planning',
-    icon: '📋',
-    group: 'navigate',
-    keywords: ['planning', 'week', 'schema'],
-    handler: () => setActiveTab('planning'),
-  });
-  commandRegistry.register('nav:verslag', {
-    label: 'Ga naar Stageverslag',
-    icon: '📄',
-    group: 'navigate',
-    keywords: ['verslag', 'report', 'stage', 'bpv', 'stageverslag'],
-    handler: () => setActiveTab('verslag'),
-  });
-  commandRegistry.register('nav:settings', {
-    label: 'Ga naar Instellingen',
-    icon: '⚙',
-    group: 'navigate',
-    keywords: ['instellingen', 'settings', 'configuratie'],
-    handler: () => setActiveTab('settings'),
-  });
-
-  // Create commands
-  commandRegistry.register('create:task', {
-    label: 'Nieuwe taak',
-    icon: '✓',
-    group: 'create',
-    keywords: ['taak', 'task', 'nieuw', 'toevoegen', 'add'],
-    handler: async () => {
-      const text = await showPrompt('Wat moet er gebeuren?', '', { title: 'Nieuwe taak' });
-      if (!text?.trim()) return;
-      await addTask(text.trim(), modeManager.getMode());
-      eventBus.emit('tasks:changed');
-    },
-  });
-  commandRegistry.register('create:project', {
-    label: 'Nieuw project',
-    icon: '🚀',
-    group: 'create',
-    keywords: ['project', 'nieuw', 'toevoegen', 'add'],
-    handler: async () => {
-      const title = await showPrompt('Projectnaam:', '', { title: 'Nieuw project' });
-      if (!title?.trim()) return;
-      await addProject(title.trim(), '', modeManager.getMode());
-      eventBus.emit('projects:changed');
-    },
-  });
-
-  // BPV quick-log command
-  commandRegistry.register('nav:bpv-log', {
-    label: 'Log BPV uren',
-    icon: '⏱',
-    group: 'navigate',
-    keywords: ['uren', 'bpv', 'loggen', 'log', 'stage', 'hours', 'registreren'],
-    handler: () => {
-      if (modeManager.getMode() !== 'BPV') modeManager.setMode('BPV');
-      setActiveTab('today', { focus: 'mode' });
-    },
-  });
-
-  // Morning flow command
-  commandRegistry.register('flow:morning', {
-    label: 'Start ochtendplan',
-    icon: '☀',
-    group: 'create',
-    keywords: ['ochtend', 'morning', 'plan', 'top 3', 'flow'],
-    handler: () => {
-      setActiveTab('today');
-      setTimeout(() => morningFlow.open(), 100);
-    },
-  });
-
+  // ── Command palette ───────────────────────────────────────
   const cmdPalette = createCommandPalette({
     onNavigate: ({ tab, focus }) => {
       setActiveTab(tab, { focus });
     },
     eventBus,
-    commands: commandRegistry,
+    modeManager,
   });
   app.querySelector('#new-os-shell')?.appendChild(cmdPalette.el);
-
-  // ── Morning Flow ────────────────────────────────────────
-  const morningFlow = createMorningFlow({ modeManager, eventBus });
-  app.querySelector('#new-os-shell')?.appendChild(morningFlow.el);
-
-  // ── Pomodoro floating timer ───────────────────────────────
-  const pomodoro = createPomodoro({ eventBus, modeManager });
-  document.body.appendChild(pomodoro.el);
-  pomodoro.init();
 
   // Global keyboard shortcuts
   function handleGlobalKeydown(e) {
@@ -1077,7 +637,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   // ── Initialize ────────────────────────────────────────────
   setShellMode(modeManager.getMode());
   updateModeBtn();
-  updateSidebarForMode(modeManager.getMode());
 
   // Deep links: determine initial tab from URL hash
   const hashState = parseHash();
@@ -1112,44 +671,10 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const tutorialDelay = modeManager.isFirstVisit?.() ? 1200 : 800;
   setTimeout(() => startTutorial(), tutorialDelay);
 
-  // ── BPV uren reminder bij app openen ────────────────────
-  if (modeManager.getMode() === 'BPV') {
-    (async () => {
-      try {
-        const logged = await isTodayLogged();
-        if (logged) return;
-        const dow = new Date().getDay();
-        if (dow === 0 || dow === 6) return; // skip weekends
-        setTimeout(() => {
-          const banner = document.createElement('div');
-          banner.className = 'os-bpv-reminder';
-          banner.innerHTML = `
-            <span class="os-bpv-reminder__icon">&#9200;</span>
-            <span class="os-bpv-reminder__text">Je hebt vandaag nog geen uren gelogd</span>
-            <button type="button" class="os-bpv-reminder__btn" data-action="goto-log">Nu loggen</button>
-            <button type="button" class="os-bpv-reminder__close" aria-label="Sluiten">&times;</button>
-          `;
-          banner.querySelector('[data-action="goto-log"]')?.addEventListener('click', () => {
-            setActiveTab('today', { focus: 'mode' });
-            banner.remove();
-          });
-          banner.querySelector('.os-bpv-reminder__close')?.addEventListener('click', () => banner.remove());
-          routeContainer?.prepend(banner);
-        }, 1500);
-      } catch { /* non-critical */ }
-    })();
-  }
-
-  // ── Friday prompt (with snooze / disable) ────────────────
+  // ── Friday prompt ─────────────────────────────────────────
   (async () => {
     try {
       if (!isFriday()) return;
-      // Check if user disabled the Friday reminder entirely
-      const disabled = await getSetting('friday_banner_disabled');
-      if (disabled) return;
-      // Check snooze
-      const snoozedUntil = await getSetting('friday_banner_snoozed_until');
-      if (snoozedUntil && getToday() < snoozedUntil) return;
       const week = getISOWeek(getToday());
       const sent = await isReviewSent(week);
       if (sent) return;
@@ -1159,8 +684,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
         banner.innerHTML = `
           <span class="os-friday-prompt__text">Het is vrijdag — tijd voor je weekoverzicht?</span>
           <button type="button" class="os-friday-prompt__btn" data-action="scroll-review">Bekijk</button>
-          <button type="button" class="os-friday-prompt__btn os-friday-prompt__btn--ghost" data-action="snooze-week">Volgende week</button>
-          <button type="button" class="os-friday-prompt__btn os-friday-prompt__btn--ghost" data-action="snooze-month">Volgende maand</button>
           <button type="button" class="os-friday-prompt__close" aria-label="Sluiten">&times;</button>
         `;
         banner.querySelector('[data-action="scroll-review"]')?.addEventListener('click', () => {
@@ -1170,16 +693,6 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
             const review = routeContainer.querySelector('.weekly-review');
             review?.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }, 100);
-        });
-        banner.querySelector('[data-action="snooze-week"]')?.addEventListener('click', () => {
-          const d = new Date(); d.setDate(d.getDate() + 7);
-          setSetting('friday_banner_snoozed_until', d.toISOString().slice(0, 10));
-          banner.remove();
-        });
-        banner.querySelector('[data-action="snooze-month"]')?.addEventListener('click', () => {
-          const d = new Date(); d.setDate(d.getDate() + 30);
-          setSetting('friday_banner_snoozed_until', d.toISOString().slice(0, 10));
-          banner.remove();
         });
         banner.querySelector('.os-friday-prompt__close')?.addEventListener('click', () => banner.remove());
         routeContainer?.prepend(banner);
@@ -1193,9 +706,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     unsubscribeInboxOpen?.();
     Object.values(vandaagSections).forEach(s => s?.destroy());
     cmdPalette.destroy();
-    morningFlow.destroy();
     focusOverlay.destroy();
-    pomodoro.destroy();
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);

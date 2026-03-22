@@ -106,6 +106,17 @@ See `docs/nav-architecture.md` for full implementation details.
 - No hardcoded colors in block styles.
 - Never set spacing/radius/motion tokens as inline styles — they must come from CSS so `[data-compact="true"]` can override them.
 
+## Command Palette Rules
+
+1. **Keyboard-first** — Every palette action must be reachable via keyboard only (arrows + enter + esc). Mouse is optional.
+2. **Commands before search** — Static commands always render above search results. They provide immediate value before the user types anything.
+3. **Progressive disclosure** — Empty state shows all commands. Typing filters commands and triggers search. Two layers of discovery.
+4. **Lazy imports** — Store modules (`tasks.js`, `projects.js`, `search.js`) are imported dynamically to keep the palette lightweight on first load.
+5. **Mode-aware creates** — Create actions use the current mode from `modeManager.getMode()`. No mode picker in the palette — it respects the ambient context.
+6. **Token-only styling** — Command palette CSS uses `var(--color-*)` tokens exclusively. No hardcoded hex values.
+7. **Close before prompt** — Create actions close the palette first, then show `showPrompt()`. This prevents z-index stacking issues and keeps the UI calm.
+8. **EventBus integration** — After creating items, emit the appropriate changed event (`tasks:changed`, `projects:changed`) so all blocks refresh.
+
 ## Data Safety
 
 - Export bundles include `_meta` with app name, version, timestamp, and record counts.

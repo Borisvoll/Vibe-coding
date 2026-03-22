@@ -118,7 +118,7 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     if (tab === 'today') {
       buildVandaagLayout(mode);
       renderVandaagHeader(mode);
-      renderWeekStrip(mode);
+      renderWeekBar();
       initSearchBar();
       showMorningNudge(mode);
     }
@@ -415,54 +415,43 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     `;
   }
 
-  // ── Compact week strip (ma-vr) ──────────────────────────
-  async function renderWeekStrip(mode) {
-    const stripEl = routeContainer.querySelector('[data-vandaag-weekstrip]');
-    if (!stripEl) return;
+  // ── Compact weekbalk — always-visible Mon–Fri progress strip ──
+  function renderWeekBar() {
+    const barEl = routeContainer.querySelector('[data-vandaag-weekbar]');
+    if (!barEl || barEl.children.length > 0) return;
 
     const today = getToday();
-    const d = new Date(today + 'T00:00:00');
-    const dayOfWeek = (d.getDay() + 6) % 7; // 0=ma
-    const monday = new Date(d);
-    monday.setDate(d.getDate() - dayOfWeek);
+    const todayObj = new Date(today + 'T00:00:00');
+    const dayOfWeek = (todayObj.getDay() + 6) % 7; // 0 = Monday
+    const weekStart = new Date(todayObj);
+    weekStart.setDate(todayObj.getDate() - dayOfWeek);
 
-    const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr'];
-    const days = [];
-    for (let i = 0; i < 5; i++) {
-      const date = new Date(monday);
-      date.setDate(monday.getDate() + i);
-      days.push(formatDateISO(date));
-    }
+    const SHORT = ['Ma', 'Di', 'Wo', 'Do', 'Vr'];
+    const workDays = SHORT.map((label, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      return { label, iso, isToday: iso === today, isFuture: d > todayObj };
+    });
 
-    // Render skeleton first
-    stripEl.innerHTML = `<div class="weekstrip">${days.map((date, i) => {
-      const isToday = date === today;
-      const isFuture = date > today;
-      return `<div class="weekstrip__day ${isToday ? 'weekstrip__day--today' : ''} ${isFuture ? 'weekstrip__day--future' : ''}">
-        <span class="weekstrip__label">${dayNames[i]}</span>
-        <span class="weekstrip__circle"></span>
-      </div>`;
-    }).join('')}</div>`;
+    barEl.innerHTML = workDays.map((d) => `
+      <div class="weekbar__day${d.isToday ? ' weekbar__day--today' : ''}${d.isFuture ? ' weekbar__day--future' : ''}">
+        <span class="weekbar__dot" data-weekday="${d.iso}"></span>
+        <span class="weekbar__label">${d.label}</span>
+      </div>
+    `).join('');
 
-    // Load data async
-    try {
-      const allPlans = await getAll('dailyPlans');
-      const planMap = {};
-      for (const plan of allPlans) {
-        if (plan.mode === mode) {
-          planMap[plan.date] = (plan.todos || []).filter(t => t.done).length;
-        }
-      }
-
-      const circleEls = stripEl.querySelectorAll('.weekstrip__circle');
-      days.forEach((date, i) => {
-        const count = planMap[date] || 0;
-        if (count > 0) {
-          circleEls[i].textContent = count;
-          circleEls[i].classList.add('weekstrip__circle--filled');
+    // Load task completions async (non-blocking)
+    getAll('os_tasks').then((tasks) => {
+      workDays.forEach((d) => {
+        const count = tasks.filter((t) => t.doneAt && t.doneAt.startsWith(d.iso)).length;
+        const dot = barEl.querySelector(`[data-weekday="${d.iso}"]`);
+        if (dot && count > 0) {
+          dot.classList.add('weekbar__dot--done');
+          dot.textContent = String(Math.min(count, 9));
         }
       });
-    } catch { /* non-critical */ }
+    }).catch(() => {});
   }
 
   // ── Search bar (with keyboard navigation) ────────────────

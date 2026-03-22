@@ -36,7 +36,7 @@ export function renderDailyCockpit(container, context) {
 
   container.insertAdjacentHTML('beforeend', `
     <div class="daily-cockpit" data-mount-id="${mountId}">
-      <div class="daily-cockpit__stats" data-cockpit-stats></div>
+      <div class="daily-cockpit__stats"></div>
       <div class="daily-cockpit__header">
         <span class="daily-cockpit__title">Nog te doen</span>
         <span class="daily-cockpit__pill"></span>
@@ -61,45 +61,42 @@ export function renderDailyCockpit(container, context) {
   const el = container.querySelector(`[data-mount-id="${mountId}"]`);
   const pillEl = el.querySelector('.daily-cockpit__pill');
   const listEl = el.querySelector('.daily-cockpit__list');
-
-  const statsEl = el.querySelector('[data-cockpit-stats]');
-
-  async function renderStats() {
-    try {
-      const mode = modeManager.getMode();
-      const stats = await getCockpitStats(mode);
-      statsEl.innerHTML = `
-        <div class="daily-cockpit__stat">
-          <span class="daily-cockpit__stat-num">${stats.done}</span>
-          <span class="daily-cockpit__stat-label">gedaan</span>
-        </div>
-        <div class="daily-cockpit__stat">
-          <span class="daily-cockpit__stat-num daily-cockpit__stat-num--streak">${stats.streak > 0 ? stats.streak : '–'}</span>
-          <span class="daily-cockpit__stat-label">streak</span>
-        </div>
-        <div class="daily-cockpit__stat">
-          <span class="daily-cockpit__stat-num">${stats.momentum}</span>
-          <span class="daily-cockpit__stat-label">momentum</span>
-        </div>
-        <div class="daily-cockpit__stat ${stats.inbox > 0 ? 'daily-cockpit__stat--warn' : ''}">
-          <span class="daily-cockpit__stat-num">${stats.inbox}</span>
-          <span class="daily-cockpit__stat-label">inbox</span>
-        </div>
-      `;
-    } catch { /* non-critical */ }
-  }
+  const statsEl = el.querySelector('.daily-cockpit__stats');
 
   async function render() {
-    let items;
+    let items, stats;
     try {
       const mode = modeManager.getMode();
-      items = await getCockpitItems(mode);
+      [items, stats] = await Promise.all([
+        getCockpitItems(mode),
+        getCockpitStats(mode),
+      ]);
     } catch (err) {
       console.error('[daily-cockpit] Failed to load cockpit data:', err);
       return;
     }
     const doneCount = items.filter((i) => i.done).length;
     const openCount = items.length - doneCount;
+
+    // Update stats row
+    statsEl.innerHTML = `
+      <div class="daily-cockpit__stat">
+        <span class="daily-cockpit__stat-val">${stats.tasksCompleted}</span>
+        <span class="daily-cockpit__stat-lbl">gedaan</span>
+      </div>
+      <div class="daily-cockpit__stat">
+        <span class="daily-cockpit__stat-val">${stats.streak > 0 ? stats.streak + ' 🔥' : '—'}</span>
+        <span class="daily-cockpit__stat-lbl">streak</span>
+      </div>
+      <div class="daily-cockpit__stat">
+        <span class="daily-cockpit__stat-val">${stats.momentumScore}</span>
+        <span class="daily-cockpit__stat-lbl">momentum</span>
+      </div>
+      <div class="daily-cockpit__stat ${stats.inboxBacklog > 0 ? 'daily-cockpit__stat--warn' : ''}">
+        <span class="daily-cockpit__stat-val">${stats.inboxBacklog}</span>
+        <span class="daily-cockpit__stat-lbl">inbox</span>
+      </div>
+    `;
 
     // Update pill
     if (openCount === 0) {
@@ -129,18 +126,16 @@ export function renderDailyCockpit(container, context) {
   }
 
   // Event subscriptions for reactive updates
-  function refreshAll() { render(); renderStats(); }
   const unsubs = [
-    eventBus.on('mode:changed', refreshAll),
-    eventBus.on('daily:changed', refreshAll),
-    eventBus.on('tasks:changed', refreshAll),
-    eventBus.on('inbox:changed', refreshAll),
-    eventBus.on('projects:changed', refreshAll),
-    eventBus.on('bpv:changed', refreshAll),
+    eventBus.on('mode:changed', render),
+    eventBus.on('daily:changed', render),
+    eventBus.on('tasks:changed', render),
+    eventBus.on('inbox:changed', render),
+    eventBus.on('projects:changed', render),
+    eventBus.on('bpv:changed', render),
   ];
 
   render();
-  renderStats();
 
   return {
     unmount() {

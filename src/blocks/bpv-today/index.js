@@ -7,7 +7,7 @@ export function registerBPVTodayBlock(registry) {
     hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
-    order: 40,
+    order: 20,
     mount(container, context) {
       return renderBPVToday(container, context);
     },

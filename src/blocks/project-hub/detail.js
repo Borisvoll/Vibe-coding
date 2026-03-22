@@ -204,6 +204,8 @@ export function renderProjectDetail(container, context, projectId, onBack) {
       import('./tabs/mindmap.js').then(({ renderMindmapTab }) => {
         contentEl.innerHTML = '';
         tabCleanup = renderMindmapTab(contentEl, project, context);
+      }).catch(() => {
+        contentEl.innerHTML = '<p class="hub-detail__loading">Mindmap kon niet geladen worden.</p>';
       });
       return;
     } else if (tabId === 'files') {

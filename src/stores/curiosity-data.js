@@ -63,7 +63,7 @@ export async function getVonk() {
   try {
     const all = await getAll(INBOX_STORE);
     const cutoff = Date.now() - 14 * 86400000;
-    const old = all.filter(item => new Date(item.createdAt).getTime() < cutoff);
+    const old = all.filter(item => item.createdAt && new Date(item.createdAt).getTime() < cutoff);
     const picked = seedPick(old);
     if (!picked) return null;
     return {
@@ -130,7 +130,7 @@ export async function getVergeten() {
     const all = await getAll(INBOX_STORE);
     const active = all
       .filter(item => item.status === 'inbox')
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      .sort((a, b) => (a.createdAt || '').localeCompare(b.createdAt || ''));
 
     if (!active.length) return null;
 

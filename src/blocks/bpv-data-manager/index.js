@@ -7,7 +7,7 @@ export function registerBPVDataManagerBlock(registry) {
     hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
-    order: 20,
+    order: 40,
     mount(container, context) {
       return renderBPVDataManager(container, context);
     },

@@ -9,7 +9,7 @@ export async function getInboxItems() {
   const all = await getAll(STORE);
   return all
     .filter((item) => item.status === 'inbox')
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 }
 
 export async function getInboxItemById(id) {

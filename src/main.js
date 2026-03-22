@@ -30,6 +30,7 @@ import { showToast } from './toast.js';
 import { purgeOldReviewMarkers } from './stores/weekly-review.js';
 import { purgeOldDoneTasks } from './stores/tasks.js';
 import { applyDefaultPresetForMode } from './core/modulePresets.js';
+import { cloudSync } from './sync-cloud.js';
 
 export const SCHEMA_VERSION = 9;
 
@@ -155,6 +156,9 @@ async function initNewOSShell() {
 
   createOSShell(app, { eventBus, modeManager, blockRegistry });
   initClickSound(eventBus, modeManager);
+
+  // Initialize cloud sync (non-blocking — resumes if previously configured)
+  cloudSync.init(eventBus).catch(() => { /* non-critical */ });
 }
 
 async function initServiceWorker() {

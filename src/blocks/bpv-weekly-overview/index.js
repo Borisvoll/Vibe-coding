@@ -7,7 +7,7 @@ export function registerBPVWeeklyOverviewBlock(registry) {
     hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
-    order: 14,
+    order: 25,
     mount(container, context) {
       return renderBPVWeeklyOverview(container, context);
     },

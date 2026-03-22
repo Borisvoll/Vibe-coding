@@ -7,7 +7,7 @@ export function registerBPVQuickLogBlock(registry) {
     hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
-    order: 8,
+    order: 15,
     mount(container, context) {
       return renderBPVQuickLog(container, context);
     },

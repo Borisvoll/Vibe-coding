@@ -4,10 +4,10 @@ export function registerBPVProgressBlock(registry) {
   registry.register({
     id: 'bpv-progress',
     title: 'BPV Voortgang',
-    hosts: ['vandaag-hero'],
+    hosts: ['vandaag-mode'],
     modes: ['BPV'],
     enabled: true,
-    order: 19,
+    order: 5,
     mount(container, context) {
       return renderBPVProgress(container, context);
     },

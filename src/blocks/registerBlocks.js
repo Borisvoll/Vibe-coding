@@ -38,6 +38,7 @@ import './bpv-heatmap/styles.css';
 import './bpv-leerdoelen/styles.css';
 import './bpv-checkin/styles.css';
 import './bpv-progress/styles.css';
+import './bpv-today/styles.css';
 import '../ui/theme-studio.css';
 import '../ui/morning-flow.css';
 import { registerMorningFocusBlock } from './morning-focus/index.js';

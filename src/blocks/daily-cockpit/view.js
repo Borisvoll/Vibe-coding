@@ -19,7 +19,6 @@ function createDeepLinks(context) {
     inbox:      () => eventBus.emit('inbox:open'),
     projects:   () => scrollTo('.projects-block'),
     reflection: () => {
-      // Open the reflection collapsible, then scroll
       const header = document.querySelector('[data-collapse-id="vandaag-reflection"] .collapsible-section__header');
       if (header?.getAttribute('aria-expanded') === 'false') header.click();
       setTimeout(() => scrollTo('.daily-reflection'), 150);
@@ -63,6 +62,21 @@ export function renderDailyCockpit(container, context) {
   const listEl = el.querySelector('.daily-cockpit__list');
   const statsEl = el.querySelector('.daily-cockpit__stats');
 
+  // Event delegation — attach once, never re-attach
+  statsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-stat-link]');
+    if (!btn) return;
+    const link = btn.dataset.statLink;
+    if (deepLinks[link]) deepLinks[link]();
+  });
+
+  listEl.addEventListener('click', (e) => {
+    const item = e.target.closest('.daily-cockpit__item');
+    if (!item) return;
+    const link = item.dataset.link;
+    if (deepLinks[link]) deepLinks[link]();
+  });
+
   async function render() {
     let items, stats;
     try {
@@ -78,7 +92,7 @@ export function renderDailyCockpit(container, context) {
     const doneCount = items.filter((i) => i.done).length;
     const openCount = items.length - doneCount;
 
-    // Update stats row — each stat is clickable and navigates to its section
+    // Stats row
     statsEl.innerHTML = `
       <button type="button" class="daily-cockpit__stat daily-cockpit__stat--link" data-stat-link="todos">
         <span class="daily-cockpit__stat-val">${stats.tasksCompleted}</span>
@@ -98,15 +112,7 @@ export function renderDailyCockpit(container, context) {
       </button>
     `;
 
-    // Attach click handlers to stats
-    statsEl.querySelectorAll('[data-stat-link]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const link = btn.dataset.statLink;
-        if (deepLinks[link]) deepLinks[link]();
-      });
-    });
-
-    // Update pill
+    // Pill
     if (openCount === 0) {
       pillEl.textContent = 'Alles klaar!';
       pillEl.className = 'daily-cockpit__pill daily-cockpit__pill--done';
@@ -115,7 +121,7 @@ export function renderDailyCockpit(container, context) {
       pillEl.className = 'daily-cockpit__pill';
     }
 
-    // Render items
+    // Items
     listEl.innerHTML = items.map((item) => `
       <li class="daily-cockpit__item ${item.done ? 'daily-cockpit__item--done' : ''}" data-link="${item.deepLink}">
         <span class="daily-cockpit__check">${item.done ? '✓' : ''}</span>
@@ -123,14 +129,6 @@ export function renderDailyCockpit(container, context) {
         ${!item.done ? '<span class="daily-cockpit__go">Nu →</span>' : ''}
       </li>
     `).join('');
-
-    // Attach deep link handlers
-    listEl.querySelectorAll('.daily-cockpit__item').forEach((li) => {
-      li.addEventListener('click', () => {
-        const link = li.dataset.link;
-        if (deepLinks[link]) deepLinks[link]();
-      });
-    });
   }
 
   // Event subscriptions for reactive updates

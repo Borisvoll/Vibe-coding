@@ -16,160 +16,6 @@
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-2);
   margin-bottom: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border-light);
-}
-
-.daily-cockpit__stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.daily-cockpit__stat-num {
-  font-size: var(--font-xl, 1.5rem);
-  font-weight: 700;
-  line-height: 1;
-  color: var(--mode-accent, var(--color-accent));
-}
-
-.daily-cockpit__stat-num--streak {
-  color: var(--color-warning, #dd6b20);
-}
-
-.daily-cockpit__stat-label {
-  font-size: var(--font-xs);
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.daily-cockpit__stat--warn .daily-cockpit__stat-num {
-  color: var(--color-warning, #dd6b20);
-}
-
-.daily-cockpit__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: var(--space-3);
-}
-
-.daily-cockpit__title {
-  font-size: var(--font-sm);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--color-text-tertiary);
-}
-
-.daily-cockpit__pill {
-  font-size: var(--font-xs);
-  font-weight: 600;
-  padding: 0.0625rem var(--space-2);
-  border-radius: var(--radius-full);
-  color: var(--mode-accent, var(--color-accent));
-  background: color-mix(in srgb, var(--mode-accent, var(--color-accent)) 12%, transparent);
-  line-height: 1.4;
-}
-
-.daily-cockpit__pill--done {
-  color: var(--color-emerald);
-  background: color-mix(in srgb, var(--color-emerald) 12%, transparent);
-}
-
-/* ── List ──────────────────────────────────────────────────── */
-
-.daily-cockpit__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.daily-cockpit__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-2);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: background var(--duration-fast) var(--ease);
-}
-
-.daily-cockpit__item:hover {
-  background: var(--color-surface-hover);
-}
-
-/* ── Check circle ─────────────────────────────────────────── */
-
-.daily-cockpit__check {
-  width: 18px;
-  height: 18px;
-  border-radius: var(--radius-full);
-  border: 1.5px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-xs);
-  flex-shrink: 0;
-  transition: all var(--duration-fast) var(--ease);
-  color: transparent;
-}
-
-.daily-cockpit__item--done .daily-cockpit__check {
-  border-color: var(--mode-accent, var(--color-accent));
-  background: var(--mode-accent, var(--color-accent));
-  color: white;
-}
-
-/* ── Label ────────────────────────────────────────────────── */
-
-.daily-cockpit__label {
-  flex: 1;
-  font-size: var(--font-md);
-  color: var(--color-text);
-  transition: color var(--duration-fast) var(--ease);
-}
-
-.daily-cockpit__item--done .daily-cockpit__label {
-  color: var(--color-text-tertiary);
-  text-decoration: line-through;
-  text-decoration-color: var(--color-border);
-}
-
-/* ── "Nu →" action ────────────────────────────────────────── */
-
-.daily-cockpit__go {
-  font-size: var(--font-xs);
-  font-weight: 600;
-  color: var(--mode-accent, var(--color-accent));
-  opacity: 0;
-  transition: opacity var(--duration-fast) var(--ease);
-  white-space: nowrap;
-}
-
-.daily-cockpit__item:hover .daily-cockpit__go {
-  opacity: 1;
-}
-
-/* On touch devices, always show the "Nu →" */
-@media (hover: none) {
-  .daily-cockpit__go {
-    opacity: 0.7;
-  }
-}
-
-/* ── Stats row ─────────────────────────────────────────────── */
-
-.daily-cockpit__stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
   padding-bottom: var(--space-3);
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -214,6 +60,121 @@
 .daily-cockpit__stat--link:hover {
   background: var(--color-surface-hover);
 }
+
+/* ── Header ───────────────────────────────────────────── */
+
+.daily-cockpit__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.daily-cockpit__title {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-tertiary);
+}
+
+.daily-cockpit__pill {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  padding: 0.0625rem var(--space-2);
+  border-radius: var(--radius-full);
+  color: var(--mode-accent, var(--color-accent));
+  background: color-mix(in srgb, var(--mode-accent, var(--color-accent)) 12%, transparent);
+  line-height: 1.4;
+}
+
+.daily-cockpit__pill--done {
+  color: var(--color-emerald);
+  background: color-mix(in srgb, var(--color-emerald) 12%, transparent);
+}
+
+/* ── List ──────────────────────────────────────────────────── */
+
+.daily-cockpit__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.daily-cockpit__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease);
+}
+
+.daily-cockpit__item:hover {
+  background: var(--color-surface-hover);
+}
+
+/* ── Check circle ─────────────────────────────────────────── */
+
+.daily-cockpit__check {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-xs);
+  flex-shrink: 0;
+  transition: background var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease);
+  color: transparent;
+}
+
+.daily-cockpit__item--done .daily-cockpit__check {
+  border-color: var(--mode-accent, var(--color-accent));
+  background: var(--mode-accent, var(--color-accent));
+  color: white;
+}
+
+/* ── Label ────────────────────────────────────────────────── */
+
+.daily-cockpit__label {
+  flex: 1;
+  font-size: var(--font-md);
+  color: var(--color-text);
+}
+
+.daily-cockpit__item--done .daily-cockpit__label {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--color-border);
+}
+
+/* ── "Nu →" action ────────────────────────────────────────── */
+
+.daily-cockpit__go {
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--mode-accent, var(--color-accent));
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease);
+  white-space: nowrap;
+}
+
+.daily-cockpit__item:hover .daily-cockpit__go {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .daily-cockpit__go {
+    opacity: 0.7;
+  }
+}
+
+/* ── Toggle ───────────────────────────────────────────────── */
 
 .daily-cockpit__show-toggle {
   display: block;

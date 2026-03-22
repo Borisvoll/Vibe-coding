@@ -76,51 +76,32 @@
 .daily-todos__list {
   list-style: none;
   margin: 0;
-  padding: var(--space-2) var(--space-3);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
 }
 
-/* Task item — card style */
+/* Task item — clean list style */
 .daily-todos__item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm, 6px);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.03);
-  transition: box-shadow 150ms var(--ease), background 120ms var(--ease), opacity 200ms var(--ease);
+  padding: var(--space-3) var(--space-3);
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background 150ms var(--ease), opacity 150ms var(--ease);
   position: relative;
 }
 
+.daily-todos__item:last-child {
+  border-bottom: none;
+}
+
 .daily-todos__item:hover {
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05);
+  background: var(--color-surface-hover);
 }
 
 .daily-todos__item--done {
-  opacity: 0.5;
-  box-shadow: none;
-}
-
-/* Left accent bar via pseudo element */
-.daily-todos__item::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 20%;
-  bottom: 20%;
-  width: 3px;
-  border-radius: 0 2px 2px 0;
-  background: var(--todo-color, var(--color-accent));
-  opacity: 0.6;
-  transition: opacity var(--duration-slow);
-}
-
-.daily-todos__item--done::before {
-  opacity: 0.2;
+  opacity: 0.45;
 }
 
 /* Checkbox */
@@ -138,13 +119,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 150ms var(--ease), color 150ms var(--ease),
-              transform 100ms var(--ease);
+  transition: background 150ms var(--ease), color 150ms var(--ease);
 }
 
 .daily-todos__check:hover {
-  background: color-mix(in srgb, var(--todo-color, var(--color-accent)) 15%, transparent);
-  transform: scale(1.08);
+  background: color-mix(in srgb, var(--todo-color, var(--color-accent)) 12%, transparent);
 }
 
 .daily-todos__item--done .daily-todos__check {

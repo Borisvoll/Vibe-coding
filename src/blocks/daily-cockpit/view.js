@@ -1,5 +1,6 @@
 import { getCockpitItems, getCockpitStats } from '../../os/cockpitData.js';
 import { getSetting } from '../../db.js';
+import { debounce } from '../../utils.js';
 
 /**
  * Deep link handlers per action type.
@@ -131,14 +132,17 @@ export function renderDailyCockpit(container, context) {
     `).join('');
   }
 
-  // Event subscriptions for reactive updates
+  // Debounce: multiple events often fire in quick succession (e.g. mode switch
+  // triggers mode:changed + tasks:changed). Without debounce, each fires a full
+  // render with 2 async DB reads + N+1 momentum scans.
+  const debouncedRender = debounce(render, 80);
   const unsubs = [
-    eventBus.on('mode:changed', render),
-    eventBus.on('daily:changed', render),
-    eventBus.on('tasks:changed', render),
-    eventBus.on('inbox:changed', render),
-    eventBus.on('projects:changed', render),
-    eventBus.on('bpv:changed', render),
+    eventBus.on('mode:changed', debouncedRender),
+    eventBus.on('daily:changed', debouncedRender),
+    eventBus.on('tasks:changed', debouncedRender),
+    eventBus.on('inbox:changed', debouncedRender),
+    eventBus.on('projects:changed', debouncedRender),
+    eventBus.on('bpv:changed', debouncedRender),
   ];
 
   render();

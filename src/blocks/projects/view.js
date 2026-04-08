@@ -157,15 +157,7 @@ export function renderProjects(container, context) {
     }));
 
     listEl.innerHTML = focusStripHtml + rows.join('');
-    bindEvents(projects);
-
-    // Unpin handler
-    listEl.querySelector('[data-unpin]')?.addEventListener('click', async (e) => {
-      const projectId = e.currentTarget.dataset.unpin;
-      await unpinProject(projectId);
-      eventBus.emit('projects:changed');
-      await render();
-    });
+    _currentProjects = projects;
   }
 
   function renderDetail(project, nextActionTask) {
@@ -211,81 +203,89 @@ export function renderProjects(container, context) {
     `;
   }
 
-  function bindEvents(projects) {
+  // Event delegation on listEl — single click + submit listener survives re-renders
+  let _currentProjects = [];
+
+  listEl.addEventListener('click', async (e) => {
     // Open project in Planning tab
-    listEl.querySelectorAll('[data-open-project]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const projectId = btn.dataset.openProject;
-        eventBus.emit('projects:open', { projectId });
-      });
-    });
-
-    // Expand/collapse
-    listEl.querySelectorAll('[data-expand]').forEach((summary) => {
-      summary.addEventListener('click', () => {
-        const projectId = summary.closest('[data-project-id]')?.dataset?.projectId;
-        if (!projectId) return;
-        expandedId = (expandedId === projectId) ? null : projectId;
-        render();
-      });
-    });
-
-    // Set next action (creates new task + links it)
-    listEl.querySelectorAll('[data-set-next-action]').forEach((form) => {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const projectId = form.closest('[data-project-id]')?.dataset?.projectId;
-        if (!projectId) return;
-        const input = form.querySelector('[data-next-action-input]');
-        const text = input.value.trim();
-        if (!text) return;
-        const project = projects.find((p) => p.id === projectId);
-        const mode = project?.mode || modeManager.getMode();
-        const task = await addTask(text, mode);
-        await setNextAction(projectId, task.id);
-        eventBus.emit('tasks:changed');
-        eventBus.emit('projects:changed');
-        await render();
-      });
-    });
+    const openBtn = e.target.closest('[data-open-project]');
+    if (openBtn) {
+      e.stopPropagation();
+      eventBus.emit('projects:open', { projectId: openBtn.dataset.openProject });
+      return;
+    }
 
     // Clear next action
-    listEl.querySelectorAll('[data-clear-next-action]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const projectId = btn.closest('[data-project-id]')?.dataset?.projectId;
-        if (!projectId) return;
-        await clearNextAction(projectId);
-        eventBus.emit('projects:changed');
-        await render();
-      });
-    });
+    if (e.target.closest('[data-clear-next-action]')) {
+      const projectId = e.target.closest('[data-project-id]')?.dataset?.projectId;
+      if (!projectId) return;
+      await clearNextAction(projectId);
+      eventBus.emit('projects:changed');
+      await render();
+      return;
+    }
 
     // Status change (active/paused/done)
-    listEl.querySelectorAll('[data-project-status]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const projectId = btn.closest('[data-project-id]')?.dataset?.projectId;
-        if (!projectId) return;
-        const status = btn.dataset.projectStatus;
-        await updateProject(projectId, { status });
-        if (expandedId === projectId) expandedId = null;
-        eventBus.emit('projects:changed');
-        await render();
-      });
-    });
+    const statusBtn = e.target.closest('[data-project-status]');
+    if (statusBtn) {
+      const projectId = statusBtn.closest('[data-project-id]')?.dataset?.projectId;
+      if (!projectId) return;
+      const status = statusBtn.dataset.projectStatus;
+      await updateProject(projectId, { status });
+      if (expandedId === projectId) expandedId = null;
+      eventBus.emit('projects:changed');
+      await render();
+      return;
+    }
 
-    // Delete
-    listEl.querySelectorAll('[data-delete-project]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const projectId = btn.closest('[data-project-id]')?.dataset?.projectId;
-        if (!projectId) return;
-        await deleteProject(projectId);
-        if (expandedId === projectId) expandedId = null;
-        eventBus.emit('projects:changed');
-        await render();
-      });
-    });
-  }
+    // Delete project
+    if (e.target.closest('[data-delete-project]')) {
+      const projectId = e.target.closest('[data-project-id]')?.dataset?.projectId;
+      if (!projectId) return;
+      await deleteProject(projectId);
+      if (expandedId === projectId) expandedId = null;
+      eventBus.emit('projects:changed');
+      await render();
+      return;
+    }
+
+    // Unpin handler
+    const unpinBtn = e.target.closest('[data-unpin]');
+    if (unpinBtn) {
+      await unpinProject(unpinBtn.dataset.unpin);
+      eventBus.emit('projects:changed');
+      await render();
+      return;
+    }
+
+    // Expand/collapse (checked last since [data-expand] wraps other buttons)
+    const expandEl = e.target.closest('[data-expand]');
+    if (expandEl) {
+      const projectId = expandEl.closest('[data-project-id]')?.dataset?.projectId;
+      if (!projectId) return;
+      expandedId = (expandedId === projectId) ? null : projectId;
+      render();
+      return;
+    }
+  });
+
+  listEl.addEventListener('submit', async (e) => {
+    const form = e.target.closest('[data-set-next-action]');
+    if (!form) return;
+    e.preventDefault();
+    const projectId = form.closest('[data-project-id]')?.dataset?.projectId;
+    if (!projectId) return;
+    const input = form.querySelector('[data-next-action-input]');
+    const text = input.value.trim();
+    if (!text) return;
+    const project = _currentProjects.find((p) => p.id === projectId);
+    const mode = project?.mode || modeManager.getMode();
+    const task = await addTask(text, mode);
+    await setNextAction(projectId, task.id);
+    eventBus.emit('tasks:changed');
+    eventBus.emit('projects:changed');
+    await render();
+  });
 
   const unsubMode = eventBus.on('mode:changed', () => render());
   const unsubProjects = eventBus.on('projects:changed', () => render());

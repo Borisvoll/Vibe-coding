@@ -3,12 +3,7 @@ import { getPinnedProject } from '../../stores/projects.js';
 import { getByKey } from '../../db.js';
 import { getToday, escapeHTML } from '../../utils.js';
 import { getFlowState } from '../../ui/morning-flow.js';
-
-const MODE_ACCENT = {
-  School:   { color: 'var(--color-purple)',  light: 'var(--color-purple-light)' },
-  Personal: { color: 'var(--color-emerald)', light: 'var(--color-emerald-light)' },
-  BPV:      { color: 'var(--color-blue)',    light: 'var(--color-blue-light)' },
-};
+import { MODE_META } from '../../os/shell.js';
 
 export function renderMorningFocus(container, context) {
   const mountId = crypto.randomUUID();
@@ -33,7 +28,7 @@ export function renderMorningFocus(container, context) {
     }
 
     el.hidden = false;
-    const meta = MODE_ACCENT[mode] || MODE_ACCENT.School;
+    const meta = MODE_META[mode] || MODE_META.School;
     const entry = await getDailyEntry(mode, today);
     const outcomes = (entry?.outcomes || []).filter((o) => o.trim());
 
@@ -56,7 +51,7 @@ export function renderMorningFocus(container, context) {
     }
 
     el.innerHTML = `
-      <div class="morning-focus__card" style="--focus-color:${meta.color};--focus-light:${meta.light}">
+      <div class="morning-focus__card" style="--focus-color:${meta.color};--focus-light:${meta.colorLight}">
         <div class="morning-focus__header">
           <span class="morning-focus__check">✓</span>
           <span class="morning-focus__label">Ochtendplan klaar</span>

@@ -1,13 +1,8 @@
 import { getDailyEntry, addTodo, toggleTodo, deleteTodo } from '../../stores/daily.js';
 import { getToday, escapeHTML } from '../../utils.js';
 import { showUndoToast } from '../../toast.js';
+import { MODE_META } from '../../os/shell.js';
 import './styles.css';
-
-const MODE_META = {
-  School:   { emoji: '📚', color: 'var(--color-purple)',  label: 'School' },
-  Personal: { emoji: '🌱', color: 'var(--color-emerald)', label: 'Persoonlijk' },
-  BPV:      { emoji: '🏢', color: 'var(--color-blue)',    label: 'BPV' },
-};
 
 export function renderDailyTodos(container, context) {
   const mountId = crypto.randomUUID();

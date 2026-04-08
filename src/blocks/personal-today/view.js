@@ -14,8 +14,7 @@ export function renderPersonalToday(container, context) {
       getMeaningfulAction(),
       getWellbeingLine(),
     ]);
-    const host = container.querySelector(`[data-block-id="${mountId}"]`);
-    if (!host) return;
+    if (!host || !host.parentNode) return;
 
     host.innerHTML = `
       <h3 class="school-block__title">Persoonlijk vandaag</h3>
@@ -39,33 +38,57 @@ export function renderPersonalToday(container, context) {
       <div class="school-block__actions"><button class="btn btn-primary btn-sm" data-action="save-action">Opslaan</button></div>
     `;
 
-    host.querySelector('[data-action="add-task"]')?.addEventListener('click', async () => {
-      if (tasks.length >= cap) return;
-      const text = host.querySelector('[data-field="task"]').value.trim();
-      if (!text) return;
-      await addTask(text);
-      render();
-    });
-    host.querySelectorAll('[data-action="del-task"]').forEach((b) => b.addEventListener('click', async () => { await removeTask(b.dataset.id); render(); }));
-
-    host.querySelector('[data-action="add-agenda"]')?.addEventListener('click', async () => {
-      const start = host.querySelector('[data-field="agenda-start"]').value;
-      const end = host.querySelector('[data-field="agenda-end"]').value;
-      const title = host.querySelector('[data-field="agenda-title"]').value.trim();
-      if (!title) return;
-      await addAgenda({ start, end, title });
-      render();
-    });
-    host.querySelectorAll('[data-action="del-agenda"]').forEach((b) => b.addEventListener('click', async () => { await removeAgenda(b.dataset.id); render(); }));
-
-    host.querySelector('[data-action="save-action"]')?.addEventListener('click', async () => {
-      await saveWellbeingLine(host.querySelector('[data-field="wellbeing"]').value.trim());
-      await saveMeaningfulAction(host.querySelector('[data-field="meaningful"]').value.trim());
-      render();
-    });
   }
 
   container.insertAdjacentHTML('beforeend', `<article class="os-mini-card school-block school-block--wide" data-block-id="${mountId}"></article>`);
+  const host = container.querySelector(`[data-block-id="${mountId}"]`);
+
+  // Event delegation — single listener survives re-renders
+  host.addEventListener('click', async (e) => {
+    const actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+
+    const action = actionEl.dataset.action;
+
+    switch (action) {
+      case 'add-task': {
+        const cap = getTaskCap(context?.mode || 'Personal');
+        const tasks = await listTasks();
+        if (tasks.length >= cap) return;
+        const text = host.querySelector('[data-field="task"]').value.trim();
+        if (!text) return;
+        await addTask(text);
+        render();
+        break;
+      }
+      case 'del-task': {
+        await removeTask(actionEl.dataset.id);
+        render();
+        break;
+      }
+      case 'add-agenda': {
+        const start = host.querySelector('[data-field="agenda-start"]').value;
+        const end = host.querySelector('[data-field="agenda-end"]').value;
+        const title = host.querySelector('[data-field="agenda-title"]').value.trim();
+        if (!title) return;
+        await addAgenda({ start, end, title });
+        render();
+        break;
+      }
+      case 'del-agenda': {
+        await removeAgenda(actionEl.dataset.id);
+        render();
+        break;
+      }
+      case 'save-action': {
+        await saveWellbeingLine(host.querySelector('[data-field="wellbeing"]').value.trim());
+        await saveMeaningfulAction(host.querySelector('[data-field="meaningful"]').value.trim());
+        render();
+        break;
+      }
+    }
+  });
+
   render();
-  return { unmount() { container.querySelector(`[data-block-id="${mountId}"]`)?.remove(); } };
+  return { unmount() { host.remove(); } };
 }

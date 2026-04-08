@@ -8,12 +8,7 @@ import {
   getTodayCompletions,
 } from '../../stores/habits.js';
 import { escapeHTML, getToday } from '../../utils.js';
-
-const MODE_COLORS = {
-  School:   'var(--color-purple)',
-  Personal: 'var(--color-emerald)',
-  BPV:      'var(--color-blue)',
-};
+import { MODE_META } from '../../os/shell.js';
 
 const HABIT_ICONS = ['✓', '🏃', '📚', '💧', '🧘', '🎯', '💪', '🌱'];
 
@@ -46,7 +41,7 @@ export function renderHabitsBlock(container, context) {
 
   function getModeColor() {
     const mode = modeManager.getMode();
-    return MODE_COLORS[mode] || 'var(--color-accent)';
+    return MODE_META[mode]?.color || 'var(--color-accent)';
   }
 
   // ── Render ───────────────────────────────────────────────

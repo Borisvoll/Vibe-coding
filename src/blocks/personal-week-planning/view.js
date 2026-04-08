@@ -8,8 +8,7 @@ export function renderPersonalWeekPlanning(container) {
 
   async function render() {
     const items = await listWeekPlan();
-    const host = container.querySelector(`[data-block-id="${mountId}"]`);
-    if (!host) return;
+    if (!host || !host.parentNode) return;
 
     host.innerHTML = `
       <h3 class="school-block__title">Eenvoudige weekplanning</h3>
@@ -23,21 +22,35 @@ export function renderPersonalWeekPlanning(container) {
       </ul>
     `;
 
-    host.querySelector('[data-action="add"]')?.addEventListener('click', async () => {
-      const day = host.querySelector('[data-field="day"]').value;
-      const plan = host.querySelector('[data-field="plan"]').value.trim();
-      if (!plan) return;
-      await addWeekItem({ day, plan });
-      render();
-    });
-
-    host.querySelectorAll('[data-action="delete"]').forEach((b) => b.addEventListener('click', async () => {
-      await deleteWeekItem(b.dataset.id);
-      render();
-    }));
   }
 
   container.insertAdjacentHTML('beforeend', `<article class="os-mini-card school-block" data-block-id="${mountId}"></article>`);
+  const host = container.querySelector(`[data-block-id="${mountId}"]`);
+
+  // Event delegation — single listener survives re-renders
+  host.addEventListener('click', async (e) => {
+    const actionEl = e.target.closest('[data-action]');
+    if (!actionEl) return;
+
+    const action = actionEl.dataset.action;
+
+    switch (action) {
+      case 'add': {
+        const day = host.querySelector('[data-field="day"]').value;
+        const plan = host.querySelector('[data-field="plan"]').value.trim();
+        if (!plan) return;
+        await addWeekItem({ day, plan });
+        render();
+        break;
+      }
+      case 'delete': {
+        await deleteWeekItem(actionEl.dataset.id);
+        render();
+        break;
+      }
+    }
+  });
+
   render();
-  return { unmount() { container.querySelector(`[data-block-id="${mountId}"]`)?.remove(); } };
+  return { unmount() { host.remove(); } };
 }

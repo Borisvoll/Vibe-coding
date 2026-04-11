@@ -62,6 +62,7 @@ async function init() {
   await checkBPVRetirement();
   await migratePersonalTasks();
   await checkExportReminder();
+  await checkImportRecovery();
   // Purge soft-deleted tombstones older than 30 days (fire-and-forget)
   purgeDeletedOlderThan(30).catch(() => { /* non-critical */ });
   // Purge weekly-review sent markers older than 52 weeks (fire-and-forget)
@@ -136,6 +137,22 @@ async function checkExportReminder() {
       showToast(`Laatste backup: ${daysSince} dagen geleden. Exporteer je data via Instellingen.`, { type: 'info', duration: 8000 });
     }, 2000);
   }
+}
+
+async function checkImportRecovery() {
+  try {
+    const raw = localStorage.getItem('boris_import_recovery');
+    if (!raw) return;
+    const critical = JSON.parse(raw);
+    // Check if hours store is empty — if so, a previous import crashed
+    const hours = await getAll('hours').catch(() => []);
+    if (hours.length === 0 && critical.hours?.length > 0) {
+      for (const record of critical.hours) await put('hours', record);
+      for (const record of (critical.logbook || [])) await put('logbook', record);
+      showToast('Uren hersteld na mislukte import', { type: 'warning', duration: 8000 });
+    }
+    localStorage.removeItem('boris_import_recovery');
+  } catch { /* non-critical */ }
 }
 
 async function initNewOSShell() {

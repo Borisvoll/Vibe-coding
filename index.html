@@ -127,6 +127,10 @@
             </svg>
           </button>
           <span class="os-topbar__spacer"></span>
+          <button id="topbar-sync-btn" type="button" class="os-topbar__sync" hidden aria-label="Sync status" data-tooltip="Sync" data-tooltip-pos="bottom">
+            <span class="sync-status-dot" data-topbar-sync-dot></span>
+            <span class="os-topbar__sync-label" data-topbar-sync-label></span>
+          </button>
           <div class="os-topbar__gear-wrap">
             <button id="topbar-settings-btn" type="button" class="os-topbar__gear" aria-label="Instellingen" aria-haspopup="true" data-tooltip="Instellingen" data-tooltip-pos="bottom">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -199,6 +203,9 @@
             <span class="os-shell__date"></span>
           </div>
           <div class="os-shell__header-actions">
+            <button id="mobile-sync-btn" type="button" class="os-topbar__sync os-topbar__sync--mobile" hidden aria-label="Sync status">
+              <span class="sync-status-dot" data-mobile-sync-dot></span>
+            </button>
             <button id="mobile-search-btn" type="button" class="os-shell__header-btn" aria-label="Zoeken">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
             </button>

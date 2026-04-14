@@ -63,6 +63,21 @@ export function renderInbox(container, context) {
     if (expanded) renderList();
   });
 
+  listEl.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const itemId = btn.closest('[data-item-id]')?.getAttribute('data-item-id');
+    if (!itemId) return;
+    if (btn.getAttribute('data-action') === 'promote') {
+      await promoteToTask(itemId);
+      eventBus.emit('tasks:changed');
+    } else {
+      await archiveItem(itemId);
+    }
+    eventBus.emit('inbox:changed');
+    await refresh();
+  });
+
   let submitting = false;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -110,21 +125,6 @@ export function renderInbox(container, context) {
         </div>
       </div>
     `).join('');
-
-    listEl.querySelectorAll('[data-action]').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const itemId = btn.closest('[data-item-id]')?.getAttribute('data-item-id');
-        if (!itemId) return;
-        if (btn.getAttribute('data-action') === 'promote') {
-          await promoteToTask(itemId);
-          eventBus.emit('tasks:changed');
-        } else {
-          await archiveItem(itemId);
-        }
-        eventBus.emit('inbox:changed');
-        await refresh();
-      });
-    });
   }
 
   async function refresh() {

@@ -160,8 +160,24 @@ async function writeImportedData(importedData) {
 
 export async function applyReplace(importedData) {
   const safetySnapshot = await createSnapshot(true);
+
+  // Stash a compact recovery key in localStorage so a mid-import crash
+  // doesn't lose everything. We only store the hours/logbook stores
+  // (most critical data the user complained about losing).
+  try {
+    const critical = {};
+    for (const store of ['hours', 'logbook']) {
+      if (safetySnapshot.data?.[store]) critical[store] = safetySnapshot.data[store];
+    }
+    localStorage.setItem('boris_import_recovery', JSON.stringify(critical));
+  } catch { /* quota exceeded — best effort */ }
+
   await clearAllData();
   await writeImportedData(importedData);
+
+  // Import succeeded — remove recovery data
+  try { localStorage.removeItem('boris_import_recovery'); } catch {}
+
   return { safetySnapshot };
 }
 

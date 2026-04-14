@@ -9,6 +9,7 @@
 import { getSetting, setSetting } from './db.js';
 import { createSnapshot, applyMerge } from './sync.js';
 import { encryptBinary, decryptBinary } from './crypto.js';
+import { showToast } from './toast.js';
 
 const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const RETRY_DELAYS = [2000, 4000, 8000, 16000];
@@ -109,6 +110,12 @@ async function syncOnce() {
         emit('daily:changed', {});
         emit('habits:changed');
         emit('bpv:changed');
+
+        if (result.conflicts.length > 0) {
+          const stores = [...new Set(result.conflicts.map((c) => c.store))];
+          const label = stores.map((s) => s.replace(/^os_/, '')).join(', ');
+          showToast(`Sync: ${result.conflicts.length} conflict(en) in ${label} — nieuwste versie bewaard`, { type: 'warning', duration: 6000 });
+        }
       }
     }
 

@@ -1,12 +1,7 @@
 import { getDailyEntry, saveOutcomes } from '../../stores/daily.js';
 import { getToday, escapeHTML } from '../../utils.js';
+import { MODE_META } from '../../os/shell.js';
 import './styles.css';
-
-const MODE_ACCENT = {
-  School:   { color: 'var(--color-purple)',  light: 'var(--color-purple-light)',  emoji: '📚', label: 'School' },
-  Personal: { color: 'var(--color-emerald)', light: 'var(--color-emerald-light)', emoji: '🌱', label: 'Persoonlijk' },
-  BPV:      { color: 'var(--color-blue)',    light: 'var(--color-blue-light)',    emoji: '🏢', label: 'BPV' },
-};
 
 const PLACEHOLDERS = [
   'Mijn belangrijkste uitkomst vandaag...',
@@ -56,7 +51,7 @@ export function renderDailyOutcomes(container, context) {
 
   async function render() {
     const mode = modeManager.getMode();
-    const meta = MODE_ACCENT[mode] || MODE_ACCENT.School;
+    const meta = MODE_META[mode] || MODE_META.School;
     const entry = await getDailyEntry(mode, today);
     const outcomes = entry?.outcomes || ['', '', ''];
     const filledCount = outcomes.filter((o) => o && o.trim()).length;

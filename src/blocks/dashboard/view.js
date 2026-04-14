@@ -8,12 +8,7 @@ import { renderSparkline } from '../../ui/sparkline.js';
 import { WEEKDAY_FULL } from '../../constants.js';
 import { getRecentActivity } from './activity-feed.js';
 import { getAll } from '../../db.js';
-
-const MODE_META = {
-  School: { label: 'School', emoji: '📚', color: 'var(--color-purple)', colorLight: 'var(--color-purple-light)' },
-  Personal: { label: 'Persoonlijk', emoji: '🌱', color: 'var(--color-emerald)', colorLight: 'var(--color-emerald-light)' },
-  BPV: { label: 'BPV', emoji: '🏢', color: 'var(--color-blue)', colorLight: 'var(--color-blue-light)' },
-};
+import { MODE_META } from '../../os/shell.js';
 
 function getGreeting() {
   const h = new Date().getHours();

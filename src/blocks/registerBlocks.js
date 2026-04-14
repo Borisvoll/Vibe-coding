@@ -32,6 +32,7 @@ import './project-hub/styles.css';
 import './history-browser/styles.css';
 import './tasks/styles.css';
 import './bpv-report/styles.css';
+import './bpv-report-generator/styles.css';
 import './bpv-mini-card/styles.css';
 import './bpv-countdown/styles.css';
 import './bpv-heatmap/styles.css';
@@ -78,6 +79,7 @@ import { registerPersonalEnergyBlock } from './personal-energy/index.js';
 import { registerPersonalWeekPlanningBlock } from './personal-week-planning/index.js';
 import { registerPersonalWeeklyReflectionBlock } from './personal-weekly-reflection/index.js';
 import { registerBPVReportBlock } from './bpv-report/index.js';
+import { registerBPVReportGeneratorBlock } from './bpv-report-generator/index.js';
 import { registerBPVDataManagerBlock } from './bpv-data-manager/index.js';
 import { registerBPVCountdownBlock } from './bpv-countdown/index.js';
 import { registerBPVHeatmapBlock } from './bpv-heatmap/index.js';
@@ -128,6 +130,7 @@ export function registerDefaultBlocks(registry) {
   registerBPVLeerdoelenBlock(registry);
   registerBPVDataManagerBlock(registry);
   registerBPVReportBlock(registry);
+  registerBPVReportGeneratorBlock(registry);
   registerBoundariesBlock(registry);
 
   // Mode-specific dashboard mini-cards (snapshot overview per mode)

@@ -9,6 +9,7 @@ import { createCollapsibleSection } from '../ui/collapsible-section.js';
 import { createCommandPalette } from '../ui/command-palette.js';
 import { parseHash, updateHash, scrollToFocus } from './deepLinks.js';
 import { createFocusOverlay } from '../ui/focus-overlay.js';
+import { cloudSync } from '../sync-cloud.js';
 
 const SHELL_TABS = ['dashboard', 'today', 'inbox', 'lijsten', 'planning', 'projects', 'settings'];
 
@@ -548,6 +549,70 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
   const focusOverlay = createFocusOverlay();
   app.querySelector('#new-os-shell')?.appendChild(focusOverlay.el);
 
+  // ── Sync status indicator (topbar + mobile) ──────────────
+  const syncBtnDesktop = app.querySelector('#topbar-sync-btn');
+  const syncBtnMobile = app.querySelector('#mobile-sync-btn');
+  const syncDotDesktop = app.querySelector('[data-topbar-sync-dot]');
+  const syncDotMobile = app.querySelector('[data-mobile-sync-dot]');
+  const syncLabelDesktop = app.querySelector('[data-topbar-sync-label]');
+
+  function formatSyncAge(isoString) {
+    if (!isoString) return '';
+    const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+    if (mins < 1) return 'zojuist';
+    if (mins < 60) return `${mins}m geleden`;
+    return `${Math.floor(mins / 60)}u geleden`;
+  }
+
+  function updateSyncChrome(status, lastSyncAt) {
+    const configured = cloudSync.getStatus().isConfigured;
+    if (syncBtnDesktop) syncBtnDesktop.hidden = !configured;
+    if (syncBtnMobile) syncBtnMobile.hidden = !configured;
+    if (!configured) return;
+
+    const dotClass = status === 'connected' ? 'sync-status-dot--connected'
+      : status === 'syncing' ? 'sync-status-dot--syncing'
+      : status === 'error' ? 'sync-status-dot--error' : '';
+
+    [syncDotDesktop, syncDotMobile].forEach((dot) => {
+      if (!dot) return;
+      dot.className = `sync-status-dot ${dotClass}`;
+    });
+    if (syncLabelDesktop) {
+      syncLabelDesktop.textContent = status === 'syncing' ? 'Sync...'
+        : status === 'error' ? 'Fout'
+        : formatSyncAge(lastSyncAt);
+    }
+  }
+
+  // Update on sync events
+  eventBus.on('sync:status', ({ status, lastSyncAt: ts }) => updateSyncChrome(status, ts));
+
+  // Clicking the sync button triggers manual sync
+  [syncBtnDesktop, syncBtnMobile].forEach((btn) => {
+    btn?.addEventListener('click', () => cloudSync.syncNow());
+  });
+
+  // Auto-sync when tab becomes visible (user switches from phone to laptop)
+  function handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && cloudSync.getStatus().isConfigured) {
+      cloudSync.syncNow();
+    }
+  }
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  // Initialize indicator from current state
+  const initSyncStatus = cloudSync.getStatus();
+  updateSyncChrome(initSyncStatus.status, initSyncStatus.lastSyncAt);
+
+  // Refresh age label every minute
+  const syncAgeTimer = setInterval(() => {
+    const s = cloudSync.getStatus();
+    if (s.isConfigured && s.status !== 'syncing') {
+      if (syncLabelDesktop) syncLabelDesktop.textContent = formatSyncAge(s.lastSyncAt);
+    }
+  }, 60000);
+
   // Load saved theme + accent
   (async () => {
     const savedTheme = await getSetting('theme') || 'system';
@@ -710,6 +775,8 @@ export function createOSShell(app, { eventBus, modeManager, blockRegistry }) {
     document.removeEventListener('keydown', handleGlobalKeydown);
     document.removeEventListener('keydown', handleEscapeKey);
     document.removeEventListener('click', closeGearMenu);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    clearInterval(syncAgeTimer);
     window.removeEventListener('hashchange', handleHashChange);
     eventBus.clear();
   }, { once: true });

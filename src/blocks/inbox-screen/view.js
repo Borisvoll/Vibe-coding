@@ -41,6 +41,92 @@ export function renderInboxScreen(container, context) {
   let items = [];
   let selectedIdx = 0;
   let processingItem = null;
+  let selectedProcessMode = null;
+
+  // --- Event delegation on listEl (stable parent) ---
+  listEl.addEventListener('click', (e) => {
+    const processBtn = e.target.closest('[data-action="process"]');
+    if (processBtn) {
+      e.stopPropagation();
+      const row = processBtn.closest('.inbox-screen__item');
+      if (row) {
+        selectedIdx = parseInt(row.dataset.idx, 10);
+        openProcessing(items[selectedIdx]);
+      }
+      return;
+    }
+    const row = e.target.closest('.inbox-screen__item');
+    if (row) {
+      selectedIdx = parseInt(row.dataset.idx, 10);
+      highlightSelected();
+    }
+  });
+
+  // --- Event delegation on processingEl (stable parent) ---
+  processingEl.addEventListener('click', (e) => {
+    // Mode tag selection
+    const modeTag = e.target.closest('[data-process-mode]');
+    if (modeTag) {
+      selectedProcessMode = modeTag.dataset.processMode;
+      processingEl.querySelectorAll('[data-process-mode]').forEach((t) => {
+        t.classList.toggle('selected', t.dataset.processMode === selectedProcessMode);
+      });
+      return;
+    }
+
+    // Process action buttons
+    const actionBtn = e.target.closest('[data-process]');
+    if (!actionBtn || !processingItem) return;
+
+    const action = actionBtn.dataset.process;
+    const item = processingItem;
+
+    switch (action) {
+      case 'task':
+        (async () => {
+          await promoteToTask(item.id, selectedProcessMode);
+          eventBus.emit('tasks:changed');
+          eventBus.emit('inbox:changed');
+          showToast(`Taak aangemaakt in ${selectedProcessMode === 'Personal' ? 'Persoonlijk' : selectedProcessMode}`);
+          closeProcessing();
+          await render();
+        })();
+        break;
+      case 'reference':
+        (async () => {
+          await saveToReference(item.id);
+          eventBus.emit('inbox:changed');
+          showToast('Opgeslagen als referentie');
+          closeProcessing();
+          await render();
+        })();
+        break;
+      case 'archive':
+        (async () => {
+          await archiveItem(item.id);
+          eventBus.emit('inbox:changed');
+          showToast('Gearchiveerd');
+          closeProcessing();
+          await render();
+        })();
+        break;
+      case 'delete':
+        (async () => {
+          await softDelete('os_inbox', item.id);
+          eventBus.emit('inbox:changed');
+          showUndoToast('Item verwijderd', async () => {
+            await undoDelete(item.id);
+            eventBus.emit('inbox:changed');
+          });
+          closeProcessing();
+          await render();
+        })();
+        break;
+      case 'close':
+        closeProcessing();
+        break;
+    }
+  });
 
   // --- Capture with swoosh + toast ---
   let capturing = false;
@@ -111,19 +197,6 @@ export function renderInboxScreen(container, context) {
       </div>
     `).join('');
 
-    // Click to select
-    listEl.querySelectorAll('.inbox-screen__item').forEach((row) => {
-      row.addEventListener('click', () => {
-        selectedIdx = parseInt(row.dataset.idx, 10);
-        highlightSelected();
-      });
-      row.querySelector('[data-action="process"]')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        selectedIdx = parseInt(row.dataset.idx, 10);
-        openProcessing(items[selectedIdx]);
-      });
-    });
-
     // If processing panel was open, keep it for the current item
     if (processingItem && !items.find((it) => it.id === processingItem.id)) {
       processingEl.hidden = true;
@@ -187,56 +260,7 @@ export function renderInboxScreen(container, context) {
       </div>
     `;
 
-    let selectedProcessMode = mode;
-
-    processingEl.querySelectorAll('[data-process-mode]').forEach((tag) => {
-      tag.addEventListener('click', () => {
-        selectedProcessMode = tag.dataset.processMode;
-        processingEl.querySelectorAll('[data-process-mode]').forEach((t) => {
-          t.classList.toggle('selected', t.dataset.processMode === selectedProcessMode);
-        });
-      });
-    });
-
-    processingEl.querySelector('[data-process="task"]')?.addEventListener('click', async () => {
-      await promoteToTask(item.id, selectedProcessMode);
-      eventBus.emit('tasks:changed');
-      eventBus.emit('inbox:changed');
-      showToast(`Taak aangemaakt in ${selectedProcessMode === 'Personal' ? 'Persoonlijk' : selectedProcessMode}`);
-      closeProcessing();
-      await render();
-    });
-
-    processingEl.querySelector('[data-process="reference"]')?.addEventListener('click', async () => {
-      await saveToReference(item.id);
-      eventBus.emit('inbox:changed');
-      showToast('Opgeslagen als referentie');
-      closeProcessing();
-      await render();
-    });
-
-    processingEl.querySelector('[data-process="archive"]')?.addEventListener('click', async () => {
-      await archiveItem(item.id);
-      eventBus.emit('inbox:changed');
-      showToast('Gearchiveerd');
-      closeProcessing();
-      await render();
-    });
-
-    processingEl.querySelector('[data-process="delete"]')?.addEventListener('click', async () => {
-      await softDelete('os_inbox', item.id);
-      eventBus.emit('inbox:changed');
-      showUndoToast('Item verwijderd', async () => {
-        await undoDelete(item.id);
-        eventBus.emit('inbox:changed');
-      });
-      closeProcessing();
-      await render();
-    });
-
-    processingEl.querySelector('[data-process="close"]')?.addEventListener('click', () => {
-      closeProcessing();
-    });
+    selectedProcessMode = mode;
   }
 
   function closeProcessing() {
